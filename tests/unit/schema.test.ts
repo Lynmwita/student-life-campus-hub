@@ -14,6 +14,7 @@ describe("Database Migrations Integrity", () => {
     expect(files).toContain("20261015000005_storage_and_campus_integrity.sql");
     expect(files).toContain("20261015000006_storage_delete_policy.sql");
     expect(files).toContain("20261015000007_announcements_department_rls.sql");
+    expect(files).toContain("20261015000007_university_directory_columns.sql");
   });
 
   it("defines all core tables in 20261015000001_core_schema.sql", () => {
@@ -108,6 +109,15 @@ describe("Database Migrations Integrity", () => {
     expect(migrationSql).toContain("target_department IN");
   });
 
+  it("defines county and ownership columns in 20261015000007_university_directory_columns.sql", () => {
+    const migrationSql = fs.readFileSync(
+      path.join(migrationsDir, "20261015000007_university_directory_columns.sql"),
+      "utf-8"
+    );
+    expect(migrationSql).toContain("ADD COLUMN IF NOT EXISTS county");
+    expect(migrationSql).toContain("ownership");
+  });
+
   it("contains seed script with pilot universities, staff author, and realistic broadcasts", () => {
     const seedPath = path.resolve(import.meta.dirname, "../../supabase/seed.sql");
     const seedSql = fs.readFileSync(seedPath, "utf-8");
@@ -117,5 +127,6 @@ describe("Database Migrations Integrity", () => {
     expect(seedSql).toContain("SMU Registrar & Academic Affairs");
     expect(seedSql).toContain("Urgent: Campus Shuttle Service Rerouted Due to Road Maintenance");
     expect(seedSql).toContain("End of Semester Examination Draft Timetable Released");
+    expect(seedSql).toContain("kenyatta-university");
   });
 });
