@@ -28,7 +28,31 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Refresh auth token
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+
+  // Protect internal routes if unauthenticated
+  const protectedRoutes = ["/dashboard", "/verifications"];
+  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
+
+  if (isProtected && !user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // Redirect authenticated user away from auth pages
+  const authRoutes = ["/login", "/register"];
+  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+
+  if (isAuthRoute && user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
 
   return supabaseResponse;
 }

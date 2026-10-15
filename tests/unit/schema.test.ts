@@ -11,6 +11,7 @@ describe("Database Migrations Integrity", () => {
     expect(files).toContain("20261015000002_triggers_and_functions.sql");
     expect(files).toContain("20261015000003_row_level_security.sql");
     expect(files).toContain("20261015000004_security_hardening.sql");
+    expect(files).toContain("20261015000005_storage_and_campus_integrity.sql");
   });
 
   it("defines all core tables in 20261015000001_core_schema.sql", () => {
@@ -71,6 +72,18 @@ describe("Database Migrations Integrity", () => {
     expect(hardeningSql).toContain("Staff can verify student memberships");
     expect(hardeningSql).toContain("Admins can manage university roles and memberships");
     expect(hardeningSql).toContain("Super admins can manage all memberships");
+  });
+
+  it("enforces campus affinity and private student storage in 20261015000005_storage_and_campus_integrity.sql", () => {
+    const migrationSql = fs.readFileSync(
+      path.join(migrationsDir, "20261015000005_storage_and_campus_integrity.sql"),
+      "utf-8"
+    );
+    expect(migrationSql).toContain("check_membership_campus_university");
+    expect(migrationSql).toContain("Selected campus does not belong to the selected university");
+    expect(migrationSql).toContain("student-documents");
+    expect(migrationSql).toContain("Students can upload own verification documents");
+    expect(migrationSql).toContain("Staff can view verification documents in their university");
   });
 
   it("contains seed script with pilot universities and bootstrap documentation", () => {

@@ -31,24 +31,56 @@ describe("Authentication & Onboarding Schemas", () => {
     });
   });
 
-  describe("registerSchema", () => {
-    it("validates matching registration passwords", () => {
+  describe("registerSchema (Password Complexity & Matching)", () => {
+    it("validates compliant password meeting full complexity criteria", () => {
       const valid = {
         fullName: "Faith Chepkemoi",
         email: "f.chepkemoi@summit.ac.ke",
-        password: "password1234",
-        confirmPassword: "password1234",
+        password: "StrongPassword123!",
+        confirmPassword: "StrongPassword123!",
       };
       const result = registerSchema.safeParse(valid);
       expect(result.success).toBe(true);
+    });
+
+    it("rejects password missing uppercase letter", () => {
+      const invalid = {
+        fullName: "Faith Chepkemoi",
+        email: "f.chepkemoi@summit.ac.ke",
+        password: "strongpassword123!",
+        confirmPassword: "strongpassword123!",
+      };
+      const result = registerSchema.safeParse(invalid);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0]?.message).toBe(
+          "Password must contain at least one uppercase letter"
+        );
+      }
+    });
+
+    it("rejects password missing special character", () => {
+      const invalid = {
+        fullName: "Faith Chepkemoi",
+        email: "f.chepkemoi@summit.ac.ke",
+        password: "StrongPassword123",
+        confirmPassword: "StrongPassword123",
+      };
+      const result = registerSchema.safeParse(invalid);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0]?.message).toBe(
+          "Password must contain at least one special character"
+        );
+      }
     });
 
     it("rejects mismatched passwords", () => {
       const invalid = {
         fullName: "Faith Chepkemoi",
         email: "f.chepkemoi@summit.ac.ke",
-        password: "password1234",
-        confirmPassword: "differentpassword",
+        password: "StrongPassword123!",
+        confirmPassword: "DifferentPassword123!",
       };
       const result = registerSchema.safeParse(invalid);
       expect(result.success).toBe(false);
@@ -68,7 +100,7 @@ describe("Authentication & Onboarding Schemas", () => {
         department: "Computer Science",
         programOfStudy: "Bachelor of Science in Computer Science",
         yearOfStudy: 2,
-        idDocumentUrl: "https://example.com/id.pdf",
+        idDocumentUrl: "00000000-0000-0000-0000-000000000001/id_card.png",
       };
       const result = onboardingSchema.safeParse(valid);
       expect(result.success).toBe(true);

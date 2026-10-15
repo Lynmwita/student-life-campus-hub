@@ -11,7 +11,13 @@ export const registerSchema = z
   .object({
     fullName: z.string().min(2, "Full name must be at least 2 characters").max(100),
     email: z.string().email("Please enter a valid email address"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+      .regex(/[0-9]/, "Password must contain at least one number")
+      .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
     confirmPassword: z.string().min(8, "Password confirmation must be at least 8 characters"),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -38,7 +44,7 @@ export const onboardingSchema = z.object({
     .int()
     .min(1, "Year of study must be between 1 and 7")
     .max(7, "Year of study must be between 1 and 7"),
-  idDocumentUrl: z.string().url("Please provide a valid document link").optional().or(z.literal("")),
+  idDocumentUrl: z.string().max(500).optional().or(z.literal("")),
 });
 
 export type OnboardingInput = z.infer<typeof onboardingSchema>;

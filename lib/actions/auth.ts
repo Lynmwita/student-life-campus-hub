@@ -108,6 +108,33 @@ export async function submitOnboardingAction(formData: FormData): Promise<Action
     };
   }
 
+  // 1. Prevent double onboarding: check if user already has an enrollment
+  const { data: existingMembership } = await supabase
+    .from("university_memberships")
+    .select("id, verification_status")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (existingMembership) {
+    redirect("/verification-status");
+  }
+
+  // 2. Campus-University Affinity Check: verify campus belongs to selected university
+  const { data: campusCheck } = await supabase
+    .from("campuses")
+    .select("id")
+    .eq("id", validated.data.campusId)
+    .eq("university_id", validated.data.universityId)
+    .maybeSingle();
+
+  if (!campusCheck) {
+    return {
+      success: false,
+      error: "The selected campus does not belong to the selected university.",
+    };
+  }
+
+  // 3. Insert student membership in pending verification state
   const { error } = await supabase.from("university_memberships").insert({
     user_id: user.id,
     university_id: validated.data.universityId,
