@@ -29,6 +29,10 @@ export interface StudentOnboardingDataResponse {
   success: boolean;
   studies: StudentStudiesData;
   savedInterests: string[];
+  notificationPreferences?: {
+    style: string;
+    careerTracks: string[];
+  };
 }
 
 export interface SmartOnboardingPayload {
@@ -245,10 +249,23 @@ export async function getStudentOnboardingDataAction(): Promise<StudentOnboardin
       isPreFilled: Boolean(membership?.registration_number),
     };
 
+    // 4. Fetch notification preferences
+    const { data: prefData } = await supabase
+      .from("notification_preferences")
+      .select("style, career_tracks")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     return {
       success: true,
       studies,
       savedInterests,
+      notificationPreferences: prefData
+        ? {
+            style: prefData.style,
+            careerTracks: prefData.career_tracks || [],
+          }
+        : undefined,
     };
   } catch (err) {
     console.error("Failed to load student onboarding data", err);
@@ -365,6 +382,25 @@ export async function completeSmartOnboardingAction(
       success: false,
       message: error.message || "Failed to save student interests and preferences.",
     };
+  }
+
+  // Persist notification preferences and career alert tracks
+  const style = payload.notificationStyle || "smart_digest";
+  const careerTracks = payload.careerAlertTracks || [];
+
+  const { error: prefError } = await supabase
+    .from("notification_preferences")
+    .upsert(
+      {
+        user_id: user.id,
+        style,
+        career_tracks: careerTracks,
+      },
+      { onConflict: "user_id" }
+    );
+
+  if (prefError) {
+    console.error("Failed to persist notification preferences:", prefError);
   }
 
   // Revalidate routes

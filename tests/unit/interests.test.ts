@@ -89,4 +89,40 @@ describe("Smart Onboarding & Kenyan Campus Directory", () => {
     expect(result.success).toBe(false);
     expect(result.message).toContain("confirm your pre-filled academic studies");
   });
+
+  it("filters faculty suggestions accurately by the student's faculty (not recommending tech to law students)", () => {
+    // Law student test
+    const lawFaculty = "School of Law";
+    const lawMatched = KENYAN_CAMPUS_DIRECTORY.filter((c) => {
+      if (!c.facultyMatches) return false;
+      const studentFaculty = lawFaculty.toLowerCase();
+      return c.facultyMatches.some(
+        (f) =>
+          studentFaculty.includes(f.toLowerCase()) ||
+          (studentFaculty.includes("computing") && f.toLowerCase().includes("computing"))
+      );
+    });
+
+    const lawNames = lawMatched.map((c) => c.name);
+    expect(lawNames.some((n) => n.includes("Law") || n.includes("Debate"))).toBe(true);
+    expect(lawNames.some((n) => n.includes("GDSC"))).toBe(false);
+    expect(lawNames.some((n) => n.includes("Cyber Security"))).toBe(false);
+
+    // Computing student test
+    const computingFaculty = "School of Computing & Informatics";
+    const compMatched = KENYAN_CAMPUS_DIRECTORY.filter((c) => {
+      if (!c.facultyMatches) return false;
+      const studentFaculty = computingFaculty.toLowerCase();
+      return c.facultyMatches.some(
+        (f) =>
+          studentFaculty.includes(f.toLowerCase()) ||
+          (studentFaculty.includes("computing") && f.toLowerCase().includes("computing"))
+      );
+    });
+
+    const compNames = compMatched.map((c) => c.name);
+    expect(compNames.some((n) => n.includes("GDSC"))).toBe(true);
+    expect(compNames.some((n) => n.includes("Cyber Security"))).toBe(true);
+  });
 });
+

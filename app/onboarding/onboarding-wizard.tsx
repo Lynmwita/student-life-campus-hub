@@ -49,32 +49,22 @@ const DEFAULT_STUDIES: StudentStudiesData = {
 
 interface SmartOnboardingWizardProps {
   initialStudies?: StudentStudiesData;
-  initialSavedInterests?: string[];
 }
 
 export default function SmartOnboardingWizard({
   initialStudies,
-  initialSavedInterests = [],
-}: SmartOnboardingWizardProps) {
+}: SmartOnboardingWizardProps = {}) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = React.useState<1 | 2 | 3>(1);
   const [studies, setStudies] = React.useState<StudentStudiesData>(
     initialStudies || DEFAULT_STUDIES
   );
 
-  // Step 1 State: Studies Confirmation
-  const [studiesConfirmed, setStudiesConfirmed] = React.useState(true);
+  // Step 1 State: Studies Confirmation (starts unchecked)
+  const [studiesConfirmed, setStudiesConfirmed] = React.useState(false);
 
-  // Step 2 State: Community Selection
-  const [selectedCommunityIds, setSelectedCommunityIds] = React.useState<string[]>(() => {
-    if (initialSavedInterests.length > 0) {
-      const matched = KENYAN_CAMPUS_DIRECTORY.filter((c) =>
-        initialSavedInterests.includes(c.canonicalInterestId)
-      ).map((c) => c.id);
-      return matched.length > 0 ? matched : ["gdsc-chapter", "computing-students-association-cssa", "kenya-red-cross-chapter"];
-    }
-    return ["gdsc-chapter", "computing-students-association-cssa", "kenya-red-cross-chapter"];
-  });
+  // Step 2 State: Community Selection (starts with zero pre-selected communities)
+  const [selectedCommunityIds, setSelectedCommunityIds] = React.useState<string[]>([]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<string>("all");
 
@@ -136,7 +126,11 @@ export default function SmartOnboardingWizard({
     const studentFaculty = studies.faculty?.toLowerCase() || "";
     const matched = KENYAN_CAMPUS_DIRECTORY.filter((c) => {
       if (!c.facultyMatches) return false;
-      return c.facultyMatches.some((f) => studentFaculty.includes(f.toLowerCase()) || f.toLowerCase().includes("computing"));
+      return c.facultyMatches.some(
+        (f) =>
+          studentFaculty.includes(f.toLowerCase()) ||
+          (studentFaculty.includes("computing") && f.toLowerCase().includes("computing"))
+      );
     });
     return matched.slice(0, 4);
   }, [studies.faculty]);

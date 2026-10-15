@@ -18,6 +18,7 @@ describe("Database Migrations Integrity", () => {
     expect(files).toContain("20261015000009_academics_and_campus_life.sql");
     expect(files).toContain("20261015000010_student_interests.sql");
     expect(files).toContain("20261015000011_timetables_unique_slot.sql");
+    expect(files).toContain("20261015000012_onboarding_preferences.sql");
   });
 
   it("defines all core tables in 20261015000001_core_schema.sql", () => {
@@ -155,6 +156,18 @@ describe("Database Migrations Integrity", () => {
     expect(migrationSql).toContain(
       "UNIQUE (university_id, course_unit_id, campus_id, day_of_week, start_time, academic_year, semester)"
     );
+  });
+
+  it("defines notification preferences table and RLS in 20261015000012_onboarding_preferences.sql", () => {
+    const migrationSql = fs.readFileSync(
+      path.join(migrationsDir, "20261015000012_onboarding_preferences.sql"),
+      "utf-8"
+    );
+    expect(migrationSql).toContain("CREATE TABLE IF NOT EXISTS public.notification_preferences");
+    expect(migrationSql).toContain("career_tracks TEXT[]");
+    expect(migrationSql).toContain("ALTER TABLE public.notification_preferences ENABLE ROW LEVEL SECURITY");
+    expect(migrationSql).toContain("Students can manage own notification preferences");
+    expect(migrationSql).toContain("uq_user_notification_preferences UNIQUE (user_id)");
   });
 
   it("contains seed script with pilot universities, staff author, realistic broadcasts, timetables, and clubs", () => {
