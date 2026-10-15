@@ -108,11 +108,14 @@ describe("Database Migrations Integrity", () => {
     expect(migrationSql).toContain("target_department IN");
   });
 
-  it("contains seed script with pilot universities and bootstrap documentation", () => {
+  it("contains seed script with pilot universities, staff author, and realistic broadcasts", () => {
     const seedPath = path.resolve(import.meta.dirname, "../../supabase/seed.sql");
     const seedSql = fs.readFileSync(seedPath, "utf-8");
     expect(seedSql).toContain("Summit Metropolitan University");
     expect(seedSql).toContain("Zetech University");
     expect(seedSql).toContain("Super Admin & Initial Admin Bootstrapping");
+    expect(seedSql).toContain("SMU Registrar & Academic Affairs");
+    expect(seedSql).toContain("Urgent: Campus Shuttle Service Rerouted Due to Road Maintenance");
+    expect(seedSql).toContain("End of Semester Examination Draft Timetable Released");
   });
 });

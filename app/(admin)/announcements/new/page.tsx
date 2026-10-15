@@ -178,6 +178,7 @@ export default function NewAnnouncementPage() {
                   <option value="all">Institution-Wide (All Verified Students & Staff)</option>
                   <option value="campus">Specific Campus Only</option>
                   <option value="faculty">Specific School / Faculty Only</option>
+                  <option value="department">Specific Academic Department Only</option>
                   <option value="year">Specific Year of Study (e.g. Freshmen)</option>
                 </select>
               </div>
@@ -215,6 +216,19 @@ export default function NewAnnouncementPage() {
                       </option>
                     ))}
                   </select>
+                </div>
+              )}
+
+              {targetScope === "department" && (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Target Department
+                  </label>
+                  <Input
+                    name="targetDepartment"
+                    required
+                    placeholder="e.g. Department of Computer Science"
+                  />
                 </div>
               )}
 

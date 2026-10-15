@@ -12,6 +12,7 @@ import {
   Sparkles,
   PlusCircle,
   ShieldCheck,
+  RotateCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,15 +26,18 @@ import {
 export default function StudentDashboardPage() {
   const [notices, setNotices] = React.useState<NoticeItem[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
   const [universityName, setUniversityName] = React.useState("Summit Metropolitan University");
   const [campusName, setCampusName] = React.useState("Main Campus (Westlands)");
   const [selectedFilter, setSelectedFilter] = React.useState<"all" | "P1" | "unread">("all");
 
   React.useEffect(() => {
+    let ignore = false;
+
     async function loadData() {
       try {
         const res = await getStudentAnnouncementsAction();
-        if (res.success) {
+        if (!ignore && res.success) {
           setNotices(res.notices);
           if (res.universityName) setUniversityName(res.universityName);
           if (res.campusName) setCampusName(res.campusName);
@@ -41,11 +45,35 @@ export default function StudentDashboardPage() {
       } catch (err) {
         console.error("Failed to load dashboard announcements", err);
       } finally {
-        setLoading(false);
+        if (!ignore) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     }
+
     loadData();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      const res = await getStudentAnnouncementsAction();
+      if (res.success) {
+        setNotices(res.notices);
+        if (res.universityName) setUniversityName(res.universityName);
+        if (res.campusName) setCampusName(res.campusName);
+      }
+    } catch (err) {
+      console.error("Failed to refresh dashboard announcements", err);
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function handleMarkRead(id: string) {
     try {
@@ -206,6 +234,17 @@ export default function StudentDashboardPage() {
                 Unread
               </button>
             </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing || loading}
+              className="h-8 px-2.5 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+              title="Refresh broadcast feed"
+            >
+              <RotateCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-blue-600" : ""}`} />
+            </Button>
           </div>
 
           <div className="space-y-3">
@@ -231,6 +270,13 @@ export default function StudentDashboardPage() {
                   <p className="text-xs text-slate-500 leading-relaxed">
                     When university administration, campus deans, or department coordinators post notices for your group, they will appear here in real-time.
                   </p>
+                  <div className="pt-2">
+                    <Link href="/announcements/new">
+                      <Button variant="outline" size="sm" className="text-xs">
+                        <PlusCircle className="w-3.5 h-3.5 mr-1 text-blue-600" /> Post Campus Broadcast
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </Card>
             ) : filteredNotices.length === 0 ? (
