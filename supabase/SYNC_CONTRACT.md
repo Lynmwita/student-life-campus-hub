@@ -15,7 +15,7 @@ This document specifies the format, natural key upsert semantics, and behavior f
 4. **Natural Key Resolution**:
    - Students: Resolved by institutional `email` address.
    - Course Units: Resolved by composite key `(university_id, code)`.
-   - Timetable Slots: Resolved by composite schedule slot `(university_id, campus_id, course_unit_id, day_of_week, start_time)`.
+   - Timetable Slots: Resolved by composite schedule slot `(university_id, course_unit_id, campus_id, day_of_week, start_time, academic_year, semester)`.
    - Campuses: Resolved by campus code (e.g. `SMU-MAIN`, `SMU-CITY`).
 
 ---
@@ -80,7 +80,7 @@ This document specifies the format, natural key upsert semantics, and behavior f
 | `department` | string | Yes | Department affiliation. |
 | `year_of_study` | integer (1-7) | Yes | Current undergraduate or graduate study year. |
 | `campus_code` | string | No | Campus code matching university campus records (defaults to primary campus). |
-| `initial_password` | string (>=8 chars) | No | Initial password meeting complexity requirements. Defaults to StudentPassword123!. |
+| `initial_password` | string (>=8 chars) | No | Optional initial password. When omitted, a unique random temporary password (`crypto.randomUUID()`) is generated per student. Students must reset their password on first login. |
 
 ### 2. Course Unit Record (`course_units[]`)
 | Field | Type | Required | Description |
@@ -142,9 +142,9 @@ During synchronization, student authentication accounts are bridged via the Supa
 2. **Account Provisioning**: If no account exists, the action invokes `supabaseAdmin.auth.admin.createUser` with:
    - Institutional email (`st.email`)
    - Pre-confirmed email status (`email_confirm: true`)
-   - Default compliant initial password (`StudentPassword123!` or custom `initial_password`)
-   - User metadata containing full name and registration number
-3. **Existing Account Linking**: If the email already exists in Supabase Auth, the user's UUID is resolved and reused.
+   - Unique unshared temporary password (`crypto.randomUUID()` per student, or custom `initial_password`) to avoid shared password vulnerability
+   - User metadata containing full name, registration number, and `must_reset_password: true`
+3. **Existing Account Linking (Paginated)**: If the email already exists in Supabase Auth, the user's UUID is resolved across all paginated pages using `supabaseAdmin.auth.admin.listUsers` with pagination (`page`, `perPage`) and an in-memory batch cache.
 4. **Profile and Membership Binding**: The resolved auth UUID is written into `public.user_profiles` (satisfying the foreign key constraint on `auth.users(id)`) and linked to `public.university_memberships` with `verification_status = 'verified'`.
-5. **Student Access**: Students can immediately sign in at `/login` using their institutional email and initial password, or reset their credentials anytime via the `/forgot-password` flow. Upon their first login, middleware intercepts their session and guides them through mandatory interest selection.
+5. **Student Access & Password Reset**: Because random temporary passwords are generated rather than a shared static password, students must reset their password on first login via `/forgot-password` (or via institutional credential issuance). Upon signing in, middleware intercepts their session and guides them through mandatory interest selection.
 

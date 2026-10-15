@@ -1,11 +1,63 @@
 "use server";
 
+import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   uamsSyncPayloadSchema,
   type UamsSyncPayload,
 } from "@/lib/validations/sync";
+
+/**
+ * Searches for an existing Supabase Auth user by email across all pages.
+ * Traverses paginated GoTrueAdminApi results until a match is found or pages are exhausted.
+ */
+async function findAuthUserByEmail(
+  adminClient: ReturnType<typeof createAdminClient>,
+  targetEmail: string,
+  cache: Map<string, string>
+): Promise<string | null> {
+  const normalizedEmail = targetEmail.toLowerCase();
+
+  if (cache.has(normalizedEmail)) {
+    return cache.get(normalizedEmail)!;
+  }
+
+  let page = 1;
+  const perPage = 50;
+
+  while (true) {
+    const { data, error } = await adminClient.auth.admin.listUsers({
+      page,
+      perPage,
+    });
+
+    if (error || !data?.users || data.users.length === 0) {
+      break;
+    }
+
+    for (const u of data.users) {
+      if (u.email) {
+        cache.set(u.email.toLowerCase(), u.id);
+      }
+    }
+
+    if (cache.has(normalizedEmail)) {
+      return cache.get(normalizedEmail)!;
+    }
+
+    const nextPage = (data as { nextPage?: number | null }).nextPage;
+    if (nextPage && nextPage > page) {
+      page = nextPage;
+    } else if (data.users.length < perPage) {
+      break;
+    } else {
+      page += 1;
+    }
+  }
+
+  return null;
+}
 
 export interface SyncCounts {
   students_processed: number;
@@ -197,6 +249,8 @@ export async function syncUamsDataAction(
   }
 
   // 6. Ingest Students & Bridge Auth via Service Role Provisioning
+  const authUserEmailCache = new Map<string, string>();
+
   for (const st of payload.students) {
     const campusId =
       campusMap.get(st.campus_code?.toUpperCase() || "") || defaultCampusId;
@@ -213,8 +267,8 @@ export async function syncUamsDataAction(
     if (existingProfile) {
       studentUserId = existingProfile.id;
     } else {
-      // Provision Supabase Auth account using service role
-      const initialPassword = st.initial_password || "StudentPassword123!";
+      // Provision Supabase Auth account using service role with a unique random temporary password
+      const initialPassword = st.initial_password || crypto.randomUUID();
       const { data: authData, error: authError } =
         await adminClient.auth.admin.createUser({
           email: st.email,
@@ -223,18 +277,20 @@ export async function syncUamsDataAction(
           user_metadata: {
             full_name: st.full_name,
             registration_number: st.registration_number,
+            must_reset_password: true,
           },
         });
 
       if (authError) {
-        // If already registered in auth.users, search for existing user by email
-        const { data: userList } = await adminClient.auth.admin.listUsers();
-        const foundUser = userList?.users?.find(
-          (u) => u.email?.toLowerCase() === st.email.toLowerCase()
+        // If already registered in auth.users, search paginated user list for existing auth user
+        const foundUserId = await findAuthUserByEmail(
+          adminClient,
+          st.email,
+          authUserEmailCache
         );
 
-        if (foundUser) {
-          studentUserId = foundUser.id;
+        if (foundUserId) {
+          studentUserId = foundUserId;
         } else {
           syncErrors.push(
             `Student auth creation ${st.email}: ${authError.message}`
@@ -243,6 +299,7 @@ export async function syncUamsDataAction(
         }
       } else if (authData?.user) {
         studentUserId = authData.user.id;
+        authUserEmailCache.set(st.email.toLowerCase(), authData.user.id);
       }
     }
 
@@ -302,7 +359,7 @@ export async function syncUamsDataAction(
     }
   }
 
-  // 7. Ingest Timetables
+  // 7. Upsert Timetables
   for (const tt of payload.timetables) {
     const campusId =
       campusMap.get(tt.campus_code?.toUpperCase() || "") || defaultCampusId;
@@ -322,24 +379,50 @@ export async function syncUamsDataAction(
       continue;
     }
 
-    const { error: ttError } = await adminClient.from("timetables").insert({
-      university_id: universityId,
-      campus_id: campusId,
-      course_unit_id: unitRecord.id,
-      day_of_week: tt.day_of_week,
-      start_time: tt.start_time,
-      end_time: tt.end_time,
-      venue: tt.venue,
-      lecturer_name: tt.lecturer_name,
-      semester: tt.semester,
-      academic_year: tt.academic_year,
-      is_active: true,
-    });
+    let existingQuery = adminClient
+      .from("timetables")
+      .select("id")
+      .eq("university_id", universityId)
+      .eq("course_unit_id", unitRecord.id)
+      .eq("day_of_week", tt.day_of_week)
+      .eq("start_time", tt.start_time)
+      .eq("academic_year", tt.academic_year)
+      .eq("semester", tt.semester);
+
+    if (campusId) {
+      existingQuery = existingQuery.eq("campus_id", campusId);
+    } else {
+      existingQuery = existingQuery.is("campus_id", null);
+    }
+
+    const { data: existingTimetable } = await existingQuery.maybeSingle();
+
+    const { error: ttError } = await adminClient.from("timetables").upsert(
+      {
+        university_id: universityId,
+        campus_id: campusId,
+        course_unit_id: unitRecord.id,
+        day_of_week: tt.day_of_week,
+        start_time: tt.start_time,
+        end_time: tt.end_time,
+        venue: tt.venue,
+        lecturer_name: tt.lecturer_name,
+        semester: tt.semester,
+        academic_year: tt.academic_year,
+        is_active: true,
+      },
+      {
+        onConflict:
+          "university_id,course_unit_id,campus_id,day_of_week,start_time,academic_year,semester",
+      }
+    );
 
     if (ttError) {
       syncErrors.push(
         `Timetable ${tt.course_code} (Day ${tt.day_of_week}): ${ttError.message}`
       );
+    } else if (existingTimetable) {
+      counts.timetables_updated += 1;
     } else {
       counts.timetables_inserted += 1;
     }
@@ -352,7 +435,7 @@ export async function syncUamsDataAction(
     errors: syncErrors.length > 0 ? syncErrors : undefined,
     message:
       syncErrors.length === 0
-        ? `UAMS sync executed: ${counts.students_inserted + counts.students_updated} students, ${counts.course_units_inserted + counts.course_units_updated} course units, and ${counts.timetables_inserted} timetable entries synced.`
+        ? `UAMS sync executed: ${counts.students_inserted + counts.students_updated} students, ${counts.course_units_inserted + counts.course_units_updated} course units, and ${counts.timetables_inserted + counts.timetables_updated} timetable entries synced.`
         : `UAMS sync completed with ${syncErrors.length} warnings/errors.`,
   };
 }

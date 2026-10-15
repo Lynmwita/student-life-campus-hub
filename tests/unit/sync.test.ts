@@ -203,7 +203,7 @@ describe("UAMS Synchronization Contract & Validation", () => {
       expect(response.errors?.length).toBeGreaterThan(0);
     });
 
-    it("defaults initial_password to StudentPassword123! in uamsStudentSchema", () => {
+    it("leaves initial_password optional in uamsStudentSchema when not provided", () => {
       const student = {
         email: "student.test@summit.ac.ke",
         full_name: "Test Student",
@@ -216,7 +216,25 @@ describe("UAMS Synchronization Contract & Validation", () => {
       const parsed = uamsStudentSchema.safeParse(student);
       expect(parsed.success).toBe(true);
       if (parsed.success) {
-        expect(parsed.data.initial_password).toBe("StudentPassword123!");
+        expect(parsed.data.initial_password).toBeUndefined();
+      }
+    });
+
+    it("accepts custom initial_password in uamsStudentSchema when specified", () => {
+      const student = {
+        email: "student.test@summit.ac.ke",
+        full_name: "Test Student",
+        registration_number: "SMU/BCS/2026/001",
+        faculty: "School of Computing",
+        department: "Computer Science",
+        year_of_study: 1,
+        initial_password: "CustomSecretPassword123!",
+      };
+
+      const parsed = uamsStudentSchema.safeParse(student);
+      expect(parsed.success).toBe(true);
+      if (parsed.success) {
+        expect(parsed.data.initial_password).toBe("CustomSecretPassword123!");
       }
     });
 
