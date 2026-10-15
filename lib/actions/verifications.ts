@@ -8,10 +8,16 @@ export interface VerificationResponse {
   message: string;
 }
 
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function verifyStudentAction(
   membershipId: string,
   notes: string = "Verified by university administration"
 ): Promise<VerificationResponse> {
+  if (!uuidRegex.test(membershipId)) {
+    return { success: false, message: "Invalid membership ID format." };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -44,6 +50,10 @@ export async function rejectStudentAction(
   membershipId: string,
   reason: string = "Credentials do not match university records"
 ): Promise<VerificationResponse> {
+  if (!uuidRegex.test(membershipId)) {
+    return { success: false, message: "Invalid membership ID format." };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -75,6 +85,10 @@ export async function requestClarificationAction(
   membershipId: string,
   notes: string
 ): Promise<VerificationResponse> {
+  if (!uuidRegex.test(membershipId)) {
+    return { success: false, message: "Invalid membership ID format." };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

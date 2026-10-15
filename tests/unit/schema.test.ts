@@ -12,6 +12,7 @@ describe("Database Migrations Integrity", () => {
     expect(files).toContain("20261015000003_row_level_security.sql");
     expect(files).toContain("20261015000004_security_hardening.sql");
     expect(files).toContain("20261015000005_storage_and_campus_integrity.sql");
+    expect(files).toContain("20261015000006_storage_delete_policy.sql");
   });
 
   it("defines all core tables in 20261015000001_core_schema.sql", () => {
@@ -84,6 +85,16 @@ describe("Database Migrations Integrity", () => {
     expect(migrationSql).toContain("student-documents");
     expect(migrationSql).toContain("Students can upload own verification documents");
     expect(migrationSql).toContain("Staff can view verification documents in their university");
+  });
+
+  it("enforces owner-only DELETE policy on student-documents in 20261015000006_storage_delete_policy.sql", () => {
+    const migrationSql = fs.readFileSync(
+      path.join(migrationsDir, "20261015000006_storage_delete_policy.sql"),
+      "utf-8"
+    );
+    expect(migrationSql).toContain("FOR DELETE");
+    expect(migrationSql).toContain("Students can delete own verification documents");
+    expect(migrationSql).toContain("bucket_id = 'student-documents'");
   });
 
   it("contains seed script with pilot universities and bootstrap documentation", () => {

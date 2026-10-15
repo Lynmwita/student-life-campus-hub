@@ -34,7 +34,7 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Protect internal routes if unauthenticated
+  // 1. Unauthenticated users cannot access protected routes
   const protectedRoutes = ["/dashboard", "/verifications"];
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
 
@@ -44,7 +44,7 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated user away from auth pages
+  // 2. Authenticated users visiting login/register
   const authRoutes = ["/login", "/register"];
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
@@ -52,6 +52,22 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  // 3. Verification status gating on /dashboard:
+  // If student is logged in but not yet verified, route them to /verification-status
+  if (pathname.startsWith("/dashboard") && user) {
+    const { data: membership } = await supabase
+      .from("university_memberships")
+      .select("verification_status")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (membership && membership.verification_status !== "verified") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/verification-status";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
