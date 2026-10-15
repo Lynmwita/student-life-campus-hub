@@ -73,26 +73,26 @@ export default function NewAnnouncementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#06101E] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Navigation & Header */}
         <div className="flex items-center justify-between">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#0B1D33] dark:hover:text-slate-200"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Link>
-          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs font-semibold">
-            <Megaphone className="w-3.5 h-3.5" /> Staff Publishing Studio
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 text-xs font-semibold">
+            <Megaphone className="w-3.5 h-3.5 text-[#FCD34D]" /> Staff Publishing Studio
           </div>
         </div>
 
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#0B1D33] dark:text-white">
             Publish Official Campus Announcement
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-sans">
             Broadcast targeted notices to verified students of Summit Metropolitan University.
           </p>
         </div>
@@ -120,7 +120,7 @@ export default function NewAnnouncementPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Card className="border-slate-200/80 dark:border-slate-800 shadow-sm">
+          <Card className="border border-[#C59B27]/30 bg-white dark:bg-[#06101E] shadow-xs">
             <CardHeader>
               <CardTitle>1. Urgency & Priority Level</CardTitle>
               <CardDescription>
@@ -136,13 +136,13 @@ export default function NewAnnouncementPage() {
                     onClick={() => setPriority(p)}
                     className={`p-3.5 rounded-xl border text-left transition-all ${
                       priority === p
-                        ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/30 ring-2 ring-blue-500/20 shadow-sm"
-                        : "border-slate-200 dark:border-slate-800 hover:border-slate-300"
+                        ? "border-2 border-[#C59B27] bg-[#C59B27]/5 dark:bg-[#C59B27]/10 shadow-xs"
+                        : "border-slate-200 dark:border-slate-800 hover:border-[#C59B27]/40"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1.5">
                       <Badge variant={priorityBadges[p].variant}>{p}</Badge>
-                      {priority === p && <span className="text-xs font-bold text-blue-600">Active</span>}
+                      {priority === p && <span className="text-xs font-bold text-[#C59B27]">Selected</span>}
                     </div>
                     <p className="font-bold text-xs text-slate-800 dark:text-slate-200">
                       {priorityBadges[p].label}

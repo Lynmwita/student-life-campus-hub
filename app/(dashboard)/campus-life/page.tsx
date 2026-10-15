@@ -4,7 +4,6 @@ import * as React from "react";
 import Link from "next/link";
 import {
   Calendar,
-  Clock,
   MapPin,
   GraduationCap,
   Megaphone,
@@ -88,21 +87,32 @@ export default function CampusLifePage() {
     return c.category === selectedClubCategory;
   });
 
+  function parseDateBadge(dateStr: string) {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) {
+      return { month: "EVT", day: "•" };
+    }
+    return {
+      month: d.toLocaleDateString("en-US", { month: "short" }).toUpperCase(),
+      day: String(d.getDate()).padStart(2, "0"),
+    };
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-16">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#06101E] pb-16">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-3 sm:px-6">
+      <header className="sticky top-0 z-30 bg-[#0B1D33] text-white border-b border-[#06101E] px-4 py-3 sm:px-6 shadow-xs">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
-              <GraduationCap className="w-6 h-6" />
+            <div className="w-9 h-9 rounded-lg bg-[#06101E] border border-[#C59B27]/40 flex items-center justify-center text-[#FCD34D]">
+              <GraduationCap className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="font-black text-sm text-slate-900 dark:text-white leading-tight">
+              <h1 className="font-serif font-bold text-sm text-white leading-tight">
                 {universityName}
               </h1>
-              <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                <Compass className="w-3 h-3 text-emerald-500" /> Student Life & Extracurriculars
+              <p className="text-[11px] text-slate-300 flex items-center gap-1.5 font-sans">
+                <Compass className="w-3 h-3 text-[#FCD34D]" /> Student Life • Campus Community
               </p>
             </div>
           </div>
@@ -112,76 +122,77 @@ export default function CampusLifePage() {
             size="sm"
             onClick={handleRefresh}
             disabled={refreshing || loading}
-            className="text-xs text-slate-600 dark:text-slate-300"
+            className="text-xs border-[#C59B27]/40 text-[#FCD34D] hover:bg-[#06101E] hover:border-[#C59B27]"
           >
-            <RotateCw className={`w-3.5 h-3.5 mr-1.5 ${refreshing ? "animate-spin text-blue-600" : ""}`} />
+            <RotateCw className={`w-3.5 h-3.5 mr-1.5 ${refreshing ? "animate-spin text-[#FCD34D]" : ""}`} />
             Refresh
           </Button>
         </div>
       </header>
 
       {/* Navigation Sub-bar */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto flex items-center gap-4 text-xs font-semibold overflow-x-auto py-2.5">
+      <div className="bg-[#06101E] border-b border-[#C59B27]/20 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto flex items-center gap-6 text-xs font-semibold overflow-x-auto py-2.5">
           <Link
             href="/dashboard"
-            className="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors pb-1.5 flex items-center gap-1.5"
+            className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
           >
             <Megaphone className="w-3.5 h-3.5" /> Campus Feed
           </Link>
           <Link
             href="/timetable"
-            className="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors pb-1.5 flex items-center gap-1.5"
+            className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
           >
             <Calendar className="w-3.5 h-3.5" /> Weekly Timetable
           </Link>
           <Link
             href="/campus-life"
-            className="text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 pb-1.5 flex items-center gap-1.5"
+            className="text-[#FCD34D] border-b-2 border-[#C59B27] pb-1 flex items-center gap-1.5"
           >
-            <Compass className="w-3.5 h-3.5" /> Campus Life & Clubs
+            <Compass className="w-3.5 h-3.5 text-[#FCD34D]" /> Campus Life & Clubs
           </Link>
         </div>
       </div>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
         {/* Header Title Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#C59B27]/20 pb-4">
           <div>
             <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
               <Link href="/dashboard" className="hover:underline">Dashboard</Link>
               <ChevronRight className="w-3 h-3 text-slate-400" />
-              <span className="text-slate-800 dark:text-slate-200 font-semibold">Campus Life</span>
+              <span className="text-[#0B1D33] dark:text-slate-200 font-semibold">Campus Life</span>
             </div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-              <Compass className="w-6 h-6 text-blue-600" />
-              Student Life, Clubs & Campus Events
+            <h2 className="text-2xl sm:text-3xl font-serif font-bold text-[#0B1D33] dark:text-white tracking-tight flex items-center gap-2.5">
+              <Compass className="w-6 h-6 text-[#C59B27]" />
+              Campus Life
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Connect with accredited student societies, hackathons, guest seminars, and community initiatives.
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+              Official university societies • Hackathons • Faculty guest seminars • Community initiatives
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Segmented text tabs with solid gold indicator under active one */}
+          <div className="flex items-center gap-4 border-b border-[#C59B27]/20 sm:border-b-0 pb-1 sm:pb-0">
             <button
               onClick={() => setActiveTab("events")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`pb-2 sm:pb-1 text-xs font-serif font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === "events"
-                  ? "bg-blue-600 text-white"
-                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800"
+                  ? "text-[#0B1D33] dark:text-[#FCD34D] border-b-2 border-[#C59B27]"
+                  : "text-slate-500 hover:text-[#0B1D33] dark:hover:text-slate-200"
               }`}
             >
-              <Calendar className="w-3.5 h-3.5" /> Upcoming Events ({events.length})
+              <Calendar className="w-3.5 h-3.5 text-[#C59B27]" /> Upcoming Events ({events.length})
             </button>
             <button
               onClick={() => setActiveTab("clubs")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`pb-2 sm:pb-1 text-xs font-serif font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === "clubs"
-                  ? "bg-emerald-600 text-white"
-                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800"
+                  ? "text-[#0B1D33] dark:text-[#FCD34D] border-b-2 border-[#C59B27]"
+                  : "text-slate-500 hover:text-[#0B1D33] dark:hover:text-slate-200"
               }`}
             >
-              <Users className="w-3.5 h-3.5" /> Student Clubs ({clubs.length})
+              <Users className="w-3.5 h-3.5 text-[#C59B27]" /> Student Clubs ({clubs.length})
             </button>
           </div>
         </div>
@@ -189,15 +200,15 @@ export default function CampusLifePage() {
         {/* Tab 1: Campus Events */}
         {activeTab === "events" && (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl text-xs max-w-fit">
+            <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg text-xs max-w-fit border border-slate-200 dark:border-slate-800">
               {["all", "hackathon", "workshop", "academic", "career"].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedEventCategory(cat)}
-                  className={`px-3 py-1 rounded-lg font-semibold capitalize transition-colors ${
+                  className={`px-3 py-1 rounded font-semibold capitalize transition-colors ${
                     selectedEventCategory === cat
-                      ? "bg-white dark:bg-slate-900 text-blue-600 shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
+                      ? "bg-[#0B1D33] text-[#FCD34D] shadow-xs border border-[#C59B27]/40"
+                      : "text-slate-600 dark:text-slate-400 hover:text-[#0B1D33]"
                   }`}
                 >
                   {cat === "all" ? "All Events" : cat}
@@ -208,7 +219,7 @@ export default function CampusLifePage() {
             {loading ? (
               <div className="space-y-3">
                 {[1, 2].map((i) => (
-                  <Card key={i} className="p-6 animate-pulse bg-slate-100/50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800">
+                  <Card key={i} className="p-6 animate-pulse bg-white border-[#C59B27]/20">
                     <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4 mb-3" />
                     <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2" />
                     <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full" />
@@ -216,11 +227,11 @@ export default function CampusLifePage() {
                 ))}
               </div>
             ) : filteredEvents.length === 0 ? (
-              <Card className="border-dashed border-2 border-slate-200 dark:border-slate-800 p-8 text-center bg-slate-50/50 dark:bg-slate-900/30">
+              <Card className="border border-[#C59B27]/30 p-8 text-center bg-white dark:bg-[#06101E]">
                 <div className="flex flex-col items-center justify-center space-y-2 max-w-sm mx-auto">
-                  <Calendar className="w-8 h-8 text-slate-400" />
-                  <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                    No events in this category
+                  <Calendar className="w-8 h-8 text-[#C59B27]" />
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] dark:text-slate-200">
+                    No Events in This Category
                   </h4>
                   <p className="text-xs text-slate-500">
                     Check back soon or explore official student societies and clubs.
@@ -229,58 +240,63 @@ export default function CampusLifePage() {
               </Card>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
-                {filteredEvents.map((event) => (
-                  <Card
-                    key={event.id}
-                    className="p-5 border-slate-200/90 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-900 transition-all bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <Badge
-                          variant={
-                            event.category === "hackathon"
-                              ? "danger"
-                              : event.category === "workshop"
-                              ? "info"
-                              : "default"
-                          }
-                          className="capitalize"
-                        >
-                          {event.category}
-                        </Badge>
-                        <span className="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                          {event.eventDate}
-                        </span>
-                      </div>
+                {filteredEvents.map((event) => {
+                  const dateParts = parseDateBadge(event.eventDate);
 
-                      <h4 className="font-black text-base text-slate-900 dark:text-white leading-snug">
-                        {event.title}
-                      </h4>
+                  return (
+                    <Card
+                      key={event.id}
+                      className="p-5 border border-[#C59B27]/30 hover:border-[#C59B27]/70 transition-all bg-white dark:bg-[#06101E] shadow-xs flex flex-col justify-between"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-start gap-3">
+                          {/* Square Navy Date Badge with Gold Typography */}
+                          <div className="bg-[#0B1D33] border border-[#C59B27]/40 rounded-lg p-2 text-center flex flex-col items-center justify-center min-w-[56px] min-h-[56px] shrink-0 shadow-xs">
+                            <span className="text-[10px] font-bold tracking-wider uppercase text-[#FCD34D] leading-none">
+                              {dateParts.month}
+                            </span>
+                            <span className="text-xl font-bold font-serif text-white leading-none mt-1">
+                              {dateParts.day}
+                            </span>
+                          </div>
 
-                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                        {event.description}
-                      </p>
-                    </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <Badge variant="info" className="capitalize text-[10px] px-2 py-0.5">
+                                {event.category}
+                              </Badge>
+                              <span className="text-[11px] font-mono text-slate-500">
+                                {event.startTime}{event.endTime ? ` - ${event.endTime}` : ""}
+                              </span>
+                            </div>
 
-                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 mt-4 space-y-1.5 text-xs text-slate-500">
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                        <span className="font-medium text-slate-700 dark:text-slate-300">{event.venue}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span>
-                          {event.startTime} {event.endTime ? `- ${event.endTime}` : ""}
-                        </span>
-                      </div>
-                      {event.clubName && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-blue-600 dark:text-blue-400 font-semibold pt-1">
-                          <Bookmark className="w-3 h-3" /> Hosted by {event.clubName}
+                            <h4 className="font-serif font-bold text-base text-[#0B1D33] dark:text-white leading-snug">
+                              {event.title}
+                            </h4>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </Card>
-                ))}
+
+                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
+                          {event.description}
+                        </p>
+                      </div>
+
+                      <div className="pt-3 border-t border-[#C59B27]/15 mt-4 space-y-1 text-xs text-slate-500 font-sans">
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-[#C59B27] shrink-0" />
+                          <span className="font-medium text-slate-700 dark:text-slate-300">
+                            {event.venue} • {event.category}
+                          </span>
+                        </div>
+                        {event.clubName && (
+                          <div className="flex items-center gap-1.5 text-[11px] text-[#C59B27] font-semibold pt-0.5">
+                            <Bookmark className="w-3 h-3" /> Hosted by {event.clubName}
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -289,15 +305,15 @@ export default function CampusLifePage() {
         {/* Tab 2: Clubs & Communities */}
         {activeTab === "clubs" && (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-xl text-xs max-w-fit">
+            <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg text-xs max-w-fit border border-slate-200 dark:border-slate-800">
               {["all", "technology", "academic", "community_service"].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedClubCategory(cat)}
-                  className={`px-3 py-1 rounded-lg font-semibold capitalize transition-colors ${
+                  className={`px-3 py-1 rounded font-semibold capitalize transition-colors ${
                     selectedClubCategory === cat
-                      ? "bg-white dark:bg-slate-900 text-emerald-600 shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
+                      ? "bg-[#0B1D33] text-[#FCD34D] shadow-xs border border-[#C59B27]/40"
+                      : "text-slate-600 dark:text-slate-400 hover:text-[#0B1D33]"
                   }`}
                 >
                   {cat === "all" ? "All Clubs" : cat.replace("_", " ")}
@@ -308,7 +324,7 @@ export default function CampusLifePage() {
             {loading ? (
               <div className="space-y-3">
                 {[1, 2].map((i) => (
-                  <Card key={i} className="p-6 animate-pulse bg-slate-100/50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800">
+                  <Card key={i} className="p-6 animate-pulse bg-white border-[#C59B27]/20">
                     <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4 mb-3" />
                     <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2" />
                     <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full" />
@@ -316,14 +332,14 @@ export default function CampusLifePage() {
                 ))}
               </div>
             ) : filteredClubs.length === 0 ? (
-              <Card className="border-dashed border-2 border-slate-200 dark:border-slate-800 p-8 text-center bg-slate-50/50 dark:bg-slate-900/30">
+              <Card className="border border-[#C59B27]/30 p-8 text-center bg-white dark:bg-[#06101E]">
                 <div className="flex flex-col items-center justify-center space-y-2 max-w-sm mx-auto">
-                  <Users className="w-8 h-8 text-slate-400" />
-                  <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                    No clubs found in this category
+                  <Users className="w-8 h-8 text-[#C59B27]" />
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] dark:text-slate-200">
+                    No Clubs Found in This Category
                   </h4>
                   <p className="text-xs text-slate-500">
-                    Check back soon as student groups register for the semester.
+                    Check back soon as student groups register for the academic semester.
                   </p>
                 </div>
               </Card>
@@ -332,19 +348,19 @@ export default function CampusLifePage() {
                 {filteredClubs.map((club) => (
                   <Card
                     key={club.id}
-                    className="p-5 border-slate-200/90 dark:border-slate-800 hover:border-emerald-300 dark:hover:border-emerald-900 transition-all bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between"
+                    className="p-5 border border-[#C59B27]/30 hover:border-[#C59B27]/70 transition-all bg-white dark:bg-[#06101E] shadow-xs flex flex-col justify-between"
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-2">
-                        <Badge variant="default" className="capitalize bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        <Badge variant="default" className="capitalize">
                           {club.category.replace("_", " ")}
                         </Badge>
-                        <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Active Club
+                        <span className="text-[11px] text-[#C59B27] font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Accredited Society
                         </span>
                       </div>
 
-                      <h4 className="font-black text-base text-slate-900 dark:text-white leading-snug">
+                      <h4 className="font-serif font-bold text-base text-[#0B1D33] dark:text-white leading-snug">
                         {club.name}
                       </h4>
 
@@ -353,17 +369,17 @@ export default function CampusLifePage() {
                       </p>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 mt-4 space-y-1 text-xs text-slate-500">
+                    <div className="pt-3 border-t border-[#C59B27]/15 mt-4 space-y-1 text-xs text-slate-500 font-sans">
                       {club.patronName && (
                         <p className="flex items-center gap-1.5">
-                          <GraduationCap className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span>Faculty Patron: <strong>{club.patronName}</strong></span>
+                          <GraduationCap className="w-3.5 h-3.5 text-[#C59B27] shrink-0" />
+                          <span>Patron • <strong>{club.patronName}</strong></span>
                         </p>
                       )}
                       {club.campusName && (
                         <p className="flex items-center gap-1.5">
-                          <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                          <span>Campus: {club.campusName}</span>
+                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span>Campus • {club.campusName}</span>
                         </p>
                       )}
                     </div>

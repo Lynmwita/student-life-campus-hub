@@ -51,14 +51,14 @@ export default function VerificationStatusPage() {
   const current = statusConfig[status];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#06101E] p-4">
       <div className="w-full max-w-lg">
-        <Card className="border-slate-200 dark:border-slate-800 shadow-xs text-center">
+        <Card className="border border-[#C59B27]/30 bg-white dark:bg-[#06101E] shadow-xs text-center">
           <CardHeader className="flex flex-col items-center pt-8 pb-4">
             <div className="mb-4">{current.icon}</div>
             <div className="mb-2">{current.badge}</div>
-            <CardTitle className="text-2xl">{current.title}</CardTitle>
-            <CardDescription className="max-w-md mx-auto text-sm mt-2">
+            <CardTitle className="text-2xl font-serif text-[#0B1D33] dark:text-white">{current.title}</CardTitle>
+            <CardDescription className="max-w-md mx-auto text-sm mt-2 font-sans">
               {current.description}
             </CardDescription>
           </CardHeader>

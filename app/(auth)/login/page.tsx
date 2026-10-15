@@ -35,21 +35,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#06101E] p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white mb-3">
+          <div className="w-14 h-14 rounded-xl bg-[#0B1D33] border border-[#C59B27]/40 flex items-center justify-center text-[#FCD34D] mb-3 shadow-xs">
             <GraduationCap className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-serif font-bold tracking-tight text-[#0B1D33] dark:text-white">
             Student Life & Campus Hub
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-sans">
             The university follows the student.
           </p>
         </div>
 
-        <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+        <Card className="border border-[#C59B27]/30 bg-white dark:bg-[#06101E] shadow-xs">
           <CardHeader>
             <CardTitle>Welcome Back</CardTitle>
             <CardDescription>
@@ -79,12 +79,12 @@ export default function LoginPage() {
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     Password
                   </label>
                   <Link
                     href="/forgot-password"
-                    className="text-xs font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 hover:underline"
+                    className="text-xs font-serif font-medium text-[#C59B27] hover:underline"
                   >
                     Forgot password?
                   </Link>
@@ -104,14 +104,14 @@ export default function LoginPage() {
                 className="w-full mt-2"
                 isLoading={loading}
               >
-                Sign In <ArrowRight className="w-4 h-4 ml-1.5" />
+                Sign In <ArrowRight className="w-4 h-4 ml-1.5 text-[#FCD34D]" />
               </Button>
             </form>
           </CardContent>
 
-          <CardFooter className="flex flex-col space-y-3 text-center border-t border-slate-100 dark:border-slate-800/80 pt-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Accounts are provisioned by university administration. Contact your registrar office if you have not received credentials.
+          <CardFooter className="flex flex-col space-y-3 text-center border-t border-[#C59B27]/15 pt-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
+              Accounts are provisioned by university administration. Contact your registrar office if you require credentials.
             </p>
           </CardFooter>
         </Card>

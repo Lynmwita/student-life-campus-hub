@@ -35,21 +35,21 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#06101E] p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white mb-3">
+          <div className="w-14 h-14 rounded-xl bg-[#0B1D33] border border-[#C59B27]/40 flex items-center justify-center text-[#FCD34D] mb-3 shadow-xs">
             <GraduationCap className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-serif font-bold tracking-tight text-[#0B1D33] dark:text-white">
             Student Life & Campus Hub
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-sans">
             Account recovery & security
           </p>
         </div>
 
-        <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
+        <Card className="border border-[#C59B27]/30 bg-white dark:bg-[#06101E] shadow-xs">
           <CardHeader>
             <CardTitle>Reset Your Password</CardTitle>
             <CardDescription>

@@ -73,20 +73,19 @@ export default function StudentInterestsOnboardingPage() {
   const meetsRequirement = selectedInterests.length >= 3;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-between py-10 px-4 sm:px-6">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#06101E] flex flex-col justify-between py-10 px-4 sm:px-6">
       <div className="max-w-3xl mx-auto w-full space-y-6">
         {/* Header */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 text-xs font-semibold">
-            <Compass className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 text-xs font-semibold">
+            <Compass className="w-3.5 h-3.5 text-[#FCD34D]" />
             Mandatory Student Onboarding
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-            Select Your Campus Interests
+          <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-[#0B1D33] dark:text-white">
+            Select Your Academic & Campus Interests
           </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
-            Your university account is active. Choose at least 3 areas of interest to tailor
-            official broadcasts, academic schedules, and student communities to your preferences.
+          <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto leading-relaxed font-sans">
+            Your university identity is verified. Select at least 3 academic and extracurricular areas to personalize your targeted official notices, class timetables, and student society updates.
           </p>
         </div>
 
@@ -98,13 +97,13 @@ export default function StudentInterestsOnboardingPage() {
         )}
 
         {/* Counter and Requirements Indicator */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 text-xs font-semibold">
-          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+        <div className="flex items-center justify-between border-b border-[#C59B27]/25 pb-3 text-xs font-semibold">
+          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 font-sans">
             <span>Selected:</span>
             <span
               className={`px-2 py-0.5 rounded-md font-mono font-bold ${
                 meetsRequirement
-                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                  ? "bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40"
                   : "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200"
               }`}
             >
@@ -115,8 +114,8 @@ export default function StudentInterestsOnboardingPage() {
 
           <div>
             {meetsRequirement ? (
-              <Badge variant="success" className="flex items-center gap-1">
-                <Check className="w-3 h-3" /> Requirement Met
+              <Badge variant="info" className="flex items-center gap-1">
+                <Check className="w-3 h-3 text-[#FCD34D]" /> Requirement Met
               </Badge>
             ) : (
               <Badge variant="warning">
@@ -137,29 +136,29 @@ export default function StudentInterestsOnboardingPage() {
                 onClick={() => toggleInterest(item.id)}
                 className={`p-4 cursor-pointer transition-all border ${
                   isSelected
-                    ? "border-blue-600 dark:border-blue-500 bg-blue-50/40 dark:bg-blue-950/20"
-                    : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
+                    ? "border-2 border-[#C59B27] bg-[#C59B27]/5 dark:bg-[#C59B27]/10 shadow-xs"
+                    : "border border-[#C59B27]/30 hover:border-[#C59B27]/70 bg-white dark:bg-[#06101E]"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1.5 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[#C59B27]">
                         {item.category}
                       </span>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                    <h3 className="text-sm font-serif font-bold text-[#0B1D33] dark:text-white leading-tight">
                       {item.name}
                     </h3>
-                    <p className="text-xs text-slate-500 leading-relaxed">
+                    <p className="text-xs text-slate-500 leading-relaxed font-sans">
                       {item.description}
                     </p>
                   </div>
 
                   <div
-                    className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                    className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
                       isSelected
-                        ? "bg-blue-600 border-blue-600 text-white"
+                        ? "bg-[#0B1D33] border-[#0B1D33] text-[#FCD34D]"
                         : "border-slate-300 dark:border-slate-700 bg-transparent"
                     }`}
                   >
@@ -172,9 +171,9 @@ export default function StudentInterestsOnboardingPage() {
         </div>
 
         {/* Action Controls */}
-        <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#C59B27]/25">
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-sans">
+            <ShieldCheck className="w-4 h-4 text-[#C59B27] shrink-0" />
             <span>Preferences are stored under your verified academic profile.</span>
           </div>
 
@@ -183,9 +182,9 @@ export default function StudentInterestsOnboardingPage() {
             disabled={!meetsRequirement || saving || loading}
             isLoading={saving}
             size="md"
-            className="w-full sm:w-auto px-6 text-sm"
+            className="w-full sm:w-auto px-6 text-sm bg-[#0B1D33] text-white hover:bg-[#06101E] border border-[#C59B27]/40 hover:border-[#C59B27]"
           >
-            Save & Continue to Dashboard <ArrowRight className="w-4 h-4 ml-2" />
+            Save & Continue to Dashboard <ArrowRight className="w-4 h-4 ml-2 text-[#FCD34D]" />
           </Button>
         </div>
       </div>
