@@ -1,0 +1,2 @@
+-- Seed script for local development and testing
+-- Pilot University: Summit Metropolitan University (SMU) & Zetech University
