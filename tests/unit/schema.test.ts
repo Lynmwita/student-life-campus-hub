@@ -133,6 +133,17 @@ describe("Database Migrations Integrity", () => {
     expect(migrationSql).toContain("ALTER TABLE public.events ENABLE ROW LEVEL SECURITY");
   });
 
+  it("defines student interests and RLS in 20261015000010_student_interests.sql", () => {
+    const migrationSql = fs.readFileSync(
+      path.join(migrationsDir, "20261015000010_student_interests.sql"),
+      "utf-8"
+    );
+    expect(migrationSql).toContain("CREATE TABLE IF NOT EXISTS public.student_interests");
+    expect(migrationSql).toContain("ALTER TABLE public.student_interests ENABLE ROW LEVEL SECURITY");
+    expect(migrationSql).toContain("Students can manage own interests");
+    expect(migrationSql).toContain("Staff can view student interests in university");
+  });
+
   it("contains seed script with pilot universities, staff author, realistic broadcasts, timetables, and clubs", () => {
     const seedPath = path.resolve(import.meta.dirname, "../../supabase/seed.sql");
     const seedSql = fs.readFileSync(seedPath, "utf-8");
@@ -141,8 +152,8 @@ describe("Database Migrations Integrity", () => {
     expect(seedSql).toContain("Super Admin & Initial Admin Bootstrapping");
     expect(seedSql).toContain("SMU Registrar & Academic Affairs");
     expect(seedSql).toContain("Urgent: Campus Shuttle Service Rerouted Due to Road Maintenance");
-    expect(seedSql).toContain("End of Semester Examination Draft Timetable Released");
-    expect(seedSql).toContain("kenyatta-university");
+    expect(seedSql).not.toContain("kenyatta-university");
+    expect(seedSql).not.toContain("University of Nairobi");
     expect(seedSql).toContain("COMP 211");
     expect(seedSql).toContain("SMU Tech Innovators & GDSC");
     expect(seedSql).toContain("Annual Inter-Campus Hackathon 2026");

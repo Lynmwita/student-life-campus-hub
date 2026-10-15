@@ -19,13 +19,8 @@ export default function HomePage() {
 
           <div className="flex items-center gap-2">
             <Link href="/login">
-              <Button variant="ghost" size="sm" className="text-xs">
-                Sign In
-              </Button>
-            </Link>
-            <Link href="/register">
               <Button variant="primary" size="sm" className="text-xs">
-                Register Student
+                Sign In
               </Button>
             </Link>
           </div>
@@ -48,9 +43,9 @@ export default function HomePage() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 w-full sm:w-auto">
-          <Link href="/register" className="w-full sm:w-auto">
+          <Link href="/login" className="w-full sm:w-auto">
             <Button variant="primary" size="lg" className="w-full sm:w-auto text-base px-8 py-3.5">
-              Get Started as Student <ArrowRight className="w-4 h-4 ml-2" />
+              Sign In to Campus Hub <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>
           <Link href="/dashboard" className="w-full sm:w-auto">

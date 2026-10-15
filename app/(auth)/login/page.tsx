@@ -111,13 +111,7 @@ export default function LoginPage() {
 
           <CardFooter className="flex flex-col space-y-3 text-center border-t border-slate-100 dark:border-slate-800/80 pt-4">
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              New to the platform?{" "}
-              <Link
-                href="/register"
-                className="font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400 underline-offset-4 hover:underline"
-              >
-                Create student account
-              </Link>
+              Accounts are provisioned by university administration. Contact your registrar office if you have not received credentials.
             </p>
           </CardFooter>
         </Card>

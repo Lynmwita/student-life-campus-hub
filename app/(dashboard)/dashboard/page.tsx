@@ -142,13 +142,8 @@ export default function StudentDashboardPage() {
 
           <div className="flex items-center gap-2">
             <Link href="/announcements/new">
-              <Button variant="outline" size="sm" className="hidden sm:inline-flex text-xs">
-                <PlusCircle className="w-3.5 h-3.5 mr-1 text-blue-600" /> Post Notice
-              </Button>
-            </Link>
-            <Link href="/verifications">
               <Button variant="outline" size="sm" className="text-xs">
-                <ShieldCheck className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Staff Queue
+                <PlusCircle className="w-3.5 h-3.5 mr-1 text-blue-600" /> Post Notice
               </Button>
             </Link>
           </div>

@@ -34,44 +34,53 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // 1. Unauthenticated users cannot access protected routes
-  const protectedRoutes = ["/dashboard", "/verifications", "/announcements"];
-  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
+  // 1. Protected routes definitions
+  const protectedRoutes = [
+    "/dashboard",
+    "/timetable",
+    "/campus-life",
+    "/announcements",
+  ];
+  const isOnboardingRoute = pathname === "/onboarding" || pathname.startsWith("/onboarding/interests");
+  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route)) || isOnboardingRoute;
 
+  // 2. Unauthenticated users cannot access protected routes
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // 2. Authenticated users visiting login/register
+  // 3. Authenticated users visiting auth routes (/login, /register)
   const authRoutes = ["/login", "/register"];
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
   if (isAuthRoute && user) {
+    const { count } = await supabase
+      .from("student_interests")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    if (!count || count === 0) {
+      url.pathname = "/onboarding/interests";
+    } else {
+      url.pathname = "/dashboard";
+    }
     return NextResponse.redirect(url);
   }
 
-  // 3. Verification status gating on /dashboard:
-  // If student is logged in, ensure they have at least one verified membership
-  if (pathname.startsWith("/dashboard") && user) {
-    const { data: memberships } = await supabase
-      .from("university_memberships")
-      .select("verification_status")
+  // 4. Mandatory Interests Onboarding Gate for Authenticated Users
+  // Users with zero recorded interests are intercepted and redirected to /onboarding/interests
+  if (user && protectedRoutes.some((route) => pathname.startsWith(route))) {
+    const { count } = await supabase
+      .from("student_interests")
+      .select("*", { count: "exact", head: true })
       .eq("user_id", user.id);
 
-    if (!memberships || memberships.length === 0) {
+    if (!count || count === 0) {
       const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
-      return NextResponse.redirect(url);
-    }
-
-    const hasVerified = memberships.some((m) => m.verification_status === "verified");
-    if (!hasVerified) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/verification-status";
+      url.pathname = "/onboarding/interests";
       return NextResponse.redirect(url);
     }
   }
