@@ -202,5 +202,38 @@ describe("UAMS Synchronization Contract & Validation", () => {
       expect(response.errors).toBeDefined();
       expect(response.errors?.length).toBeGreaterThan(0);
     });
+
+    it("defaults initial_password to StudentPassword123! in uamsStudentSchema", () => {
+      const student = {
+        email: "student.test@summit.ac.ke",
+        full_name: "Test Student",
+        registration_number: "SMU/BCS/2026/001",
+        faculty: "School of Computing",
+        department: "Computer Science",
+        year_of_study: 1,
+      };
+
+      const parsed = uamsStudentSchema.safeParse(student);
+      expect(parsed.success).toBe(true);
+      if (parsed.success) {
+        expect(parsed.data.initial_password).toBe("StudentPassword123!");
+      }
+    });
+
+    it("rejects unauthenticated callers before checking roles when dry_run is false", async () => {
+      const livePayload = {
+        version: 1,
+        dry_run: false,
+        students: [],
+        course_units: [],
+        timetables: [],
+      };
+
+      const response = await syncUamsDataAction(livePayload);
+      expect(response.success).toBe(false);
+      expect(response.dry_run).toBe(false);
+      expect(response.message).toContain("Unauthorized: Unauthenticated callers are rejected.");
+      expect(response.errors?.[0]).toContain("Unauthenticated request");
+    });
   });
 });

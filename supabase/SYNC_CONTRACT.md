@@ -80,6 +80,7 @@ This document specifies the format, natural key upsert semantics, and behavior f
 | `department` | string | Yes | Department affiliation. |
 | `year_of_study` | integer (1-7) | Yes | Current undergraduate or graduate study year. |
 | `campus_code` | string | No | Campus code matching university campus records (defaults to primary campus). |
+| `initial_password` | string (>=8 chars) | No | Initial password meeting complexity requirements. Defaults to StudentPassword123!. |
 
 ### 2. Course Unit Record (`course_units[]`)
 | Field | Type | Required | Description |
@@ -127,3 +128,23 @@ This document specifies the format, natural key upsert semantics, and behavior f
   "message": "UAMS sync executed: 150 students, 18 course units, and 42 timetable entries synced."
 }
 ```
+
+---
+
+## Student Authentication Bridging Architecture
+
+### Context and Decision
+Because public self-registration (`/register`) was eliminated in favor of an institutional single-university model, student identities cannot self-register. Students are provisioned directly from UAMS records.
+
+### Implementation Choice: Service Role Provisioning
+During synchronization, student authentication accounts are bridged via the Supabase Service Role client (`createAdminClient`):
+1. **Identity Resolution**: For each student email, the system checks whether a user already exists in `public.user_profiles` or Supabase Auth.
+2. **Account Provisioning**: If no account exists, the action invokes `supabaseAdmin.auth.admin.createUser` with:
+   - Institutional email (`st.email`)
+   - Pre-confirmed email status (`email_confirm: true`)
+   - Default compliant initial password (`StudentPassword123!` or custom `initial_password`)
+   - User metadata containing full name and registration number
+3. **Existing Account Linking**: If the email already exists in Supabase Auth, the user's UUID is resolved and reused.
+4. **Profile and Membership Binding**: The resolved auth UUID is written into `public.user_profiles` (satisfying the foreign key constraint on `auth.users(id)`) and linked to `public.university_memberships` with `verification_status = 'verified'`.
+5. **Student Access**: Students can immediately sign in at `/login` using their institutional email and initial password, or reset their credentials anytime via the `/forgot-password` flow. Upon their first login, middleware intercepts their session and guides them through mandatory interest selection.
+

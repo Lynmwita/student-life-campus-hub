@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   uamsSyncPayloadSchema,
   type UamsSyncPayload,
@@ -31,6 +32,8 @@ const DEFAULT_PILOT_UNIVERSITY_ID = "00000000-0000-0000-0000-000000000001";
 /**
  * Server action to ingest students, course units, and timetables from the University Academic Management System (UAMS).
  * Supports dry-run validation without writing to the database.
+ * Rejects unauthenticated callers before checking role permissions.
+ * Bridges student auth by provisioning auth.users accounts via Supabase service role.
  */
 export async function syncUamsDataAction(
   rawPayload: unknown
@@ -64,7 +67,7 @@ export async function syncUamsDataAction(
   const payload: UamsSyncPayload = parsed.data;
   const isDryRun = payload.dry_run ?? false;
 
-  // Handle dry-run mode without writing
+  // Handle dry-run mode without writes or database access
   if (isDryRun) {
     return {
       success: true,
@@ -84,33 +87,48 @@ export async function syncUamsDataAction(
     };
   }
 
+  // 1. Verify caller authentication first (reject anonymous callers before role lookup)
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Enforce staff/super_admin role
-  if (user) {
-    const { data: membership } = await supabase
-      .from("university_memberships")
-      .select("role")
-      .eq("user_id", user.id)
-      .in("role", ["staff", "admin", "super_admin"])
-      .maybeSingle();
-
-    if (!membership) {
-      return {
-        success: false,
-        dry_run: isDryRun,
-        counts: initialCounts,
-        errors: ["Insufficient permissions. UAMS sync requires staff or super_admin privileges."],
-        message: "Unauthorized: Insufficient privileges for UAMS synchronization.",
-      };
-    }
+  if (!user) {
+    return {
+      success: false,
+      dry_run: isDryRun,
+      counts: initialCounts,
+      errors: [
+        "Unauthenticated request. UAMS synchronization requires an authenticated session.",
+      ],
+      message: "Unauthorized: Unauthenticated callers are rejected.",
+    };
   }
 
-  // 1. Resolve Pilot University
-  const { data: univData } = await supabase
+  // 2. Enforce staff or super_admin privileges
+  const { data: membership } = await supabase
+    .from("university_memberships")
+    .select("role")
+    .eq("user_id", user.id)
+    .in("role", ["staff", "admin", "super_admin"])
+    .maybeSingle();
+
+  if (!membership) {
+    return {
+      success: false,
+      dry_run: isDryRun,
+      counts: initialCounts,
+      errors: [
+        "Insufficient permissions. UAMS sync requires staff or super_admin privileges.",
+      ],
+      message: "Unauthorized: Insufficient privileges for UAMS synchronization.",
+    };
+  }
+
+  const adminClient = createAdminClient();
+
+  // 3. Resolve Pilot University
+  const { data: univData } = await adminClient
     .from("universities")
     .select("id")
     .limit(1)
@@ -118,8 +136,8 @@ export async function syncUamsDataAction(
 
   const universityId = univData?.id || DEFAULT_PILOT_UNIVERSITY_ID;
 
-  // 2. Fetch active campuses for code lookups
-  const { data: campusesData } = await supabase
+  // 4. Fetch active campuses for code lookups
+  const { data: campusesData } = await adminClient
     .from("campuses")
     .select("id, code")
     .eq("university_id", universityId);
@@ -129,7 +147,8 @@ export async function syncUamsDataAction(
     if (c.code) campusMap.set(c.code.toUpperCase(), c.id);
   });
 
-  const defaultCampusId = campusesData && campusesData.length > 0 ? campusesData[0].id : null;
+  const defaultCampusId =
+    campusesData && campusesData.length > 0 ? campusesData[0].id : null;
 
   const counts: SyncCounts = {
     students_processed: payload.students.length,
@@ -145,16 +164,16 @@ export async function syncUamsDataAction(
 
   const syncErrors: string[] = [];
 
-  // 3. Upsert Course Units
+  // 5. Upsert Course Units
   for (const cu of payload.course_units) {
-    const { data: existingUnit } = await supabase
+    const { data: existingUnit } = await adminClient
       .from("course_units")
       .select("id")
       .eq("university_id", universityId)
       .eq("code", cu.code)
       .maybeSingle();
 
-    const { error: cuError } = await supabase.from("course_units").upsert(
+    const { error: cuError } = await adminClient.from("course_units").upsert(
       {
         university_id: universityId,
         code: cu.code,
@@ -177,59 +196,102 @@ export async function syncUamsDataAction(
     }
   }
 
-  // 4. Ingest Students
+  // 6. Ingest Students & Bridge Auth via Service Role Provisioning
   for (const st of payload.students) {
-    const campusId = campusMap.get(st.campus_code?.toUpperCase() || "") || defaultCampusId;
+    const campusId =
+      campusMap.get(st.campus_code?.toUpperCase() || "") || defaultCampusId;
 
-    // Check if user profile exists by email
-    const { data: existingProfile } = await supabase
+    let studentUserId: string | null = null;
+
+    // Check if user profile already exists by email
+    const { data: existingProfile } = await adminClient
       .from("user_profiles")
       .select("id")
       .eq("email", st.email)
       .maybeSingle();
 
-    let studentUserId = existingProfile?.id;
+    if (existingProfile) {
+      studentUserId = existingProfile.id;
+    } else {
+      // Provision Supabase Auth account using service role
+      const initialPassword = st.initial_password || "StudentPassword123!";
+      const { data: authData, error: authError } =
+        await adminClient.auth.admin.createUser({
+          email: st.email,
+          password: initialPassword,
+          email_confirm: true,
+          user_metadata: {
+            full_name: st.full_name,
+            registration_number: st.registration_number,
+          },
+        });
+
+      if (authError) {
+        // If already registered in auth.users, search for existing user by email
+        const { data: userList } = await adminClient.auth.admin.listUsers();
+        const foundUser = userList?.users?.find(
+          (u) => u.email?.toLowerCase() === st.email.toLowerCase()
+        );
+
+        if (foundUser) {
+          studentUserId = foundUser.id;
+        } else {
+          syncErrors.push(
+            `Student auth creation ${st.email}: ${authError.message}`
+          );
+          continue;
+        }
+      } else if (authData?.user) {
+        studentUserId = authData.user.id;
+      }
+    }
 
     if (!studentUserId) {
-      // Create user profile
-      const { data: newProfile, error: profError } = await supabase
-        .from("user_profiles")
-        .insert({
-          email: st.email,
-          full_name: st.full_name,
-        })
-        .select("id")
-        .single();
+      syncErrors.push(
+        `Student profile ${st.email}: Failed to resolve or provision auth user identity.`
+      );
+      continue;
+    }
 
-      if (profError || !newProfile) {
-        syncErrors.push(`Student profile ${st.email}: ${profError?.message || "Failed to create profile"}`);
-        continue;
-      }
-      studentUserId = newProfile.id;
+    // Upsert public.user_profiles using the resolved auth user UUID
+    const { error: profError } = await adminClient.from("user_profiles").upsert(
+      {
+        id: studentUserId,
+        email: st.email,
+        full_name: st.full_name,
+      },
+      { onConflict: "id" }
+    );
+
+    if (profError) {
+      syncErrors.push(`Student profile ${st.email}: ${profError.message}`);
+      continue;
     }
 
     // Upsert membership with verified status
-    const { data: existingMem } = await supabase
+    const { data: existingMem } = await adminClient
       .from("university_memberships")
       .select("id")
       .eq("user_id", studentUserId)
       .eq("university_id", universityId)
       .maybeSingle();
 
-    const { error: memError } = await supabase.from("university_memberships").upsert(
-      {
-        user_id: studentUserId,
-        university_id: universityId,
-        campus_id: campusId,
-        role: "student",
-        registration_number: st.registration_number,
-        faculty: st.faculty,
-        department: st.department,
-        year_of_study: st.year_of_study,
-        verification_status: "verified",
-      },
-      { onConflict: "user_id, university_id" }
-    );
+    const { error: memError } = await adminClient
+      .from("university_memberships")
+      .upsert(
+        {
+          user_id: studentUserId,
+          university_id: universityId,
+          campus_id: campusId,
+          role: "student",
+          registration_number: st.registration_number,
+          faculty: st.faculty,
+          department: st.department,
+          year_of_study: st.year_of_study,
+          verification_status: "verified",
+        },
+        { onConflict: "user_id, university_id" }
+      );
 
     if (memError) {
       syncErrors.push(`Student membership ${st.email}: ${memError.message}`);
@@ -240,12 +302,13 @@ export async function syncUamsDataAction(
     }
   }
 
-  // 5. Ingest Timetables
+  // 7. Ingest Timetables
   for (const tt of payload.timetables) {
-    const campusId = campusMap.get(tt.campus_code?.toUpperCase() || "") || defaultCampusId;
+    const campusId =
+      campusMap.get(tt.campus_code?.toUpperCase() || "") || defaultCampusId;
 
     // Lookup course unit id
-    const { data: unitRecord } = await supabase
+    const { data: unitRecord } = await adminClient
       .from("course_units")
       .select("id")
       .eq("university_id", universityId)
@@ -253,11 +316,13 @@ export async function syncUamsDataAction(
       .maybeSingle();
 
     if (!unitRecord) {
-      syncErrors.push(`Timetable unit ${tt.course_code}: Course unit not found in database.`);
+      syncErrors.push(
+        `Timetable unit ${tt.course_code}: Course unit not found in database.`
+      );
       continue;
     }
 
-    const { error: ttError } = await supabase.from("timetables").insert({
+    const { error: ttError } = await adminClient.from("timetables").insert({
       university_id: universityId,
       campus_id: campusId,
       course_unit_id: unitRecord.id,
@@ -272,7 +337,9 @@ export async function syncUamsDataAction(
     });
 
     if (ttError) {
-      syncErrors.push(`Timetable ${tt.course_code} (Day ${tt.day_of_week}): ${ttError.message}`);
+      syncErrors.push(
+        `Timetable ${tt.course_code} (Day ${tt.day_of_week}): ${ttError.message}`
+      );
     } else {
       counts.timetables_inserted += 1;
     }

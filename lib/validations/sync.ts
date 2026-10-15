@@ -8,6 +8,7 @@ export const uamsStudentSchema = z.object({
   department: z.string().min(2, "Department is required"),
   year_of_study: z.coerce.number().int().min(1).max(7),
   campus_code: z.string().optional().default("SMU-MAIN"),
+  initial_password: z.string().min(8).optional().default("StudentPassword123!"),
 });
 
 export type UamsStudentInput = z.infer<typeof uamsStudentSchema>;
