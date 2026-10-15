@@ -55,6 +55,9 @@ SET name = EXCLUDED.name,
 -- ------------------------------------------------------------------------------
 -- 4. Seed Official Staff Author for Broadcasts
 -- ------------------------------------------------------------------------------
+-- WARNING: The credentials below (e.g. StaffPassword123!) are strictly for local
+-- development and automated integration testing. NEVER use hardcoded or default
+-- passwords in a production or public staging database.
 INSERT INTO auth.users (
     id,
     instance_id,
@@ -211,7 +214,7 @@ ON CONFLICT (id) DO UPDATE SET
 -- 'List of universities and colleges in Kenya' (citing CUE, 12 Mar 2026)
 -- and the May 2026 CUE list (tuko.co.ke).
 --
--- REQUIRES migration 20261015000007_university_directory_columns.sql
+-- REQUIRES migration 20261015000008_university_directory_columns.sql
 --
 -- Pilot rows are PRESERVED:
 --   * Summit Metropolitan University (fictional pilot) is NOT in this file

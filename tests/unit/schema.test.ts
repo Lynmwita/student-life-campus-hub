@@ -14,7 +14,7 @@ describe("Database Migrations Integrity", () => {
     expect(files).toContain("20261015000005_storage_and_campus_integrity.sql");
     expect(files).toContain("20261015000006_storage_delete_policy.sql");
     expect(files).toContain("20261015000007_announcements_department_rls.sql");
-    expect(files).toContain("20261015000007_university_directory_columns.sql");
+    expect(files).toContain("20261015000008_university_directory_columns.sql");
   });
 
   it("defines all core tables in 20261015000001_core_schema.sql", () => {
@@ -109,9 +109,9 @@ describe("Database Migrations Integrity", () => {
     expect(migrationSql).toContain("target_department IN");
   });
 
-  it("defines county and ownership columns in 20261015000007_university_directory_columns.sql", () => {
+  it("defines county and ownership columns in 20261015000008_university_directory_columns.sql", () => {
     const migrationSql = fs.readFileSync(
-      path.join(migrationsDir, "20261015000007_university_directory_columns.sql"),
+      path.join(migrationsDir, "20261015000008_university_directory_columns.sql"),
       "utf-8"
     );
     expect(migrationSql).toContain("ADD COLUMN IF NOT EXISTS county");

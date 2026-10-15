@@ -1,5 +1,5 @@
 -- ==============================================================================
--- Migration: 20261015000007_university_directory_columns.sql
+-- Migration: 20261015000008_university_directory_columns.sql
 -- Description: Add county and ownership columns to public.universities so the
 --              Kenyan university directory seed can tag every institution by
 --              county and public/private ownership.
