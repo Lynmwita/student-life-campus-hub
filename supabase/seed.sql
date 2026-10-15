@@ -25,3 +25,30 @@ ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
     code = EXCLUDED.code,
     location = EXCLUDED.location;
+
+-- ------------------------------------------------------------------------------
+-- 3. Super Admin & Initial Admin Bootstrapping
+-- ------------------------------------------------------------------------------
+-- Note: The very first super_admin cannot be created through the public API because
+-- the security guard restricts role promotion to existing super admins.
+--
+-- Production / Staging Bootstrap Guide:
+-- 1. Create a user via Supabase Auth Dashboard or API (e.g. root@studenthub.ac.ke).
+-- 2. Run the following snippet in the Supabase SQL Console (runs as postgres/service_role):
+--
+--    INSERT INTO public.university_memberships (
+--        user_id,
+--        university_id,
+--        role,
+--        verification_status
+--    )
+--    SELECT
+--        u.id,
+--        '00000000-0000-0000-0000-000000000001',
+--        'super_admin',
+--        'verified'
+--    FROM auth.users u
+--    WHERE u.email = 'root@studenthub.ac.ke'
+--    ON CONFLICT (user_id, university_id)
+--    DO UPDATE SET role = 'super_admin', verification_status = 'verified';
+
