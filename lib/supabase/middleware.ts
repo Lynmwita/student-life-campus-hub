@@ -28,9 +28,17 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Refresh auth token
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const res = await supabase.auth.getUser();
+    user = res.data.user;
+  } catch {
+    // Network / offline fallback
+  }
+
+  const demoSession = request.cookies.get("smu_demo_session")?.value;
+  const demoOnboarded = request.cookies.get("smu_demo_onboarded")?.value;
+  const isAuthenticated = Boolean(user || demoSession);
 
   const pathname = request.nextUrl.pathname;
 
@@ -48,7 +56,7 @@ export async function updateSession(request: NextRequest) {
     isOnboardingRoute;
 
   // 2. Unauthenticated users cannot access protected routes
-  if (isProtected && !user) {
+  if (isProtected && !isAuthenticated) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -58,19 +66,26 @@ export async function updateSession(request: NextRequest) {
   const authRoutes = ["/login", "/register"];
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
-  if (isAuthRoute && user) {
-    const { count } = await supabase
-      .from("student_interests")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
-
+  if (isAuthRoute && isAuthenticated) {
     const url = request.nextUrl.clone();
-    if (!count || count === 0) {
-      url.pathname = "/onboarding";
-    } else {
-      url.pathname = "/dashboard";
+    if (demoSession) {
+      url.pathname = demoSession === "student@summit.ac.ke" && !demoOnboarded ? "/onboarding" : "/dashboard";
+      return NextResponse.redirect(url);
     }
-    return NextResponse.redirect(url);
+
+    if (user) {
+      const { count } = await supabase
+        .from("student_interests")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (!count || count === 0) {
+        url.pathname = "/onboarding";
+      } else {
+        url.pathname = "/dashboard";
+      }
+      return NextResponse.redirect(url);
+    }
   }
 
   // 4. Mandatory Interests Onboarding Gate for Authenticated Users

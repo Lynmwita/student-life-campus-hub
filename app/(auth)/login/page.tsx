@@ -9,8 +9,16 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { loginAction } from "@/lib/actions/auth";
 
 export default function LoginPage() {
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+
+  function fillDemo(e: string, p: string) {
+    setEmail(e);
+    setPassword(p);
+    setError(null);
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -72,6 +80,8 @@ export default function LoginPage() {
                   name="email"
                   type="email"
                   required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="student@summit.ac.ke"
                   autoComplete="email"
                 />
@@ -93,6 +103,8 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />
@@ -115,6 +127,36 @@ export default function LoginPage() {
             </p>
           </CardFooter>
         </Card>
+
+        {/* Pilot Inspection Demo Credentials */}
+        <div className="mt-6 p-4 rounded-xl border border-[#C59B27]/30 bg-white/70 dark:bg-[#0B1D33]/40 backdrop-blur-xs">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#C59B27]">
+              Pilot Demo Access
+            </span>
+            <span className="text-[10px] text-slate-400 font-mono">SMU Pilot Node</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <button
+              type="button"
+              onClick={() => fillDemo("student@summit.ac.ke", "StudentPassword123!")}
+              className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] dark:bg-[#06101E] transition-colors"
+            >
+              <div className="font-semibold text-[#0B1D33] dark:text-white">Student Demo</div>
+              <div className="text-[10px] text-slate-500 truncate">student@summit.ac.ke</div>
+              <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Alex Mutua • 3-Step Flow</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => fillDemo("registrar@summit.ac.ke", "StaffPassword123!")}
+              className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] dark:bg-[#06101E] transition-colors"
+            >
+              <div className="font-semibold text-[#0B1D33] dark:text-white">Registrar Demo</div>
+              <div className="text-[10px] text-slate-500 truncate">registrar@summit.ac.ke</div>
+              <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Academic Affairs • Notice Ops</div>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

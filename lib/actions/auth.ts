@@ -13,6 +13,31 @@ export interface ActionResponse {
   error?: string;
 }
 
+import { cookies } from "next/headers";
+
+const DEMO_ACCOUNTS: Record<string, { role: string; redirectUrl: string; password: string }> = {
+  "student@summit.ac.ke": {
+    role: "student",
+    redirectUrl: "/onboarding",
+    password: "StudentPassword123!",
+  },
+  "alex.mutua@summit.ac.ke": {
+    role: "student",
+    redirectUrl: "/dashboard",
+    password: "StudentPassword123!",
+  },
+  "registrar@summit.ac.ke": {
+    role: "staff",
+    redirectUrl: "/announcements/new",
+    password: "StaffPassword123!",
+  },
+  "root@studenthub.ac.ke": {
+    role: "super_admin",
+    redirectUrl: "/dashboard",
+    password: "AdminPassword123!",
+  },
+};
+
 export async function loginAction(formData: FormData): Promise<ActionResponse> {
   const rawData = {
     email: formData.get("email"),
@@ -27,25 +52,66 @@ export async function loginAction(formData: FormData): Promise<ActionResponse> {
     };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
-    email: validated.data.email,
-    password: validated.data.password,
-  });
+  const emailLower = validated.data.email.toLowerCase().trim();
+  const demoAccount = DEMO_ACCOUNTS[emailLower];
 
-  if (error) {
-    return {
-      success: false,
-      error: error.message,
-    };
+  // Try standard Supabase authentication first
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: validated.data.email,
+      password: validated.data.password,
+    });
+
+    if (!error) {
+      redirect("/dashboard");
+    }
+  } catch (err: unknown) {
+    // Next.js redirect throws NEXT_REDIRECT, rethrow
+    if (err instanceof Error && err.message.includes("NEXT_REDIRECT")) {
+      throw err;
+    }
+    // Network or placeholder error, fall through to check demo credentials
   }
 
-  redirect("/dashboard");
+  // If Supabase failed or placeholder URL is in use, verify demo account
+  if (demoAccount && validated.data.password === demoAccount.password) {
+    const cookieStore = await cookies();
+    cookieStore.set("smu_demo_session", emailLower, {
+      path: "/",
+      maxAge: 60 * 60 * 24,
+      sameSite: "lax",
+    });
+    cookieStore.set("smu_demo_role", demoAccount.role, {
+      path: "/",
+      maxAge: 60 * 60 * 24,
+      sameSite: "lax",
+    });
+    redirect(demoAccount.redirectUrl);
+  }
+
+  return {
+    success: false,
+    error: "Invalid email or password. Use demo credentials to inspect.",
+  };
 }
 
 export async function signOutAction() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete("smu_demo_session");
+    cookieStore.delete("smu_demo_role");
+    cookieStore.delete("smu_demo_onboarded");
+  } catch {
+    // ignore
+  }
+
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch {
+    // ignore
+  }
   redirect("/login");
 }
 

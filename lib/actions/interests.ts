@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
 import { CANONICAL_INTEREST_IDS } from "@/lib/constants/interests";
 import { KENYAN_CAMPUS_DIRECTORY } from "@/lib/constants/campus-directory";
 import { revalidatePath } from "next/cache";
@@ -340,10 +341,26 @@ export async function completeSmartOnboardingAction(
 
   const interestArray = Array.from(resolvedInterests);
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const supabase = await createClient();
+    const res = await supabase.auth.getUser();
+    user = res.data.user;
+  } catch {
+    // offline / placeholder
+  }
+
+  const cookieStore = await cookies();
+  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+
+  if (!user && demoEmail) {
+    cookieStore.set("smu_demo_onboarded", "true", { path: "/" });
+    revalidatePath("/dashboard");
+    return {
+      success: true,
+      message: "Preferences successfully saved.",
+    };
+  }
 
   if (!user) {
     return {
@@ -351,6 +368,8 @@ export async function completeSmartOnboardingAction(
       message: "Unauthorized: You must be logged in to complete onboarding.",
     };
   }
+
+  const supabase = await createClient();
 
   // Ensure user has a profile record in user_profiles
   const { data: profile } = await supabase
