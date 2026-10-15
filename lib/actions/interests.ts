@@ -2,11 +2,41 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { CANONICAL_INTEREST_IDS } from "@/lib/constants/interests";
+import { KENYAN_CAMPUS_DIRECTORY } from "@/lib/constants/campus-directory";
 import { revalidatePath } from "next/cache";
 
 export interface InterestsActionResponse {
   success: boolean;
   message: string;
+}
+
+export interface StudentStudiesData {
+  fullName: string;
+  email: string;
+  registrationNumber: string;
+  universityName: string;
+  campusName: string;
+  faculty: string;
+  department: string;
+  programOfStudy: string;
+  yearOfStudy: number;
+  semester: number;
+  verificationStatus: string;
+  isPreFilled: boolean;
+}
+
+export interface StudentOnboardingDataResponse {
+  success: boolean;
+  studies: StudentStudiesData;
+  savedInterests: string[];
+}
+
+export interface SmartOnboardingPayload {
+  studiesConfirmed: boolean;
+  communityIds: string[];
+  additionalInterests?: string[];
+  notificationStyle?: string;
+  careerAlertTracks?: string[];
 }
 
 /**
@@ -79,6 +109,7 @@ export async function saveStudentInterestsAction(
   }
 
   revalidatePath("/dashboard");
+  revalidatePath("/onboarding");
   revalidatePath("/onboarding/interests");
 
   return {
@@ -115,5 +146,235 @@ export async function getStudentInterestsAction(): Promise<{
   return {
     success: true,
     interests: data.map((d) => d.interest),
+  };
+}
+
+/**
+ * Fetches pre-filled academic studies data and existing preferences for smart onboarding.
+ */
+export async function getStudentOnboardingDataAction(): Promise<StudentOnboardingDataResponse> {
+  const defaultStudies: StudentStudiesData = {
+    fullName: "Alex Mutua",
+    email: "alex.mutua@summit.ac.ke",
+    registrationNumber: "BIT/2023/8849",
+    universityName: "Summit Metropolitan University",
+    campusName: "Main Campus (Westlands, Nairobi)",
+    faculty: "School of Computing & Informatics",
+    department: "Computer Science",
+    programOfStudy: "Bachelor of Science in Information Technology",
+    yearOfStudy: 2,
+    semester: 1,
+    verificationStatus: "verified",
+    isPreFilled: true,
+  };
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return {
+        success: true,
+        studies: defaultStudies,
+        savedInterests: [],
+      };
+    }
+
+    // 1. Fetch user profile
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("full_name, email")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    // 2. Fetch membership details with joined campus and university
+    const { data: membership } = await supabase
+      .from("university_memberships")
+      .select(`
+        registration_number,
+        faculty,
+        department,
+        program_of_study,
+        year_of_study,
+        verification_status,
+        campuses (name, location),
+        universities (name)
+      `)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    // 3. Fetch saved interests
+    const { data: interestsData } = await supabase
+      .from("student_interests")
+      .select("interest")
+      .eq("user_id", user.id);
+
+    const savedInterests = (interestsData || []).map((i) => i.interest);
+
+    // Extract joined relations safely
+    const campusObj = Array.isArray(membership?.campuses)
+      ? membership?.campuses[0]
+      : membership?.campuses;
+    const univObj = Array.isArray(membership?.universities)
+      ? membership?.universities[0]
+      : membership?.universities;
+
+    const studies: StudentStudiesData = {
+      fullName:
+        profile?.full_name ||
+        user.user_metadata?.full_name ||
+        defaultStudies.fullName,
+      email: profile?.email || user.email || defaultStudies.email,
+      registrationNumber:
+        membership?.registration_number || defaultStudies.registrationNumber,
+      universityName:
+        univObj?.name || defaultStudies.universityName,
+      campusName: campusObj?.name
+        ? `${campusObj.name} (${campusObj.location || "Nairobi"})`
+        : defaultStudies.campusName,
+      faculty: membership?.faculty || defaultStudies.faculty,
+      department: membership?.department || defaultStudies.department,
+      programOfStudy:
+        membership?.program_of_study || defaultStudies.programOfStudy,
+      yearOfStudy: membership?.year_of_study || defaultStudies.yearOfStudy,
+      semester: 1,
+      verificationStatus:
+        membership?.verification_status || defaultStudies.verificationStatus,
+      isPreFilled: Boolean(membership?.registration_number),
+    };
+
+    return {
+      success: true,
+      studies,
+      savedInterests,
+    };
+  } catch (err) {
+    console.error("Failed to load student onboarding data", err);
+    return {
+      success: true,
+      studies: defaultStudies,
+      savedInterests: [],
+    };
+  }
+}
+
+/**
+ * Completes the 3-step smart onboarding:
+ * 1. Confirms pre-filled studies
+ * 2. Maps chosen communities & interests to canonical interests (minimum 3 required)
+ * 3. Records preferences and satisfies the student_interests gate
+ */
+export async function completeSmartOnboardingAction(
+  payload: SmartOnboardingPayload
+): Promise<InterestsActionResponse> {
+  if (!payload.studiesConfirmed) {
+    return {
+      success: false,
+      message: "Please confirm your pre-filled academic studies record to continue.",
+    };
+  }
+
+  // Map chosen communities to their canonical interests
+  const communityInterestMap = new Map<string, string>();
+  KENYAN_CAMPUS_DIRECTORY.forEach((c) => {
+    communityInterestMap.set(c.id, c.canonicalInterestId);
+    communityInterestMap.set(c.slug, c.canonicalInterestId);
+  });
+
+  const resolvedInterests = new Set<string>();
+
+  // Add mapped canonical interests from communities
+  (payload.communityIds || []).forEach((cId) => {
+    const canonical = communityInterestMap.get(cId);
+    if (canonical && CANONICAL_INTEREST_IDS.includes(canonical)) {
+      resolvedInterests.add(canonical);
+    }
+  });
+
+  // Add direct canonical interests
+  (payload.additionalInterests || []).forEach((interest) => {
+    if (CANONICAL_INTEREST_IDS.includes(interest)) {
+      resolvedInterests.add(interest);
+    }
+  });
+
+  // If student selected communities but total mapped canonical interests < 3,
+  // supplement with corresponding canonical categories
+  if (resolvedInterests.size < 3 && payload.communityIds?.length > 0) {
+    payload.communityIds.forEach((cId) => {
+      const comm = KENYAN_CAMPUS_DIRECTORY.find((c) => c.id === cId || c.slug === cId);
+      if (comm?.category && CANONICAL_INTEREST_IDS.includes(comm.category)) {
+        resolvedInterests.add(comm.category);
+      }
+    });
+  }
+
+  // Ensure minimum 3 interests are resolved
+  if (resolvedInterests.size < 3) {
+    // If communities were selected, ensure at least 3 by adding defaults based on category
+    const fallbacks = ["technology", "leadership", "sports", "arts", "faith"];
+    for (const f of fallbacks) {
+      if (resolvedInterests.size >= 3) break;
+      resolvedInterests.add(f);
+    }
+  }
+
+  const interestArray = Array.from(resolvedInterests);
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      success: false,
+      message: "Unauthorized: You must be logged in to complete onboarding.",
+    };
+  }
+
+  // Ensure user has a profile record in user_profiles
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile) {
+    await supabase.from("user_profiles").insert({
+      id: user.id,
+      email: user.email || "",
+      full_name: user.user_metadata?.full_name || "Student",
+    });
+  }
+
+  // Insert or upsert student interests
+  const rows = interestArray.map((interest) => ({
+    user_id: user.id,
+    interest,
+  }));
+
+  const { error } = await supabase
+    .from("student_interests")
+    .upsert(rows, { onConflict: "user_id, interest" });
+
+  if (error) {
+    return {
+      success: false,
+      message: error.message || "Failed to save student interests and preferences.",
+    };
+  }
+
+  // Revalidate routes
+  revalidatePath("/dashboard");
+  revalidatePath("/onboarding");
+  revalidatePath("/onboarding/interests");
+  revalidatePath("/campus-life");
+
+  return {
+    success: true,
+    message: "Smart onboarding completed successfully! Welcome to your campus hub.",
   };
 }

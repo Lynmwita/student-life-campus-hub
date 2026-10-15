@@ -235,12 +235,17 @@ ON CONFLICT (id) DO UPDATE SET
   lecturer_name = EXCLUDED.lecturer_name,
   is_active = EXCLUDED.is_active;
 
--- Clubs & Communities
+-- Clubs & Communities (Full Kenyan Campus Directory Pilot)
 INSERT INTO public.clubs_communities (id, university_id, campus_id, name, slug, description, category, patron_name, is_active)
 VALUES
   ('40000000-0000-0000-0000-000000000201', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000011', 'SMU Tech Innovators & GDSC', 'smu-tech-innovators', 'Student developer community focusing on web, mobile, AI, and open-source software solutions.', 'technology', 'Dr. Evans Ochieng', true),
   ('40000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000011', 'SMU Computing Students Association', 'smu-cssa', 'Official departmental academic student association uniting all Computing & Informatics majors.', 'academic', 'Prof. Catherine Ndung''u', true),
-  ('40000000-0000-0000-0000-000000000203', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000011', 'Kenya Red Cross SMU Chapter', 'smu-red-cross', 'First aid training, blood donation drives, disaster relief volunteering and community service.', 'community_service', 'Ms. Janet Korir', true)
+  ('40000000-0000-0000-0000-000000000203', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000011', 'Kenya Red Cross SMU Chapter', 'smu-red-cross', 'First aid training, blood donation drives, disaster relief volunteering and community service.', 'community_service', 'Ms. Janet Korir', true),
+  ('40000000-0000-0000-0000-000000000204', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000011', 'SMU Christian Union (FOCUS Kenya)', 'smu-cu', 'Inter-denominational evangelical fellowship organizing weekday Bible study, Sunday services, and outreach.', 'faith', 'Rev. Dr. Isaac Mutisya', true),
+  ('40000000-0000-0000-0000-000000000205', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000011', 'SMU Varsity Rugby Football Club', 'smu-rugby-rfc', 'Premier university rugby team competing in Impala Floodlit circuit and KUSA varsity league.', 'sports', 'Coach Dan Kiprop', true),
+  ('40000000-0000-0000-0000-000000000206', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000011', 'Traveling Theater & Drama Troupe', 'smu-theater-troupe', 'Stage plays, spoken word poetry, and Kenya National Drama Festival competitive performances.', 'arts', 'Ms. Linda Moraa', true),
+  ('40000000-0000-0000-0000-000000000207', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000011', 'Rotaract Club of Summit Metropolitan', 'smu-rotaract', 'Community development, sanitation drives, career mentoring, and youth leadership summits.', 'leadership', 'Dr. Peter Kamau', true),
+  ('40000000-0000-0000-0000-000000000208', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000011', 'Cyber Security & PwnZone CTF Guild', 'smu-cybersec-pwnzone', 'Ethical hacking labs, reverse engineering, and regional inter-university CTF competitions.', 'technology', 'Eng. Samuel Koech', true)
 ON CONFLICT (university_id, slug) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,

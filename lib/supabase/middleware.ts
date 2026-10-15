@@ -41,8 +41,11 @@ export async function updateSession(request: NextRequest) {
     "/campus-life",
     "/announcements",
   ];
-  const isOnboardingRoute = pathname === "/onboarding" || pathname.startsWith("/onboarding/interests");
-  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route)) || isOnboardingRoute;
+  const isOnboardingRoute =
+    pathname === "/onboarding" || pathname.startsWith("/onboarding/");
+  const isProtected =
+    protectedRoutes.some((route) => pathname.startsWith(route)) ||
+    isOnboardingRoute;
 
   // 2. Unauthenticated users cannot access protected routes
   if (isProtected && !user) {
@@ -63,7 +66,7 @@ export async function updateSession(request: NextRequest) {
 
     const url = request.nextUrl.clone();
     if (!count || count === 0) {
-      url.pathname = "/onboarding/interests";
+      url.pathname = "/onboarding";
     } else {
       url.pathname = "/dashboard";
     }
@@ -71,7 +74,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // 4. Mandatory Interests Onboarding Gate for Authenticated Users
-  // Users with zero recorded interests are intercepted and redirected to /onboarding/interests
+  // Users with zero recorded interests are intercepted and redirected to /onboarding
   if (user && protectedRoutes.some((route) => pathname.startsWith(route))) {
     const { count } = await supabase
       .from("student_interests")
@@ -80,7 +83,7 @@ export async function updateSession(request: NextRequest) {
 
     if (!count || count === 0) {
       const url = request.nextUrl.clone();
-      url.pathname = "/onboarding/interests";
+      url.pathname = "/onboarding";
       return NextResponse.redirect(url);
     }
   }

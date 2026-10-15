@@ -1,6 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { CANONICAL_INTERESTS, CANONICAL_INTEREST_IDS } from "@/lib/constants/interests";
-import { saveStudentInterestsAction } from "@/lib/actions/interests";
+import {
+  KENYAN_CAMPUS_DIRECTORY,
+  CAREER_ALERT_TRACKS,
+  NOTIFICATION_STYLE_OPTIONS,
+} from "@/lib/constants/campus-directory";
+import {
+  saveStudentInterestsAction,
+  getStudentOnboardingDataAction,
+  completeSmartOnboardingAction,
+} from "@/lib/actions/interests";
 
 describe("Mandatory Student Interests Logic", () => {
   it("contains all 10 canonical student interest categories", () => {
@@ -31,5 +40,53 @@ describe("Mandatory Student Interests Logic", () => {
     ]);
     expect(result.success).toBe(false);
     expect(result.message).toContain("not recognized");
+  });
+});
+
+describe("Smart Onboarding & Kenyan Campus Directory", () => {
+  it("seeds full Kenyan campus directory across sports, faith, tech, arts, civic, and academic guilds", () => {
+    expect(KENYAN_CAMPUS_DIRECTORY.length).toBeGreaterThanOrEqual(20);
+
+    const categories = new Set(KENYAN_CAMPUS_DIRECTORY.map((c) => c.category));
+    expect(categories.has("technology")).toBe(true);
+    expect(categories.has("sports")).toBe(true);
+    expect(categories.has("faith")).toBe(true);
+    expect(categories.has("arts")).toBe(true);
+    expect(categories.has("community_service")).toBe(true);
+    expect(categories.has("leadership")).toBe(true);
+    expect(categories.has("academic")).toBe(true);
+
+    // Verify key Kenyan campus chapters exist
+    const names = KENYAN_CAMPUS_DIRECTORY.map((c) => c.name);
+    expect(names.some((n) => n.includes("GDSC"))).toBe(true);
+    expect(names.some((n) => n.includes("Christian Union"))).toBe(true);
+    expect(names.some((n) => n.includes("Red Cross"))).toBe(true);
+    expect(names.some((n) => n.includes("Rugby"))).toBe(true);
+    expect(names.some((n) => n.includes("Football"))).toBe(true);
+  });
+
+  it("provides career alert tracks and collegiate notification delivery styles", () => {
+    expect(CAREER_ALERT_TRACKS.length).toBeGreaterThanOrEqual(4);
+    expect(NOTIFICATION_STYLE_OPTIONS.length).toBe(3);
+    expect(NOTIFICATION_STYLE_OPTIONS.some((n) => n.isRecommended)).toBe(true);
+  });
+
+  it("retrieves pre-filled student studies data for step 1 verification", async () => {
+    const data = await getStudentOnboardingDataAction();
+    expect(data.success).toBe(true);
+    expect(data.studies).toBeDefined();
+    expect(data.studies.registrationNumber).toBeTruthy();
+    expect(data.studies.universityName).toBeTruthy();
+    expect(data.studies.faculty).toBeTruthy();
+    expect(data.studies.programOfStudy).toBeTruthy();
+  });
+
+  it("rejects completeSmartOnboardingAction if studies are not confirmed", async () => {
+    const result = await completeSmartOnboardingAction({
+      studiesConfirmed: false,
+      communityIds: ["gdsc-chapter", "varsity-football-club", "christian-union-cu"],
+    });
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("confirm your pre-filled academic studies");
   });
 });
