@@ -84,7 +84,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Form Card */}
-        <Card className="border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-none">
+        <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
           <CardHeader>
             <CardTitle>Academic Enrollment Details</CardTitle>
             <CardDescription>

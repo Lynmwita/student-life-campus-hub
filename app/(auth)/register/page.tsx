@@ -53,7 +53,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-6 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 mb-3">
+          <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white mb-3">
             <GraduationCap className="w-8 h-8" />
           </div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
@@ -64,7 +64,7 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <Card className="border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-none">
+        <Card className="border-slate-200 dark:border-slate-800 shadow-xs">
           <CardHeader>
             <CardTitle>Register Account</CardTitle>
             <CardDescription>
@@ -101,8 +101,8 @@ export default function RegisterPage() {
                 autoComplete="email"
                 helperText={
                   isAcademic
-                    ? "✓ Official academic email recognized (.ac.ke / .edu)"
-                    : "Tip: Use your institutional email (@university.ac.ke) for faster verification"
+                    ? "Official academic email recognized (.ac.ke / .edu)"
+                    : "Must be your official university email (@university.ac.ke or .edu)"
                 }
               />
 

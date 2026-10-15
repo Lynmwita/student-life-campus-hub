@@ -9,7 +9,6 @@ import {
   GraduationCap,
   Megaphone,
   CheckCircle,
-  Sparkles,
   PlusCircle,
   ShieldCheck,
   RotateCw,
@@ -128,7 +127,7 @@ export default function StudentDashboardPage() {
       <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-3 sm:px-6">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
               <GraduationCap className="w-6 h-6" />
             </div>
             <div>
@@ -182,29 +181,29 @@ export default function StudentDashboardPage() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
         {/* Student Welcome Banner */}
-        <div className="rounded-3xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 p-6 sm:p-8 text-white shadow-xl shadow-blue-600/15">
+        <div className="rounded-2xl bg-slate-900 border border-slate-800 p-6 sm:p-8 text-white">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/20 text-white text-xs font-semibold backdrop-blur-sm">
-                <Sparkles className="w-3 h-3 text-amber-300" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-slate-800 text-blue-300 text-xs font-semibold border border-slate-700">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
                 Verified Student Portal
               </div>
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
                 Student Life & Campus Hub
               </h2>
-              <p className="text-xs sm:text-sm text-blue-100 max-w-lg">
-                Your live campus portal is connected. You have <strong>{unreadCount} unread notices</strong> and live lecture scheduling for your campus.
+              <p className="text-xs sm:text-sm text-slate-300 max-w-lg">
+                Your campus portal is connected. You have <strong>{unreadCount} unread notices</strong> and live lecture scheduling for your campus.
               </p>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl text-center border border-white/10">
-                <span className="block text-sm font-bold text-emerald-300">Active</span>
-                <span className="text-[10px] uppercase font-bold text-blue-200">Verified</span>
+              <div className="bg-slate-800/80 px-4 py-3 rounded-xl text-center border border-slate-700">
+                <span className="block text-sm font-bold text-emerald-400">Active</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400">Verified</span>
               </div>
-              <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl text-center border border-white/10">
-                <span className="block text-2xl font-black">{unreadCount}</span>
-                <span className="text-[10px] uppercase font-bold text-blue-200">Alerts</span>
+              <div className="bg-slate-800/80 px-4 py-3 rounded-xl text-center border border-slate-700">
+                <span className="block text-2xl font-black text-white">{unreadCount}</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400">Alerts</span>
               </div>
             </div>
           </div>
@@ -336,7 +335,7 @@ export default function StudentDashboardPage() {
                     : "text-slate-500 hover:text-slate-800"
                 }`}
               >
-                🚨 Urgent (P1)
+                Urgent (P1)
               </button>
               <button
                 onClick={() => setSelectedFilter("unread")}
@@ -406,7 +405,7 @@ export default function StudentDashboardPage() {
                     key={notice.id}
                     className={`transition-all ${
                       isP1
-                        ? "border-red-300 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/20 shadow-md shadow-red-500/5"
+                        ? "border-red-300 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/20"
                         : !notice.isRead
                         ? "border-blue-200 dark:border-blue-900/50 bg-blue-50/20 dark:bg-blue-950/10"
                         : "border-slate-200/80 dark:border-slate-800 opacity-90"
@@ -416,8 +415,8 @@ export default function StudentDashboardPage() {
                       <div className="space-y-2 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           {isP1 ? (
-                            <Badge variant="danger" className="animate-pulse">
-                              🚨 P1 Urgent
+                            <Badge variant="danger">
+                              P1 Urgent
                             </Badge>
                           ) : notice.priority === "P2" ? (
                             <Badge variant="warning">P2 Academic</Badge>

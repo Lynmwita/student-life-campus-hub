@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Check, X, Shield, UserCheck, HelpCircle, CheckCircle2 } from "lucide-react";
+import { Check, X, Shield, UserCheck, HelpCircle, CheckCircle2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -236,7 +236,7 @@ export default function VerificationQueuePage() {
                         rel="noreferrer"
                         className="text-xs font-semibold text-blue-600 hover:underline inline-flex items-center gap-1"
                       >
-                        📄 View Attached Student ID Document
+                        <FileText className="w-3.5 h-3.5" /> View Attached Student ID Document
                       </a>
                     </div>
                   )}

@@ -13,7 +13,7 @@ export default function VerificationStatusPage() {
     pending: {
       title: "Verification in Progress",
       badge: <Badge variant="warning">Pending Review</Badge>,
-      icon: <Clock className="w-12 h-12 text-amber-500 animate-pulse" />,
+      icon: <Clock className="w-12 h-12 text-amber-500" />,
       description:
         "Your student registration has been received and is queued for verification by your university administration.",
       actionText: "Check Back Soon",
@@ -53,7 +53,7 @@ export default function VerificationStatusPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
       <div className="w-full max-w-lg">
-        <Card className="border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-none text-center">
+        <Card className="border-slate-200 dark:border-slate-800 shadow-xs text-center">
           <CardHeader className="flex flex-col items-center pt-8 pb-4">
             <div className="mb-4">{current.icon}</div>
             <div className="mb-2">{current.badge}</div>

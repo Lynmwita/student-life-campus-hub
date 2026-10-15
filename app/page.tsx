@@ -9,7 +9,7 @@ export default function HomePage() {
       <header className="border-b border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-3.5 sm:px-6">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/20">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white">
               <GraduationCap className="w-5 h-5" />
             </div>
             <span className="font-black text-sm tracking-tight text-slate-900 dark:text-white">
@@ -75,24 +75,24 @@ export default function HomePage() {
               Targeted Broadcasts
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Prioritized P1–P4 official notices filtered specifically to your campus, faculty, and year of study.
+              Prioritized P1 to P4 official notices filtered specifically to your campus, faculty, and year of study.
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2 opacity-85">
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2">
             <div className="flex items-center justify-between">
-              <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950 flex items-center justify-center text-amber-600">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center text-emerald-600">
                 <Calendar className="w-4 h-4" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-full">
-                Roadmap • Phase 5
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
+                Active • Phase 5
               </span>
             </div>
             <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-              Course Timetables & Schedules
+              Course Timetables & Campus Life
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Personalized lecture schedules, hall venues, and unit codes arriving in Phase 5.
+              Live course schedules, lecture venues, instructor details, and student club communities.
             </p>
           </div>
 
