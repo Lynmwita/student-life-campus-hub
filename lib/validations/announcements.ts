@@ -59,6 +59,14 @@ export const announcementSchema = z
       });
     }
 
+    if (data.targetScope === "department" && (!data.targetDepartment || data.targetDepartment.trim() === "")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["targetDepartment"],
+        message: "Please enter a department when scoping to a specific department",
+      });
+    }
+
     if (data.targetScope === "year" && (!data.targetYear || data.targetYear < 1)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,

@@ -11,6 +11,13 @@ import { registerAction } from "@/lib/actions/auth";
 export default function RegisterPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [emailValue, setEmailValue] = React.useState("");
+
+  const isAcademic =
+    emailValue.includes("@") &&
+    (emailValue.toLowerCase().endsWith(".ac.ke") ||
+      emailValue.toLowerCase().endsWith(".edu") ||
+      emailValue.toLowerCase().endsWith(".edu.ke"));
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -88,9 +95,15 @@ export default function RegisterPage() {
                 name="email"
                 type="email"
                 required
+                value={emailValue}
+                onChange={(e) => setEmailValue(e.target.value)}
                 placeholder="brian@summit.ac.ke"
                 autoComplete="email"
-                helperText="Use your university email if available"
+                helperText={
+                  isAcademic
+                    ? "✓ Official academic email recognized (.ac.ke / .edu)"
+                    : "Tip: Use your institutional email (@university.ac.ke) for faster verification"
+                }
               />
 
               <Input

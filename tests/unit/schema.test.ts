@@ -13,6 +13,7 @@ describe("Database Migrations Integrity", () => {
     expect(files).toContain("20261015000004_security_hardening.sql");
     expect(files).toContain("20261015000005_storage_and_campus_integrity.sql");
     expect(files).toContain("20261015000006_storage_delete_policy.sql");
+    expect(files).toContain("20261015000007_announcements_department_rls.sql");
   });
 
   it("defines all core tables in 20261015000001_core_schema.sql", () => {
@@ -95,6 +96,16 @@ describe("Database Migrations Integrity", () => {
     expect(migrationSql).toContain("FOR DELETE");
     expect(migrationSql).toContain("Students can delete own verification documents");
     expect(migrationSql).toContain("bucket_id = 'student-documents'");
+  });
+
+  it("enforces department audience scoping on announcements in 20261015000007_announcements_department_rls.sql", () => {
+    const migrationSql = fs.readFileSync(
+      path.join(migrationsDir, "20261015000007_announcements_department_rls.sql"),
+      "utf-8"
+    );
+    expect(migrationSql).toContain("Verified members can view targeted announcements");
+    expect(migrationSql).toContain("target_scope = 'department'");
+    expect(migrationSql).toContain("target_department IN");
   });
 
   it("contains seed script with pilot universities and bootstrap documentation", () => {

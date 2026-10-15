@@ -65,6 +65,37 @@ describe("Announcement Schemas & Audience Scoping", () => {
     }
   });
 
+  it("validates a department-scoped announcement", () => {
+    const valid = {
+      universityId: "00000000-0000-0000-0000-000000000001",
+      title: "Software Engineering Lab Practical Session",
+      content: "All Software Engineering students report to Lab 4 on Wednesday morning.",
+      priority: "P2",
+      targetScope: "department",
+      targetDepartment: "Department of Software Engineering",
+    };
+    const result = announcementSchema.safeParse(valid);
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects department-scoped announcement if targetDepartment is missing", () => {
+    const invalid = {
+      universityId: "00000000-0000-0000-0000-000000000001",
+      title: "Department Meeting",
+      content: "All department students must attend.",
+      priority: "P3",
+      targetScope: "department",
+      targetDepartment: "",
+    };
+    const result = announcementSchema.safeParse(invalid);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(
+        "Please enter a department when scoping to a specific department"
+      );
+    }
+  });
+
   it("rejects invalid date string in expiresAt", () => {
     const invalid = {
       universityId: "00000000-0000-0000-0000-000000000001",

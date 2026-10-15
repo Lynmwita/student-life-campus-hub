@@ -1,0 +1,127 @@
+"use client";
+
+import * as React from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { GraduationCap, ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { updatePasswordAction } from "@/lib/actions/auth";
+
+export default function ResetPasswordPage() {
+  const router = useRouter();
+  const [error, setError] = React.useState<string | null>(null);
+  const [success, setSuccess] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const formData = new FormData(event.currentTarget);
+    try {
+      const res = await updatePasswordAction(formData);
+      if (res && !res.success && res.error) {
+        setError(res.error);
+        setLoading(false);
+      } else {
+        setSuccess(true);
+        setLoading(false);
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2000);
+      }
+    } catch {
+      setError("An unexpected error occurred. Please try again.");
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
+      <div className="w-full max-w-md">
+        <div className="flex flex-col items-center mb-8 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30 mb-3">
+            <GraduationCap className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+            Student Life & Campus Hub
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Choose a new secure password
+          </p>
+        </div>
+
+        <Card className="border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/40 dark:shadow-none">
+          <CardHeader>
+            <CardTitle>Set New Password</CardTitle>
+            <CardDescription>
+              Ensure your new password contains uppercase, lowercase, numbers, and symbols.
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent>
+            {error && (
+              <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 flex items-start gap-2.5 text-red-700 dark:text-red-300 text-xs leading-relaxed">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {success ? (
+              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200 space-y-3">
+                <div className="flex items-center gap-2 font-bold text-sm">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                  Password updated successfully!
+                </div>
+                <p className="text-xs leading-relaxed text-emerald-700 dark:text-emerald-300">
+                  Your credentials have been securely updated. Redirecting to your student dashboard...
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                  label="New Password"
+                  name="password"
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                />
+
+                <Input
+                  label="Confirm New Password"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                />
+
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="w-full mt-2"
+                  isLoading={loading}
+                >
+                  Update Password <ArrowRight className="w-4 h-4 ml-1.5" />
+                </Button>
+              </form>
+            )}
+          </CardContent>
+
+          <CardFooter className="flex flex-col space-y-3 text-center border-t border-slate-100 dark:border-slate-800/80 pt-4">
+            <Link
+              href="/login"
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+            >
+              Back to Sign In
+            </Link>
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
+  );
+}

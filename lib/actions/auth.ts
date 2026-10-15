@@ -1,7 +1,13 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { loginSchema, registerSchema, onboardingSchema } from "@/lib/validations/auth";
+import {
+  loginSchema,
+  registerSchema,
+  onboardingSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "@/lib/validations/auth";
 import { redirect } from "next/navigation";
 
 export interface ActionResponse {
@@ -108,11 +114,12 @@ export async function submitOnboardingAction(formData: FormData): Promise<Action
     };
   }
 
-  // 1. Prevent double onboarding: check if user already has an enrollment
+  // 1. Prevent double onboarding: check if user already has an enrollment for this university
   const { data: existingMembership } = await supabase
     .from("university_memberships")
     .select("id, verification_status")
     .eq("user_id", user.id)
+    .eq("university_id", validated.data.universityId)
     .maybeSingle();
 
   if (existingMembership) {
@@ -163,4 +170,70 @@ export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+export async function requestPasswordResetAction(
+  formData: FormData
+): Promise<ActionResponse> {
+  const rawData = {
+    email: formData.get("email"),
+  };
+
+  const validated = forgotPasswordSchema.safeParse(rawData);
+  if (!validated.success) {
+    return {
+      success: false,
+      error: validated.error.issues[0]?.message || "Invalid email address",
+    };
+  }
+
+  const supabase = await createClient();
+  const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const { error } = await supabase.auth.resetPasswordForEmail(validated.data.email, {
+    redirectTo: `${origin}/reset-password`,
+  });
+
+  if (error) {
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+
+  return {
+    success: true,
+  };
+}
+
+export async function updatePasswordAction(
+  formData: FormData
+): Promise<ActionResponse> {
+  const rawData = {
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  };
+
+  const validated = resetPasswordSchema.safeParse(rawData);
+  if (!validated.success) {
+    return {
+      success: false,
+      error: validated.error.issues[0]?.message || "Invalid password details",
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({
+    password: validated.data.password,
+  });
+
+  if (error) {
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+
+  return {
+    success: true,
+  };
 }

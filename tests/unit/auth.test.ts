@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { loginSchema, registerSchema, onboardingSchema } from "@/lib/validations/auth";
+import {
+  loginSchema,
+  registerSchema,
+  onboardingSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  isAcademicEmail,
+} from "@/lib/validations/auth";
 
 describe("Authentication & Onboarding Schemas", () => {
   describe("loginSchema", () => {
@@ -118,6 +125,56 @@ describe("Authentication & Onboarding Schemas", () => {
       };
       const result = onboardingSchema.safeParse(invalid);
       expect(result.success).toBe(false);
+    });
+  });
+
+  describe("forgotPasswordSchema & resetPasswordSchema", () => {
+    it("validates valid email for password recovery", () => {
+      const valid = { email: "student@summit.ac.ke" };
+      const result = forgotPasswordSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects invalid email for password recovery", () => {
+      const invalid = { email: "invalid-email" };
+      const result = forgotPasswordSchema.safeParse(invalid);
+      expect(result.success).toBe(false);
+    });
+
+    it("validates compliant new password matching confirmation", () => {
+      const valid = {
+        password: "NewComplexPassword123#",
+        confirmPassword: "NewComplexPassword123#",
+      };
+      const result = resetPasswordSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+    });
+
+    it("rejects new password when passwords do not match", () => {
+      const invalid = {
+        password: "NewComplexPassword123#",
+        confirmPassword: "MismatchPassword123#",
+      };
+      const result = resetPasswordSchema.safeParse(invalid);
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe("isAcademicEmail", () => {
+    it("recognizes Kenyan institutional email (.ac.ke)", () => {
+      expect(isAcademicEmail("student@summit.ac.ke")).toBe(true);
+      expect(isAcademicEmail("lecturer@zetech.ac.ke")).toBe(true);
+      expect(isAcademicEmail("admin@uonbi.ac.ke")).toBe(true);
+    });
+
+    it("recognizes general higher-education academic email (.edu)", () => {
+      expect(isAcademicEmail("scholar@mit.edu")).toBe(true);
+    });
+
+    it("rejects personal commercial email providers", () => {
+      expect(isAcademicEmail("user@gmail.com")).toBe(false);
+      expect(isAcademicEmail("user@yahoo.com")).toBe(false);
+      expect(isAcademicEmail("")).toBe(false);
     });
   });
 });

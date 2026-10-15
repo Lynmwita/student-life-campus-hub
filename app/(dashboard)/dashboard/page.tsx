@@ -16,64 +16,36 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { markAnnouncementAsReadAction } from "@/lib/actions/announcements";
-
-interface NoticeItem {
-  id: string;
-  title: string;
-  content: string;
-  priority: "P1" | "P2" | "P3" | "P4";
-  targetScope: string;
-  publishedAt: string;
-  isRead: boolean;
-}
-
-const SAMPLE_NOTICES: NoticeItem[] = [
-  {
-    id: "not-001",
-    title: "Urgent: Campus Shuttle Service Rerouted Due to Road Maintenance",
-    content:
-      "All Westlands Campus shuttles will pick up and drop off students at Gate 3 along Ring Road until Friday 5:00 PM. Please plan extra 15 minutes of transit time.",
-    priority: "P1",
-    targetScope: "Main Campus (Westlands)",
-    publishedAt: "Today at 07:15 AM",
-    isRead: false,
-  },
-  {
-    id: "not-002",
-    title: "End of Semester Examination Timetable Released",
-    content:
-      "The finalized draft timetable for School of Computing & Informatics is now uploaded. Review your unit codes and report any exam clash to the department coordinator before Oct 20.",
-    priority: "P2",
-    targetScope: "School of Computing",
-    publishedAt: "Yesterday at 04:30 PM",
-    isRead: false,
-  },
-  {
-    id: "not-003",
-    title: "Annual Tech Innovation & Hackathon Registrations Open",
-    content:
-      "Form teams of 2 to 4 students. Mentors from Safaricom and Microsoft ADC will be hosting workshops next week. Cash prizes and internship fast-tracks for winners.",
-    priority: "P3",
-    targetScope: "All Students",
-    publishedAt: "Oct 13, 2026",
-    isRead: true,
-  },
-  {
-    id: "not-004",
-    title: "Main Library Extended Revision Hours",
-    content:
-      "Starting next Monday, the main campus digital library will remain open until 11:00 PM on weekdays with high-speed Wi-Fi and power stations accessible to all verified students.",
-    priority: "P4",
-    targetScope: "All Students",
-    publishedAt: "Oct 12, 2026",
-    isRead: true,
-  },
-];
+import {
+  markAnnouncementAsReadAction,
+  getStudentAnnouncementsAction,
+  type NoticeItem,
+} from "@/lib/actions/announcements";
 
 export default function StudentDashboardPage() {
-  const [notices, setNotices] = React.useState<NoticeItem[]>(SAMPLE_NOTICES);
+  const [notices, setNotices] = React.useState<NoticeItem[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [universityName, setUniversityName] = React.useState("Summit Metropolitan University");
+  const [campusName, setCampusName] = React.useState("Main Campus (Westlands)");
   const [selectedFilter, setSelectedFilter] = React.useState<"all" | "P1" | "unread">("all");
+
+  React.useEffect(() => {
+    async function loadData() {
+      try {
+        const res = await getStudentAnnouncementsAction();
+        if (res.success) {
+          setNotices(res.notices);
+          if (res.universityName) setUniversityName(res.universityName);
+          if (res.campusName) setCampusName(res.campusName);
+        }
+      } catch (err) {
+        console.error("Failed to load dashboard announcements", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
   async function handleMarkRead(id: string) {
     try {
@@ -105,16 +77,16 @@ export default function StudentDashboardPage() {
             </div>
             <div>
               <h1 className="font-black text-sm text-slate-900 dark:text-white leading-tight">
-                Summit Metropolitan University
+                {universityName}
               </h1>
               <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-blue-500" /> Main Campus (Westlands)
+                <MapPin className="w-3 h-3 text-blue-500" /> {campusName}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Link href="/admin/announcements/new">
+            <Link href="/announcements/new">
               <Button variant="outline" size="sm" className="hidden sm:inline-flex text-xs">
                 <PlusCircle className="w-3.5 h-3.5 mr-1 text-blue-600" /> Post Notice
               </Button>
@@ -237,72 +209,102 @@ export default function StudentDashboardPage() {
           </div>
 
           <div className="space-y-3">
-            {filteredNotices.map((notice) => {
-              const isP1 = notice.priority === "P1";
-              return (
-                <Card
-                  key={notice.id}
-                  className={`transition-all ${
-                    isP1
-                      ? "border-red-300 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/20 shadow-md shadow-red-500/5"
-                      : !notice.isRead
-                      ? "border-blue-200 dark:border-blue-900/50 bg-blue-50/20 dark:bg-blue-950/10"
-                      : "border-slate-200/80 dark:border-slate-800 opacity-90"
-                  }`}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {isP1 ? (
-                          <Badge variant="danger" className="animate-pulse">
-                            🚨 P1 Urgent
-                          </Badge>
-                        ) : notice.priority === "P2" ? (
-                          <Badge variant="warning">P2 Academic</Badge>
-                        ) : notice.priority === "P3" ? (
-                          <Badge variant="info">P3 Campus</Badge>
-                        ) : (
-                          <Badge variant="default">P4 Notice</Badge>
-                        )}
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2].map((i) => (
+                  <Card key={i} className="p-6 animate-pulse bg-slate-100/50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800">
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4 mb-3" />
+                    <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2" />
+                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full" />
+                  </Card>
+                ))}
+              </div>
+            ) : notices.length === 0 ? (
+              <Card className="border-dashed border-2 border-slate-200 dark:border-slate-800 p-8 text-center bg-slate-50/50 dark:bg-slate-900/30">
+                <div className="flex flex-col items-center justify-center space-y-3 max-w-md mx-auto">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-950/60 flex items-center justify-center text-blue-600">
+                    <Megaphone className="w-6 h-6" />
+                  </div>
+                  <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
+                    No official broadcasts at this time
+                  </h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    When university administration, campus deans, or department coordinators post notices for your group, they will appear here in real-time.
+                  </p>
+                </div>
+              </Card>
+            ) : filteredNotices.length === 0 ? (
+              <Card className="border-dashed border border-slate-200 dark:border-slate-800 p-6 text-center text-xs text-slate-500">
+                No announcements matching the selected filter.
+              </Card>
+            ) : (
+              filteredNotices.map((notice) => {
+                const isP1 = notice.priority === "P1";
+                return (
+                  <Card
+                    key={notice.id}
+                    className={`transition-all ${
+                      isP1
+                        ? "border-red-300 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/20 shadow-md shadow-red-500/5"
+                        : !notice.isRead
+                        ? "border-blue-200 dark:border-blue-900/50 bg-blue-50/20 dark:bg-blue-950/10"
+                        : "border-slate-200/80 dark:border-slate-800 opacity-90"
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {isP1 ? (
+                            <Badge variant="danger" className="animate-pulse">
+                              🚨 P1 Urgent
+                            </Badge>
+                          ) : notice.priority === "P2" ? (
+                            <Badge variant="warning">P2 Academic</Badge>
+                          ) : notice.priority === "P3" ? (
+                            <Badge variant="info">P3 Campus</Badge>
+                          ) : (
+                            <Badge variant="default">P4 Notice</Badge>
+                          )}
 
-                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                          {notice.targetScope}
-                        </span>
+                          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                            {notice.targetScope}
+                          </span>
 
-                        <span className="text-[11px] text-slate-400">
-                          {notice.publishedAt}
-                        </span>
+                          <span className="text-[11px] text-slate-400">
+                            {notice.publishedAt}
+                          </span>
+                        </div>
+
+                        <h4 className="font-bold text-base text-slate-900 dark:text-white leading-snug">
+                          {notice.title}
+                        </h4>
+
+                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                          {notice.content}
+                        </p>
                       </div>
 
-                      <h4 className="font-bold text-base text-slate-900 dark:text-white leading-snug">
-                        {notice.title}
-                      </h4>
-
-                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                        {notice.content}
-                      </p>
+                      <div className="shrink-0 pt-2 sm:pt-0">
+                        {!notice.isRead ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleMarkRead(notice.id)}
+                            className="text-xs text-blue-600 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5 mr-1" /> Mark as Read
+                          </Button>
+                        ) : (
+                          <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3 text-emerald-500" /> Read
+                          </span>
+                        )}
+                      </div>
                     </div>
-
-                    <div className="shrink-0 pt-2 sm:pt-0">
-                      {!notice.isRead ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleMarkRead(notice.id)}
-                          className="text-xs text-blue-600 border-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950"
-                        >
-                          <CheckCircle className="w-3.5 h-3.5 mr-1" /> Mark as Read
-                        </Button>
-                      ) : (
-                        <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3 text-emerald-500" /> Read
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
+                  </Card>
+                );
+              })
+            )}
           </div>
         </section>
       </main>
