@@ -55,21 +55,21 @@ export async function updateSession(request: NextRequest) {
   }
 
   // 3. Verification status gating on /dashboard:
-  // If student is logged in but not yet verified, route them to /verification-status
+  // If student is logged in, ensure they have at least one verified membership
   if (pathname.startsWith("/dashboard") && user) {
-    const { data: membership } = await supabase
+    const { data: memberships } = await supabase
       .from("university_memberships")
       .select("verification_status")
-      .eq("user_id", user.id)
-      .maybeSingle();
+      .eq("user_id", user.id);
 
-    if (!membership) {
+    if (!memberships || memberships.length === 0) {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
       return NextResponse.redirect(url);
     }
 
-    if (membership.verification_status !== "verified") {
+    const hasVerified = memberships.some((m) => m.verification_status === "verified");
+    if (!hasVerified) {
       const url = request.nextUrl.clone();
       url.pathname = "/verification-status";
       return NextResponse.redirect(url);
