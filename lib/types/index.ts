@@ -32,6 +32,7 @@ export interface University {
   slug: string;
   code: string;
   domain: string | null;
+  logo_url?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -65,6 +66,7 @@ export interface UniversityMembership {
   campus_id: string | null;
   role: UserRole;
   registration_number?: string | null;
+  staff_id?: string | null;
   faculty?: string | null;
   department?: string | null;
   program_of_study?: string | null;
@@ -72,6 +74,63 @@ export interface UniversityMembership {
   verification_status: VerificationStatus;
   verified_at?: string | null;
   verified_by?: string | null;
+  verification_notes?: string | null;
+  id_document_url?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface Announcement {
+  id: string;
+  university_id: string;
+  campus_id?: string | null;
+  author_id: string;
+  title: string;
+  content: string;
+  priority: NotificationPriority;
+  target_scope: AnnouncementTargetScope;
+  target_faculty?: string | null;
+  target_department?: string | null;
+  target_year?: number | null;
+  is_published: boolean;
+  published_at: string;
+  expires_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AnnouncementRead {
+  id: string;
+  announcement_id: string;
+  user_id: string;
+  read_at: string;
+}
+
+export interface HelpRequest {
+  id: string;
+  reference_no: string;
+  university_id: string;
+  campus_id?: string | null;
+  student_id: string;
+  assigned_staff_id?: string | null;
+  category: HelpRequestCategory;
+  priority: NotificationPriority;
+  subject: string;
+  description: string;
+  status: HelpRequestStatus;
+  resolution_notes?: string | null;
+  resolved_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HelpRequestUpdate {
+  id: string;
+  help_request_id: string;
+  author_id: string;
+  status_from?: string | null;
+  status_to?: string | null;
+  message: string;
+  is_internal: boolean;
+  created_at: string;
 }
