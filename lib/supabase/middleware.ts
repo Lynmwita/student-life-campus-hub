@@ -35,7 +35,7 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // 1. Unauthenticated users cannot access protected routes
-  const protectedRoutes = ["/dashboard", "/verifications"];
+  const protectedRoutes = ["/dashboard", "/verifications", "/announcements"];
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
 
   if (isProtected && !user) {
@@ -63,7 +63,13 @@ export async function updateSession(request: NextRequest) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    if (membership && membership.verification_status !== "verified") {
+    if (!membership) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
+    }
+
+    if (membership.verification_status !== "verified") {
       const url = request.nextUrl.clone();
       url.pathname = "/verification-status";
       return NextResponse.redirect(url);

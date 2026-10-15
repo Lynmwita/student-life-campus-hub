@@ -295,14 +295,31 @@ export default function NewAnnouncementPage() {
             </div>
           </div>
 
-          <Button
-            type="submit"
-            variant="primary"
-            className="w-full py-3.5 text-base"
-            isLoading={loading}
-          >
-            <Send className="w-4 h-4 mr-1.5" /> Publish & Broadcast Announcement
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+            <Button
+              type="submit"
+              variant="outline"
+              className="w-full sm:w-1/3 py-3"
+              disabled={loading}
+              onClick={() => {
+                const draftInput = document.createElement("input");
+                draftInput.type = "hidden";
+                draftInput.name = "isDraft";
+                draftInput.value = "true";
+                document.querySelector("form")?.appendChild(draftInput);
+              }}
+            >
+              Save as Draft
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              className="w-full sm:w-2/3 py-3 text-base"
+              isLoading={loading}
+            >
+              <Send className="w-4 h-4 mr-1.5" /> Publish & Broadcast Announcement
+            </Button>
+          </div>
         </form>
       </div>
     </div>

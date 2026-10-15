@@ -40,11 +40,11 @@ export default function HomePage() {
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 dark:text-white max-w-2xl leading-[1.1]">
-          Your Entire Campus Life, in One Fast Mobile App.
+          Official Campus Communications, Clean & Real-Time.
         </h1>
 
         <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-xl">
-          Say goodbye to noisy WhatsApp groups and missed noticeboards. Receive official university broadcasts, daily lecture schedules, and instant academic help.
+          Say goodbye to noisy WhatsApp groups and missed noticeboards. Connect directly to your verified university tenant for targeted broadcasts, priority alerts, and upcoming academic tools.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 w-full sm:w-auto">
@@ -55,46 +55,61 @@ export default function HomePage() {
           </Link>
           <Link href="/dashboard" className="w-full sm:w-auto">
             <Button variant="outline" size="lg" className="w-full sm:w-auto text-base px-6">
-              Preview Student Feed
+              Preview Broadcast Feed
             </Button>
           </Link>
         </div>
 
-        {/* Value Proposition Cards */}
+        {/* Feature Roadmap Transparency Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-12 text-left w-full">
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-blue-600">
-              <Megaphone className="w-4 h-4" />
+            <div className="flex items-center justify-between">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-blue-600">
+                <Megaphone className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
+                Active • Phase 4
+              </span>
             </div>
             <h3 className="font-bold text-sm text-slate-900 dark:text-white">
               Targeted Broadcasts
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Prioritized P1–P4 notices filtered specifically to your campus, faculty, and year.
+              Prioritized P1–P4 official notices filtered specifically to your campus, faculty, and year of study.
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center text-emerald-600">
-              <Calendar className="w-4 h-4" />
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2 opacity-85">
+            <div className="flex items-center justify-between">
+              <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950 flex items-center justify-center text-amber-600">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-full">
+                Roadmap • Phase 5
+              </span>
             </div>
             <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-              Daily Class Schedule
+              Course Timetables & Schedules
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Personalized timetable for today with lecture halls, start times, and unit codes.
+              Personalized lecture schedules, hall venues, and unit codes arriving in Phase 5.
             </p>
           </div>
 
-          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-indigo-600">
-              <HelpCircle className="w-4 h-4" />
+          <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 space-y-2 opacity-85">
+            <div className="flex items-center justify-between">
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-indigo-600">
+                <HelpCircle className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-full">
+                Roadmap • Phase 6
+              </span>
             </div>
             <h3 className="font-bold text-sm text-slate-900 dark:text-white">
               Direct Student Help Desk
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Submit inquiries with unique tracking numbers and real-time status progression.
+              Submit academic inquiries with unique tracking codes and status timelines arriving in Phase 6.
             </p>
           </div>
         </div>

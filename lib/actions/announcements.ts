@@ -23,6 +23,7 @@ export async function createAnnouncementAction(
     targetDepartment: formData.get("targetDepartment") || "",
     targetYear: formData.get("targetYear") || 0,
     expiresAt: formData.get("expiresAt") || "",
+    isPublished: formData.get("isDraft") !== "true",
   };
 
   const validated = announcementSchema.safeParse(rawData);
@@ -45,6 +46,14 @@ export async function createAnnouncementAction(
     };
   }
 
+  let formattedExpiresAt: string | null = null;
+  if (validated.data.expiresAt && validated.data.expiresAt.trim() !== "") {
+    const parsedDate = new Date(validated.data.expiresAt);
+    if (!isNaN(parsedDate.getTime())) {
+      formattedExpiresAt = parsedDate.toISOString();
+    }
+  }
+
   const { error } = await supabase.from("announcements").insert({
     university_id: validated.data.universityId,
     campus_id: validated.data.campusId || null,
@@ -56,9 +65,9 @@ export async function createAnnouncementAction(
     target_faculty: validated.data.targetFaculty || null,
     target_department: validated.data.targetDepartment || null,
     target_year: validated.data.targetYear && validated.data.targetYear > 0 ? validated.data.targetYear : null,
-    is_published: true,
+    is_published: validated.data.isPublished,
     published_at: new Date().toISOString(),
-    expires_at: validated.data.expiresAt ? new Date(validated.data.expiresAt).toISOString() : null,
+    expires_at: formattedExpiresAt,
   });
 
   if (error) {
@@ -71,7 +80,9 @@ export async function createAnnouncementAction(
   revalidatePath("/dashboard");
   return {
     success: true,
-    message: "Announcement published and broadcast to students.",
+    message: validated.data.isPublished
+      ? "Announcement published and broadcast to students."
+      : "Announcement saved as draft.",
   };
 }
 

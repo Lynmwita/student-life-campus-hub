@@ -71,23 +71,6 @@ const SAMPLE_NOTICES: NoticeItem[] = [
   },
 ];
 
-const TODAY_CLASSES = [
-  {
-    code: "BCS 214",
-    title: "Database Systems Architecture",
-    time: "09:00 AM - 11:00 AM",
-    venue: "ICT Lab 3 • Westlands",
-    lecturer: "Dr. Kamau",
-  },
-  {
-    code: "MAT 202",
-    title: "Discrete Mathematics for Computing",
-    time: "02:00 PM - 04:00 PM",
-    venue: "Lecture Theatre 4",
-    lecturer: "Prof. Omondi",
-  },
-];
-
 export default function StudentDashboardPage() {
   const [notices, setNotices] = React.useState<NoticeItem[]>(SAMPLE_NOTICES);
   const [selectedFilter, setSelectedFilter] = React.useState<"all" | "P1" | "unread">("all");
@@ -152,20 +135,20 @@ export default function StudentDashboardPage() {
             <div className="space-y-1.5">
               <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/20 text-white text-xs font-semibold backdrop-blur-sm">
                 <Sparkles className="w-3 h-3 text-amber-300" />
-                Verified Student • Year 2 Computer Science
+                Verified Student Portal
               </div>
               <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-                Habari, Brian Otieno!
+                Student Life & Campus Hub
               </h2>
               <p className="text-xs sm:text-sm text-blue-100 max-w-lg">
-                Your daily campus feed is active. You have <strong>{unreadCount} unread official notices</strong> and 2 scheduled lecture sessions today.
+                Your official broadcast feed is active. You have <strong>{unreadCount} unread university notices</strong> tailored to your institution.
               </p>
             </div>
 
             <div className="flex items-center gap-2">
               <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl text-center border border-white/10">
-                <span className="block text-2xl font-black">2</span>
-                <span className="text-[10px] uppercase font-bold text-blue-200">Classes</span>
+                <span className="block text-sm font-bold text-emerald-300">Active</span>
+                <span className="text-[10px] uppercase font-bold text-blue-200">Verified</span>
               </div>
               <div className="bg-white/10 backdrop-blur-md px-4 py-3 rounded-2xl text-center border border-white/10">
                 <span className="block text-2xl font-black">{unreadCount}</span>
@@ -175,40 +158,36 @@ export default function StudentDashboardPage() {
           </div>
         </div>
 
-        {/* Today's Schedule Glance */}
+        {/* Academic Timetable Roadmap Status (Phase 5) */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <Calendar className="w-4 h-4 text-blue-600" />
-              Today&apos;s Academic Schedule
+              Academic Timetable & Schedule
             </h3>
-            <span className="text-xs text-slate-400">Thursday, Oct 15</span>
+            <Badge variant="warning">Coming in Phase 5</Badge>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {TODAY_CLASSES.map((cls) => (
-              <Card key={cls.code} className="border-slate-200/80 dark:border-slate-800 p-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <span className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950 px-2 py-0.5 rounded-md">
-                      {cls.code}
-                    </span>
-                    <h4 className="font-bold text-sm text-slate-900 dark:text-white pt-1">
-                      {cls.title}
-                    </h4>
-                    <p className="text-xs text-slate-500">{cls.lecturer}</p>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <div className="inline-flex items-center text-xs font-bold text-slate-700 dark:text-slate-300">
-                      <Clock className="w-3.5 h-3.5 mr-1 text-slate-400" />
-                      {cls.time.split(" - ")[0]}
-                    </div>
-                    <p className="text-[11px] text-slate-500">{cls.venue}</p>
-                  </div>
+          <Card className="border-dashed border-2 border-slate-200 dark:border-slate-800 p-6 bg-slate-50/50 dark:bg-slate-900/30">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Personalized Lecture Schedules
+                  </span>
+                  <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-full">
+                    Phase 5
+                  </span>
                 </div>
-              </Card>
-            ))}
-          </div>
+                <p className="text-xs text-slate-500 max-w-xl leading-relaxed">
+                  Your daily course unit timetable, lecture halls, and instructor details will sync automatically once faculty course schedules are released in Phase 5.
+                </p>
+              </div>
+              <div className="shrink-0 text-xs text-slate-400 font-semibold flex items-center gap-1">
+                <Clock className="w-4 h-4 text-slate-400" /> Phase 5 Roadmap
+              </div>
+            </div>
+          </Card>
         </section>
 
         {/* Priority Announcements Feed */}

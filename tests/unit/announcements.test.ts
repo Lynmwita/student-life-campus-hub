@@ -29,27 +29,74 @@ describe("Announcement Schemas & Audience Scoping", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects invalid priority codes", () => {
+  it("rejects campus-scoped announcement if campusId is missing", () => {
     const invalid = {
       universityId: "00000000-0000-0000-0000-000000000001",
-      title: "General Campus Announcement",
-      content: "Detailed content goes here for general notices.",
-      priority: "URGENT_NOW", // invalid priority
-      targetScope: "all",
+      title: "Campus Shuttle Maintenance Notice",
+      content: "Westlands gate shuttle schedule is temporarily amended.",
+      priority: "P2",
+      targetScope: "campus",
+      campusId: "", // missing campusId
     };
     const result = announcementSchema.safeParse(invalid);
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(
+        "Please select a campus when scoping announcements to a specific campus"
+      );
+    }
   });
 
-  it("rejects announcements with too short title or content", () => {
+  it("rejects faculty-scoped announcement if targetFaculty is missing", () => {
     const invalid = {
       universityId: "00000000-0000-0000-0000-000000000001",
-      title: "Hi",
-      content: "Short",
-      priority: "P4",
-      targetScope: "all",
+      title: "Faculty Moderation Results",
+      content: "Moderation committee report has been submitted to the dean.",
+      priority: "P3",
+      targetScope: "faculty",
+      targetFaculty: "",
     };
     const result = announcementSchema.safeParse(invalid);
     expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(
+        "Please select a school or faculty when scoping to a specific faculty"
+      );
+    }
+  });
+
+  it("rejects invalid date string in expiresAt", () => {
+    const invalid = {
+      universityId: "00000000-0000-0000-0000-000000000001",
+      title: "Library Weekend Book Return",
+      content: "Please return all reserve section textbooks by Friday afternoon.",
+      priority: "P4",
+      targetScope: "all",
+      expiresAt: "invalid-date-string",
+    };
+    const result = announcementSchema.safeParse(invalid);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toBe(
+        "Expiration date must be a valid ISO date string"
+      );
+    }
+  });
+
+  it("accepts valid date string in expiresAt and supports draft mode", () => {
+    const valid = {
+      universityId: "00000000-0000-0000-0000-000000000001",
+      title: "Library Weekend Book Return",
+      content: "Please return all reserve section textbooks by Friday afternoon.",
+      priority: "P4",
+      targetScope: "all",
+      expiresAt: "2026-10-25T18:00:00Z",
+      isPublished: false, // draft mode
+    };
+    const result = announcementSchema.safeParse(valid);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.isPublished).toBe(false);
+    }
   });
 });
