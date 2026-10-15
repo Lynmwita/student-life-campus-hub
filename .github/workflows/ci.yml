@@ -1,0 +1,40 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, feat/*, fix/* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    name: Lint, Test & Build
+    runs-on: ubuntu-latest
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+      NEXT_PUBLIC_APP_NAME: "Student Life & Campus Hub"
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Vitest Unit Tests
+        run: npm test
+
+      - name: Run Next.js Production Build
+        run: npm run build
