@@ -13,6 +13,10 @@ import {
   PlusCircle,
   ShieldCheck,
   RotateCw,
+  BookOpen,
+  Users,
+  ArrowRight,
+  Compass,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,9 +26,15 @@ import {
   getStudentAnnouncementsAction,
   type NoticeItem,
 } from "@/lib/actions/announcements";
+import {
+  getStudentTodayScheduleAction,
+  type TimetableEntry,
+} from "@/lib/actions/academics";
 
 export default function StudentDashboardPage() {
   const [notices, setNotices] = React.useState<NoticeItem[]>([]);
+  const [todaySchedule, setTodaySchedule] = React.useState<TimetableEntry[]>([]);
+  const [todayDayName, setTodayDayName] = React.useState<string>("Today");
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [universityName, setUniversityName] = React.useState("Summit Metropolitan University");
@@ -36,14 +46,24 @@ export default function StudentDashboardPage() {
 
     async function loadData() {
       try {
-        const res = await getStudentAnnouncementsAction();
-        if (!ignore && res.success) {
-          setNotices(res.notices);
-          if (res.universityName) setUniversityName(res.universityName);
-          if (res.campusName) setCampusName(res.campusName);
+        const [announcementsRes, scheduleRes] = await Promise.all([
+          getStudentAnnouncementsAction(),
+          getStudentTodayScheduleAction(),
+        ]);
+
+        if (!ignore) {
+          if (announcementsRes.success) {
+            setNotices(announcementsRes.notices);
+            if (announcementsRes.universityName) setUniversityName(announcementsRes.universityName);
+            if (announcementsRes.campusName) setCampusName(announcementsRes.campusName);
+          }
+          if (scheduleRes.success) {
+            setTodaySchedule(scheduleRes.entries);
+            setTodayDayName(scheduleRes.dayName);
+          }
         }
       } catch (err) {
-        console.error("Failed to load dashboard announcements", err);
+        console.error("Failed to load dashboard data", err);
       } finally {
         if (!ignore) {
           setLoading(false);
@@ -62,14 +82,22 @@ export default function StudentDashboardPage() {
   async function handleRefresh() {
     setRefreshing(true);
     try {
-      const res = await getStudentAnnouncementsAction();
-      if (res.success) {
-        setNotices(res.notices);
-        if (res.universityName) setUniversityName(res.universityName);
-        if (res.campusName) setCampusName(res.campusName);
+      const [announcementsRes, scheduleRes] = await Promise.all([
+        getStudentAnnouncementsAction(),
+        getStudentTodayScheduleAction(),
+      ]);
+
+      if (announcementsRes.success) {
+        setNotices(announcementsRes.notices);
+        if (announcementsRes.universityName) setUniversityName(announcementsRes.universityName);
+        if (announcementsRes.campusName) setCampusName(announcementsRes.campusName);
+      }
+      if (scheduleRes.success) {
+        setTodaySchedule(scheduleRes.entries);
+        setTodayDayName(scheduleRes.dayName);
       }
     } catch (err) {
-      console.error("Failed to refresh dashboard announcements", err);
+      console.error("Failed to refresh dashboard data", err);
     } finally {
       setRefreshing(false);
     }
@@ -96,7 +124,7 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-16">
-      {/* Top Mobile Navbar */}
+      {/* Top Navbar */}
       <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-3 sm:px-6">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -128,6 +156,30 @@ export default function StudentDashboardPage() {
         </div>
       </header>
 
+      {/* Navigation Sub-bar */}
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto flex items-center gap-4 text-xs font-semibold overflow-x-auto py-2.5">
+          <Link
+            href="/dashboard"
+            className="text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 pb-1.5 flex items-center gap-1.5"
+          >
+            <Megaphone className="w-3.5 h-3.5" /> Campus Feed
+          </Link>
+          <Link
+            href="/timetable"
+            className="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors pb-1.5 flex items-center gap-1.5"
+          >
+            <Calendar className="w-3.5 h-3.5" /> Weekly Timetable
+          </Link>
+          <Link
+            href="/campus-life"
+            className="text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors pb-1.5 flex items-center gap-1.5"
+          >
+            <Compass className="w-3.5 h-3.5" /> Campus Life & Clubs
+          </Link>
+        </div>
+      </div>
+
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
         {/* Student Welcome Banner */}
         <div className="rounded-3xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 p-6 sm:p-8 text-white shadow-xl shadow-blue-600/15">
@@ -141,7 +193,7 @@ export default function StudentDashboardPage() {
                 Student Life & Campus Hub
               </h2>
               <p className="text-xs sm:text-sm text-blue-100 max-w-lg">
-                Your official broadcast feed is active. You have <strong>{unreadCount} unread university notices</strong> tailored to your institution.
+                Your live campus portal is connected. You have <strong>{unreadCount} unread notices</strong> and live lecture scheduling for your campus.
               </p>
             </div>
 
@@ -158,36 +210,99 @@ export default function StudentDashboardPage() {
           </div>
         </div>
 
-        {/* Academic Timetable Roadmap Status (Phase 5) */}
+        {/* Live Academic Timetable: Today's Schedule */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-blue-600" />
-              Academic Timetable & Schedule
-            </h3>
-            <Badge variant="warning">Coming in Phase 5</Badge>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-blue-600" />
+                Today&apos;s Lecture Schedule ({todayDayName})
+              </h3>
+              {todaySchedule.length > 0 && (
+                <Badge variant="info">{todaySchedule.length} Lecture{todaySchedule.length > 1 ? "s" : ""}</Badge>
+              )}
+            </div>
+            <Link
+              href="/timetable"
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+            >
+              Full Timetable <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
 
-          <Card className="border-dashed border-2 border-slate-200 dark:border-slate-800 p-6 bg-slate-50/50 dark:bg-slate-900/30">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                    Personalized Lecture Schedules
-                  </span>
-                  <span className="text-[10px] font-mono font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 rounded-full">
-                    Phase 5
-                  </span>
+          {loading ? (
+            <Card className="p-6 animate-pulse bg-slate-100/50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800">
+              <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4 mb-3" />
+              <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2" />
+              <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full" />
+            </Card>
+          ) : todaySchedule.length === 0 ? (
+            <Card className="border-dashed border-2 border-slate-200 dark:border-slate-800 p-6 bg-slate-50/50 dark:bg-slate-900/30">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      No Lectures Scheduled for {todayDayName}
+                    </span>
+                    <Badge variant="default">Free Study Day</Badge>
+                  </div>
+                  <p className="text-xs text-slate-500 max-w-xl leading-relaxed">
+                    You have no official classes scheduled for today. You can view your full weekly schedule or explore upcoming campus events and clubs.
+                  </p>
                 </div>
-                <p className="text-xs text-slate-500 max-w-xl leading-relaxed">
-                  Your daily course unit timetable, lecture halls, and instructor details will sync automatically once faculty course schedules are released in Phase 5.
-                </p>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Link href="/timetable">
+                    <Button variant="outline" size="sm" className="text-xs">
+                      <Calendar className="w-3.5 h-3.5 mr-1 text-blue-600" /> View Weekly Timetable
+                    </Button>
+                  </Link>
+                  <Link href="/campus-life">
+                    <Button variant="outline" size="sm" className="text-xs">
+                      <Users className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Campus Life
+                    </Button>
+                  </Link>
+                </div>
               </div>
-              <div className="shrink-0 text-xs text-slate-400 font-semibold flex items-center gap-1">
-                <Clock className="w-4 h-4 text-slate-400" /> Phase 5 Roadmap
-              </div>
+            </Card>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {todaySchedule.map((entry) => (
+                <Card
+                  key={entry.id}
+                  className="p-4 border-slate-200/90 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-800 transition-all shadow-xs"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded">
+                        {entry.code}
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {entry.creditHours} Credits
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                      <Clock className="w-3 h-3 text-slate-500" /> {entry.startTime} - {entry.endTime}
+                    </span>
+                  </div>
+
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white leading-snug mb-1">
+                    {entry.name}
+                  </h4>
+
+                  <div className="space-y-1 text-xs text-slate-500 pt-1 border-t border-slate-100 dark:border-slate-800/80 mt-2">
+                    <p className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      <span className="font-medium text-slate-700 dark:text-slate-300">{entry.venue}</span>
+                    </p>
+                    <p className="flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <span>{entry.lecturerName}</span>
+                    </p>
+                  </div>
+                </Card>
+              ))}
             </div>
-          </Card>
+          )}
         </section>
 
         {/* Priority Announcements Feed */}
@@ -352,6 +467,45 @@ export default function StudentDashboardPage() {
               })
             )}
           </div>
+        </section>
+
+        {/* Quick Links Section */}
+        <section className="pt-2 grid sm:grid-cols-2 gap-4">
+          <Link href="/timetable" className="block group">
+            <Card className="p-5 border-slate-200/90 dark:border-slate-800 group-hover:border-blue-400 dark:group-hover:border-blue-700 transition-all bg-white dark:bg-slate-900 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                    Weekly Timetable Schedules
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    View lecture halls, times, and faculty instructors for Monday - Friday.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </Link>
+
+          <Link href="/campus-life" className="block group">
+            <Card className="p-5 border-slate-200/90 dark:border-slate-800 group-hover:border-emerald-400 dark:group-hover:border-emerald-700 transition-all bg-white dark:bg-slate-900 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors">
+                    Clubs, Communities & Events
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Discover campus student groups, workshops, hackathons, and activities.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </Link>
         </section>
       </main>
     </div>

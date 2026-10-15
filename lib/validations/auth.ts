@@ -7,6 +7,15 @@ export const loginSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 
+/**
+ * Checks whether an email address belongs to an accredited academic institution (e.g., .ac.ke, .edu).
+ */
+export function isAcademicEmail(email: string): boolean {
+  if (!email || !email.includes("@")) return false;
+  const domain = email.split("@")[1]?.toLowerCase() || "";
+  return domain.endsWith(".ac.ke") || domain.endsWith(".edu") || domain.endsWith(".edu.ke");
+}
+
 export const registerSchema = z
   .object({
     fullName: z.string().min(2, "Full name must be at least 2 characters").max(100),
@@ -19,6 +28,10 @@ export const registerSchema = z
       .regex(/[0-9]/, "Password must contain at least one number")
       .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
     confirmPassword: z.string().min(8, "Password confirmation must be at least 8 characters"),
+  })
+  .refine((data) => isAcademicEmail(data.email), {
+    message: "Please register using an official university email address (.ac.ke or .edu)",
+    path: ["email"],
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -72,12 +85,3 @@ export const resetPasswordSchema = z
   });
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
-
-/**
- * Checks whether an email address belongs to an accredited academic institution (e.g., .ac.ke, .edu).
- */
-export function isAcademicEmail(email: string): boolean {
-  if (!email || !email.includes("@")) return false;
-  const domain = email.split("@")[1]?.toLowerCase() || "";
-  return domain.endsWith(".ac.ke") || domain.endsWith(".edu") || domain.endsWith(".edu.ke");
-}

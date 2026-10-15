@@ -15,6 +15,7 @@ describe("Database Migrations Integrity", () => {
     expect(files).toContain("20261015000006_storage_delete_policy.sql");
     expect(files).toContain("20261015000007_announcements_department_rls.sql");
     expect(files).toContain("20261015000008_university_directory_columns.sql");
+    expect(files).toContain("20261015000009_academics_and_campus_life.sql");
   });
 
   it("defines all core tables in 20261015000001_core_schema.sql", () => {
@@ -118,7 +119,21 @@ describe("Database Migrations Integrity", () => {
     expect(migrationSql).toContain("ownership");
   });
 
-  it("contains seed script with pilot universities, staff author, and realistic broadcasts", () => {
+  it("defines academic course units, timetables, clubs, and events in 20261015000009_academics_and_campus_life.sql", () => {
+    const migrationSql = fs.readFileSync(
+      path.join(migrationsDir, "20261015000009_academics_and_campus_life.sql"),
+      "utf-8"
+    );
+    expect(migrationSql).toContain("CREATE TABLE IF NOT EXISTS public.course_units");
+    expect(migrationSql).toContain("CREATE TABLE IF NOT EXISTS public.timetables");
+    expect(migrationSql).toContain("CREATE TABLE IF NOT EXISTS public.clubs_communities");
+    expect(migrationSql).toContain("CREATE TABLE IF NOT EXISTS public.events");
+    expect(migrationSql).toContain("ALTER TABLE public.timetables ENABLE ROW LEVEL SECURITY");
+    expect(migrationSql).toContain("ALTER TABLE public.clubs_communities ENABLE ROW LEVEL SECURITY");
+    expect(migrationSql).toContain("ALTER TABLE public.events ENABLE ROW LEVEL SECURITY");
+  });
+
+  it("contains seed script with pilot universities, staff author, realistic broadcasts, timetables, and clubs", () => {
     const seedPath = path.resolve(import.meta.dirname, "../../supabase/seed.sql");
     const seedSql = fs.readFileSync(seedPath, "utf-8");
     expect(seedSql).toContain("Summit Metropolitan University");
@@ -128,5 +143,8 @@ describe("Database Migrations Integrity", () => {
     expect(seedSql).toContain("Urgent: Campus Shuttle Service Rerouted Due to Road Maintenance");
     expect(seedSql).toContain("End of Semester Examination Draft Timetable Released");
     expect(seedSql).toContain("kenyatta-university");
+    expect(seedSql).toContain("COMP 211");
+    expect(seedSql).toContain("SMU Tech Innovators & GDSC");
+    expect(seedSql).toContain("Annual Inter-Campus Hackathon 2026");
   });
 });

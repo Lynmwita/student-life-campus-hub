@@ -95,6 +95,26 @@ describe("Authentication & Onboarding Schemas", () => {
         expect(result.error.issues[0]?.message).toBe("Passwords do not match");
       }
     });
+
+    it("rejects non-academic email address during registration", () => {
+      const invalid = {
+        fullName: "Faith Chepkemoi",
+        email: "f.chepkemoi@gmail.com",
+        password: "StrongPassword123!",
+        confirmPassword: "StrongPassword123!",
+      };
+      const result = registerSchema.safeParse(invalid);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(
+          result.error.issues.some(
+            (issue) =>
+              issue.message ===
+              "Please register using an official university email address (.ac.ke or .edu)"
+          )
+        ).toBe(true);
+      }
+    });
   });
 
   describe("onboardingSchema", () => {
