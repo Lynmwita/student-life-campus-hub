@@ -15,7 +15,13 @@ import {
   AlertCircle,
   ShieldCheck,
   Check,
-  Plus,
+  Laptop,
+  Trophy,
+  Heart,
+  Palette,
+  Compass,
+  Users,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -49,6 +55,26 @@ const DEFAULT_STUDIES: StudentStudiesData = {
 
 interface SmartOnboardingWizardProps {
   initialStudies?: StudentStudiesData;
+}
+
+function getCategoryIcon(cat: string) {
+  switch (cat) {
+    case "technology":
+      return <Laptop className="w-3.5 h-3.5 shrink-0" />;
+    case "sports":
+      return <Trophy className="w-3.5 h-3.5 shrink-0" />;
+    case "faith":
+      return <Heart className="w-3.5 h-3.5 shrink-0" />;
+    case "arts":
+      return <Palette className="w-3.5 h-3.5 shrink-0" />;
+    case "leadership":
+      return <Compass className="w-3.5 h-3.5 shrink-0" />;
+    case "community_service":
+      return <Users className="w-3.5 h-3.5 shrink-0" />;
+    case "academic":
+    default:
+      return <BookOpen className="w-3.5 h-3.5 shrink-0" />;
+  }
 }
 
 export default function SmartOnboardingWizard({
@@ -150,15 +176,15 @@ export default function SmartOnboardingWizard({
 
   const meetsStep2Requirement = selectedCommunityIds.length >= 3;
 
-  async function handleFinalSubmit() {
+  async function handleFinishOnboarding() {
     if (!studiesConfirmed) {
-      setError("Please confirm your academic studies records in Step 1.");
+      setError("Please confirm your academic studies record in Step 1.");
       setCurrentStep(1);
       return;
     }
 
-    if (selectedCommunityIds.length < 3) {
-      setError("Please select at least 3 campus communities to personalize your hub.");
+    if (!meetsStep2Requirement) {
+      setError("Please select at least 3 campus communities or societies.");
       setCurrentStep(2);
       return;
     }
@@ -168,44 +194,43 @@ export default function SmartOnboardingWizard({
 
     try {
       const res = await completeSmartOnboardingAction({
-        studiesConfirmed,
+        studiesConfirmed: true,
         communityIds: selectedCommunityIds,
         notificationStyle,
         careerAlertTracks: selectedCareerTracks,
       });
 
-      if (res.success) {
-        router.push("/dashboard");
-        router.refresh();
-      } else {
-        setError(res.message);
+      if (!res.success) {
+        setError(res.message || "Failed to save preferences.");
         setSaving(false);
+        return;
       }
+
+      router.push("/dashboard");
     } catch {
-      setError("An unexpected error occurred while completing onboarding. Please try again.");
+      setError("An unexpected error occurred. Please try again.");
       setSaving(false);
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between py-10 px-4 sm:px-6">
-      <div className="max-w-4xl mx-auto w-full space-y-8">
-        {/* Top Institutional Header */}
-        <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 text-xs font-semibold shadow-xs">
-            <GraduationCap className="w-3.5 h-3.5 text-[#FCD34D]" />
-            Official University Matriculation
+    <div className="min-h-screen bg-[#F8FAFC] text-[#0B1D33] py-8 px-4 sm:px-6 lg:px-8 font-sans">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Institutional Masthead */}
+        <div className="text-center space-y-2 border-b border-[#C59B27]/25 pb-6">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 shadow-xs mb-2">
+            <GraduationCap className="w-8 h-8" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-[#0B1D33]">
-            Smart Student Onboarding
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#0B1D33] tracking-tight">
+            Student Life & Campus Hub
           </h1>
-          <p className="text-sm text-slate-600 max-w-xl mx-auto leading-relaxed font-sans">
-            Personalize your collegiate hub in three simple steps: verify your enrolled studies, choose your campus societies, and set your academic alerts.
+          <p className="text-xs sm:text-sm text-slate-600 font-sans max-w-lg mx-auto">
+            Academic Identity Synchronization & Campus Discovery Onboarding
           </p>
         </div>
 
-        {/* 3-Step Collegiate Stepper */}
-        <div className="relative border-b border-[#C59B27]/25 pb-6">
+        {/* 3-Step Breadcrumb / Progress Bar */}
+        <div className="bg-white border border-[#C59B27]/30 rounded-xl p-3 shadow-xs">
           <div className="flex items-center justify-between max-w-2xl mx-auto">
             {/* Step 1 Pill */}
             <button
@@ -435,29 +460,29 @@ export default function SmartOnboardingWizard({
         )}
 
         {/* ============================================================== */}
-        {/* STEP 2: PICK COMMUNITIES                                       */}
+        {/* STEP 2: PICK COMMUNITIES (ROUND/OVAL PILL CHIPS)               */}
         {/* ============================================================== */}
         {currentStep === 2 && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#0B1D33]">
                   Step 2: Join Kenyan Campus Societies & Fellowships
                 </h2>
                 <p className="text-xs text-slate-600 font-sans mt-0.5">
-                  Select at least 3 communities to join their event feeds, discussion circles, and notices.
+                  Tap to toggle communities. Choose at least 3 to curate your activity feed, societies, and alerts.
                 </p>
               </div>
 
               {/* Requirement Counter Badge */}
               <div
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold ${
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-semibold ${
                   meetsStep2Requirement
                     ? "bg-emerald-50 text-emerald-800 border-emerald-400"
                     : "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
                 }`}
               >
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4 text-[#FCD34D]" />
                 <span>
                   {selectedCommunityIds.length} Selected (Minimum 3 required)
                 </span>
@@ -493,10 +518,10 @@ export default function SmartOnboardingWizard({
                     key={cat.id}
                     type="button"
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-3 py-1.5 rounded-md whitespace-nowrap font-medium text-xs transition-colors border ${
+                    className={`px-3 py-1.5 rounded-full whitespace-nowrap font-medium text-xs transition-colors border ${
                       selectedCategory === cat.id
                         ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
-                        : "bg-white text-slate-600 border-slate-200 hover:border-[#C59B27]/50"
+                        : "bg-white text-[#0B1D33] border-[#C59B27]/40 hover:border-[#C59B27]"
                     }`}
                   >
                     {cat.label}
@@ -505,74 +530,95 @@ export default function SmartOnboardingWizard({
               </div>
             </div>
 
-            {/* Communities Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredCommunities.map((comm) => {
-                const isSelected = selectedCommunityIds.includes(comm.id);
-
-                return (
-                  <div
-                    key={comm.id}
-                    onClick={() => toggleCommunity(comm.id)}
-                    className={`cursor-pointer rounded-xl p-4 transition-all duration-150 border select-none ${
-                      isSelected
-                        ? "border-[#C59B27] bg-[#0B1D33]/[0.03] shadow-xs ring-1 ring-[#C59B27]"
-                        : "border-[#C59B27]/30 bg-white hover:border-[#C59B27]/60 shadow-xs"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#C59B27]">
-                            {comm.categoryLabel}
-                          </span>
-                          <span className="text-slate-400 text-xs">•</span>
-                          <span className="text-[11px] text-slate-500 font-sans">
-                            {comm.memberCount}
-                          </span>
-                        </div>
-                        <h3 className="font-sans font-bold text-sm text-[#0B1D33]">
-                          {comm.name}
-                        </h3>
-                      </div>
-
-                      {/* Select Toggle Button */}
+            {/* Faculty-Matched Suggestions Row (Pills) */}
+            {facultyMatchedCommunities.length > 0 && (
+              <div className="space-y-2.5 p-4 rounded-2xl bg-white border border-[#C59B27]/30 shadow-xs">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#0B1D33]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#C59B27]" />
+                  <span>Faculty-Matched Suggestions for {studies.faculty}:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {facultyMatchedCommunities.map((item) => {
+                    const isSelected = selectedCommunityIds.includes(item.id);
+                    return (
                       <button
+                        key={`faculty-${item.id}`}
                         type="button"
-                        aria-label={isSelected ? "Leave community" : "Join community"}
-                        className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border transition-colors ${
+                        onClick={() => toggleCommunity(item.id)}
+                        className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-medium transition-all duration-150 select-none border ${
                           isSelected
-                            ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
-                            : "bg-slate-50 text-slate-400 border-slate-300 hover:border-[#C59B27]"
+                            ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27] shadow-xs"
+                            : "bg-[#FFFFFF] text-[#0B1D33] border-[#C59B27]/40 hover:border-[#C59B27] hover:bg-slate-50"
                         }`}
                       >
                         {isSelected ? (
-                          <Check className="w-4 h-4 text-[#FCD34D]" />
+                          <Check className="w-3.5 h-3.5 stroke-[2.5] text-[#FCD34D]" />
                         ) : (
-                          <Plus className="w-4 h-4" />
+                          <span className="text-[#C59B27]">{getCategoryIcon(item.category)}</span>
                         )}
+                        <span>{item.name}</span>
                       </button>
-                    </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
-                    <p className="text-xs text-slate-600 font-sans mt-2 line-clamp-2 leading-relaxed">
-                      {comm.description}
-                    </p>
+            {/* Pill Chips Container (TikTok / Spotify interest picker style) */}
+            <Card className="border border-[#C59B27]/30 bg-white p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                <span>Select Communities & Societies:</span>
+                <span>{filteredCommunities.length} available</span>
+              </div>
 
-                    {/* Metadata line */}
-                    <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-sans">
-                      <div>
-                        {comm.meetingSchedule} • {comm.venue}
-                      </div>
-                      {comm.patronName && (
-                        <div className="text-[10px] text-slate-400 italic">
-                          Patron: {comm.patronName}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+              {filteredCommunities.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-500">
+                  No societies match your query &quot;{searchQuery}&quot;. Try clearing the search or category filter.
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2.5 sm:gap-3">
+                  {filteredCommunities.map((comm) => {
+                    const isSelected = selectedCommunityIds.includes(comm.id);
+
+                    return (
+                      <button
+                        key={comm.id}
+                        type="button"
+                        onClick={() => toggleCommunity(comm.id)}
+                        className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs sm:text-sm font-medium transition-all duration-150 select-none border ${
+                          isSelected
+                            ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27] shadow-sm"
+                            : "bg-[#FFFFFF] text-[#0B1D33] border-[#C59B27]/40 hover:border-[#C59B27] hover:bg-slate-50"
+                        }`}
+                      >
+                        {isSelected ? (
+                          <Check className="w-3.5 h-3.5 stroke-[2.5] text-[#FCD34D]" />
+                        ) : (
+                          <span className="text-[#C59B27]">{getCategoryIcon(comm.category)}</span>
+                        )}
+                        <span>{comm.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Requirement reminder */}
+              <div className="mt-6 pt-4 border-t border-[#C59B27]/20 flex items-center justify-between text-xs text-slate-600 font-sans">
+                <div>
+                  Selected: <strong className="text-[#0B1D33]">{selectedCommunityIds.length}</strong> of minimum 3
+                </div>
+                {meetsStep2Requirement ? (
+                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Requirement satisfied
+                  </span>
+                ) : (
+                  <span className="text-[#C59B27] font-medium">
+                    Pick {3 - selectedCommunityIds.length} more to continue
+                  </span>
+                )}
+              </div>
+            </Card>
 
             {/* Step 2 Bottom Navigation */}
             <div className="flex items-center justify-between pt-4 border-t border-[#C59B27]/25">
@@ -622,181 +668,159 @@ export default function SmartOnboardingWizard({
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-wrap gap-2.5">
                 {facultyMatchedCommunities.map((item) => {
                   const isSelected = selectedCommunityIds.includes(item.id);
                   return (
-                    <div
+                    <button
                       key={item.id}
+                      type="button"
                       onClick={() => toggleCommunity(item.id)}
-                      className={`cursor-pointer p-3.5 rounded-xl border transition-all ${
+                      className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-xs sm:text-sm font-semibold transition-all select-none shadow-xs border ${
                         isSelected
-                          ? "border-[#C59B27] bg-[#0B1D33]/[0.04]"
-                          : "border-[#C59B27]/30 bg-white hover:border-[#C59B27]/60"
+                          ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27] ring-1 ring-[#C59B27]"
+                          : "bg-white text-[#0B1D33] border-[#C59B27]/40 hover:border-[#C59B27] hover:bg-slate-50"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <div className="text-[10px] uppercase font-bold text-[#C59B27]">
-                            Matched to {studies.department || "Your Major"}
-                          </div>
-                          <div className="text-xs font-bold text-[#0B1D33] font-sans">
-                            {item.name}
-                          </div>
-                        </div>
-                        <Badge
-                          variant={isSelected ? "info" : "default"}
-                          className="text-[10px]"
-                        >
-                          {isSelected ? "Added" : "+ Add"}
-                        </Badge>
-                      </div>
-                      <p className="text-[11px] text-slate-600 font-sans mt-1 line-clamp-1">
-                        {item.description}
-                      </p>
-                    </div>
+                      <span className={isSelected ? "text-[#FCD34D]" : "text-[#C59B27]"}>
+                        {isSelected ? <Check className="w-4 h-4 stroke-[2.5]" /> : getCategoryIcon(item.category)}
+                      </span>
+                      <span>{item.name}</span>
+                      <span className="text-[10px] text-[#C59B27] font-semibold uppercase">
+                        Matched Major
+                      </span>
+                    </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* B. Collegiate Notification Delivery Style */}
-            <div className="space-y-3">
+            {/* B. Official Notification Style */}
+            <Card className="border border-[#C59B27]/30 bg-white p-6 shadow-xs space-y-4">
               <div className="flex items-center gap-2">
                 <Bell className="w-4 h-4 text-[#C59B27]" />
-                <h3 className="font-serif font-bold text-base text-[#0B1D33]">
-                  Official Bulletin & Notification Style
+                <h3 className="font-serif font-bold text-sm text-[#0B1D33]">
+                  Official Broadcast Delivery Preference
                 </h3>
               </div>
+              <p className="text-xs text-slate-600 font-sans">
+                Choose how priority bulletins from Academic Affairs, Faculty Deans, and Campus Security are surfaced.
+              </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {NOTIFICATION_STYLE_OPTIONS.map((opt) => {
-                  const isSelected = notificationStyle === opt.id;
+                  const isChosen = notificationStyle === opt.id;
                   return (
                     <div
                       key={opt.id}
                       onClick={() => setNotificationStyle(opt.id)}
-                      className={`cursor-pointer p-4 rounded-xl border select-none transition-all ${
-                        isSelected
-                          ? "border-[#C59B27] bg-[#0B1D33]/[0.04] shadow-xs ring-1 ring-[#C59B27]"
-                          : "border-[#C59B27]/30 bg-white hover:border-[#C59B27]/50"
+                      className={`cursor-pointer p-4 rounded-xl border text-left transition-all ${
+                        isChosen
+                          ? "border-[#C59B27] bg-[#0B1D33]/[0.03] ring-1 ring-[#C59B27]"
+                          : "border-slate-200 bg-white hover:border-[#C59B27]/50"
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#0B1D33] font-sans">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-serif font-bold text-[#0B1D33]">
                           {opt.title}
                         </span>
-                        {isSelected && (
-                          <Check className="w-4 h-4 text-[#C59B27] shrink-0" />
-                        )}
+                        <div
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                            isChosen
+                              ? "border-[#C59B27] bg-[#0B1D33] text-[#FCD34D]"
+                              : "border-slate-300"
+                          }`}
+                        >
+                          {isChosen && <div className="w-1.5 h-1.5 rounded-full bg-[#FCD34D]" />}
+                        </div>
                       </div>
-                      <p className="text-[11px] text-slate-600 font-sans mt-1.5 leading-relaxed">
+                      <p className="text-xs text-slate-600 font-sans leading-relaxed">
                         {opt.description}
                       </p>
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </Card>
 
-            {/* C. Career & Internship Alert Tracks */}
-            <div className="space-y-3">
+            {/* C. Career Alerts & Internship Tracks */}
+            <Card className="border border-[#C59B27]/30 bg-white p-6 shadow-xs space-y-4">
               <div className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-[#C59B27]" />
-                <h3 className="font-serif font-bold text-base text-[#0B1D33]">
-                  Targeted Career, Internship & Grant Tracks
+                <h3 className="font-serif font-bold text-sm text-[#0B1D33]">
+                  Kenyan Industry Career Tracks & Internship Bulletins
                 </h3>
               </div>
+              <p className="text-xs text-slate-600 font-sans">
+                Receive fast-track notices for Safaricom, Microsoft ADC, Equity Leaders, and Kenya national innovation challenges.
+              </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {CAREER_ALERT_TRACKS.map((track) => {
-                  const isSelected = selectedCareerTracks.includes(track.id);
+                  const isChecked = selectedCareerTracks.includes(track.id);
                   return (
                     <div
                       key={track.id}
                       onClick={() => toggleCareerTrack(track.id)}
-                      className={`cursor-pointer p-3.5 rounded-xl border select-none transition-all ${
-                        isSelected
-                          ? "border-[#C59B27] bg-[#0B1D33]/[0.04] ring-1 ring-[#C59B27]"
-                          : "border-[#C59B27]/30 bg-white hover:border-[#C59B27]/60"
+                      className={`cursor-pointer p-3.5 rounded-xl border flex items-start gap-3 transition-all ${
+                        isChecked
+                          ? "border-[#C59B27] bg-[#0B1D33]/[0.03] ring-1 ring-[#C59B27]"
+                          : "border-slate-200 bg-white hover:border-[#C59B27]/50"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-1">
-                        <span className="text-[10px] font-bold text-[#C59B27] uppercase">
-                          {track.badge}
-                        </span>
-                        <div
-                          className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                            isSelected
-                              ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
-                              : "border-slate-300"
-                          }`}
-                        >
-                          {isSelected && <Check className="w-3 h-3 text-[#FCD34D]" />}
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {}} // handled by parent onClick
+                        className="mt-0.5 rounded border-slate-300 text-[#0B1D33] focus:ring-[#C59B27]"
+                      />
+                      <div className="space-y-0.5">
+                        <div className="text-xs font-bold text-[#0B1D33] font-sans">
+                          {track.title}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-sans">
+                          {track.description}
                         </div>
                       </div>
-                      <div className="text-xs font-bold text-[#0B1D33] font-sans mt-1">
-                        {track.title}
-                      </div>
-                      <p className="text-[11px] text-slate-600 font-sans mt-1 line-clamp-2 leading-relaxed">
-                        {track.description}
-                      </p>
                     </div>
                   );
                 })}
               </div>
-            </div>
+            </Card>
 
-            {/* Final Completion Summary & Button */}
-            <div className="p-4 rounded-xl border border-[#C59B27]/30 bg-[#0B1D33] text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
-              <div className="space-y-1 text-center sm:text-left">
-                <div className="text-sm font-serif font-bold text-[#FCD34D]">
-                  Ready to Enter Your Campus Hub
-                </div>
-                <div className="text-xs text-slate-300 font-sans">
-                  {selectedCommunityIds.length} societies joined • {selectedCareerTracks.length} career tracks active • Studies verified
-                </div>
-              </div>
+            {/* Step 3 Bottom Navigation */}
+            <div className="flex items-center justify-between pt-4 border-t border-[#C59B27]/25">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCurrentStep(2)}
+                className="border-[#C59B27]/40 text-[#0B1D33] text-xs gap-2"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Communities</span>
+              </Button>
 
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setCurrentStep(2)}
-                  className="border-[#C59B27]/40 text-white hover:bg-white/10 text-xs gap-1.5"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Back</span>
-                </Button>
-
-                <Button
-                  type="button"
-                  onClick={handleFinalSubmit}
-                  disabled={saving}
-                  className="bg-[#C59B27] hover:bg-[#C59B27]/90 text-[#0B1D33] font-bold px-6 py-2.5 h-auto text-sm gap-2 shadow-xs shrink-0"
-                >
-                  {saving ? (
-                    <span>Finalizing Enrollment...</span>
-                  ) : (
-                    <>
-                      <span>Complete Enrollment & Enter Hub</span>
-                      <ArrowRight className="w-4 h-4 text-[#0B1D33]" />
-                    </>
-                  )}
-                </Button>
-              </div>
+              <Button
+                type="button"
+                onClick={handleFinishOnboarding}
+                isLoading={saving}
+                className="bg-[#0B1D33] hover:bg-[#0B1D33]/90 text-white border border-[#C59B27]/40 font-semibold px-8 py-3 h-auto text-sm gap-2 shadow-xs"
+              >
+                <span>Save Preferences & Open Dashboard</span>
+                <ArrowRight className="w-4 h-4 text-[#FCD34D]" />
+              </Button>
             </div>
           </div>
         )}
-      </div>
 
-      {/* Collegiate Footer */}
-      <footer className="mt-12 text-center text-xs text-slate-500 border-t border-[#C59B27]/20 pt-4 font-sans">
-        <p>Summit Metropolitan University • Student Life & Campus Hub</p>
-        <p className="text-[11px] text-slate-400 mt-0.5">
-          Academic Identity and Course Records Managed via UAMS Registrar Integration
-        </p>
-      </footer>
+        {/* Institutional Footer */}
+        <footer className="mt-12 text-center text-xs text-slate-500 border-t border-[#C59B27]/20 pt-4 font-sans">
+          <p>Summit Metropolitan University • Student Life & Campus Hub</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">
+            Academic Identity and Course Records Managed via UAMS Registrar Integration
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }
