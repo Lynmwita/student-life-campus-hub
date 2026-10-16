@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#06101E] flex flex-col justify-between">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between">
       {/* Top Navbar */}
       <header className="border-b border-[#06101E] bg-[#0B1D33] text-white px-4 py-3.5 sm:px-6 shadow-xs">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
@@ -38,11 +38,11 @@ export default function HomePage() {
           The University Follows The Student
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-serif font-bold tracking-tight text-[#0B1D33] dark:text-white max-w-2xl leading-[1.15]">
+        <h1 className="text-4xl sm:text-6xl font-serif font-bold tracking-tight text-[#0B1D33] max-w-2xl leading-[1.15]">
           Official Campus Communications, Clean & Real-Time.
         </h1>
 
-        <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-xl font-sans">
+        <p className="text-base sm:text-lg text-slate-600 max-w-xl font-sans">
           Say goodbye to noisy WhatsApp groups and missed noticeboards. Connect directly to your verified university tenant for targeted broadcasts, priority alerts, and academic lecture timetables.
         </p>
 
@@ -60,7 +60,7 @@ export default function HomePage() {
             <Button
               variant="outline"
               size="lg"
-              className="w-full sm:w-auto text-base px-6 border-[#C59B27]/40 text-[#0B1D33] dark:text-[#FCD34D] hover:bg-[#0B1D33]/5"
+              className="w-full sm:w-auto text-base px-6 border-[#C59B27]/40 text-[#0B1D33] hover:bg-[#0B1D33]/5"
             >
               Preview Broadcast Feed
             </Button>
@@ -69,16 +69,16 @@ export default function HomePage() {
 
         {/* Feature Transparency Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-12 text-left w-full">
-          <div className="p-5 rounded-xl bg-white dark:bg-[#06101E] border border-[#C59B27]/30 hover:border-[#C59B27]/70 transition-all space-y-2 shadow-xs">
+          <div className="p-5 rounded-xl bg-white border border-[#C59B27]/30 hover:border-[#C59B27]/70 transition-all space-y-2 shadow-xs">
             <div className="flex items-center justify-between">
               <div className="w-8 h-8 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center">
                 <Megaphone className="w-4 h-4" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#0B1D33] dark:text-[#FCD34D] bg-[#0B1D33]/5 dark:bg-white/10 px-2 py-0.5 rounded border border-[#C59B27]/30">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#0B1D33] bg-[#0B1D33]/5 px-2 py-0.5 rounded border border-[#C59B27]/30">
                 Active • Phase 4
               </span>
             </div>
-            <h3 className="font-serif font-bold text-sm text-[#0B1D33] dark:text-white">
+            <h3 className="font-serif font-bold text-sm text-[#0B1D33]">
               Targeted Broadcasts
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed font-sans">
@@ -86,16 +86,16 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="p-5 rounded-xl bg-white dark:bg-[#06101E] border border-[#C59B27]/30 hover:border-[#C59B27]/70 transition-all space-y-2 shadow-xs">
+          <div className="p-5 rounded-xl bg-white border border-[#C59B27]/30 hover:border-[#C59B27]/70 transition-all space-y-2 shadow-xs">
             <div className="flex items-center justify-between">
               <div className="w-8 h-8 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center">
                 <Calendar className="w-4 h-4" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#0B1D33] dark:text-[#FCD34D] bg-[#0B1D33]/5 dark:bg-white/10 px-2 py-0.5 rounded border border-[#C59B27]/30">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#0B1D33] bg-[#0B1D33]/5 px-2 py-0.5 rounded border border-[#C59B27]/30">
                 Active • Phase 5
               </span>
             </div>
-            <h3 className="font-serif font-bold text-sm text-[#0B1D33] dark:text-white">
+            <h3 className="font-serif font-bold text-sm text-[#0B1D33]">
               Course Timetables & Campus Life
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed font-sans">
@@ -103,16 +103,16 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="p-5 rounded-xl bg-white dark:bg-[#06101E] border border-[#C59B27]/30 hover:border-[#C59B27]/70 transition-all space-y-2 shadow-xs opacity-90">
+          <div className="p-5 rounded-xl bg-white border border-[#C59B27]/30 hover:border-[#C59B27]/70 transition-all space-y-2 shadow-xs opacity-90">
             <div className="flex items-center justify-between">
               <div className="w-8 h-8 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center">
                 <HelpCircle className="w-4 h-4" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
                 Roadmap • Phase 6
               </span>
             </div>
-            <h3 className="font-serif font-bold text-sm text-[#0B1D33] dark:text-white">
+            <h3 className="font-serif font-bold text-sm text-[#0B1D33]">
               Direct Student Help Desk
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed font-sans">

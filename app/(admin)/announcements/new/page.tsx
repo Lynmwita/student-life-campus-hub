@@ -73,13 +73,13 @@ export default function NewAnnouncementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#06101E] py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Navigation & Header */}
         <div className="flex items-center justify-between">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#0B1D33] dark:hover:text-slate-200"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#0B1D33]"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Link>
@@ -89,10 +89,10 @@ export default function NewAnnouncementPage() {
         </div>
 
         <div>
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#0B1D33] dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#0B1D33]">
             Publish Official Campus Announcement
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 font-sans">
+          <p className="text-sm text-slate-500 mt-1 font-sans">
             Broadcast targeted notices to verified students of Summit Metropolitan University.
           </p>
         </div>
@@ -101,8 +101,8 @@ export default function NewAnnouncementPage() {
           <div
             className={`p-3.5 rounded-xl text-xs flex items-center justify-between border ${
               feedback.type === "success"
-                ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200"
-                : "bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-300 border-red-200"
+                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                : "bg-red-50 text-red-800 border-red-200"
             }`}
           >
             <span className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export default function NewAnnouncementPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Card className="border border-[#C59B27]/30 bg-white dark:bg-[#06101E] shadow-xs">
+          <Card className="border border-[#C59B27]/30 bg-white shadow-xs">
             <CardHeader>
               <CardTitle>1. Urgency & Priority Level</CardTitle>
               <CardDescription>
@@ -136,15 +136,15 @@ export default function NewAnnouncementPage() {
                     onClick={() => setPriority(p)}
                     className={`p-3.5 rounded-xl border text-left transition-all ${
                       priority === p
-                        ? "border-2 border-[#C59B27] bg-[#C59B27]/5 dark:bg-[#C59B27]/10 shadow-xs"
-                        : "border-slate-200 dark:border-slate-800 hover:border-[#C59B27]/40"
+                        ? "border-2 border-[#C59B27] bg-[#C59B27]/5 shadow-xs"
+                        : "border-slate-200 hover:border-[#C59B27]/40"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1.5">
                       <Badge variant={priorityBadges[p].variant}>{p}</Badge>
                       {priority === p && <span className="text-xs font-bold text-[#C59B27]">Selected</span>}
                     </div>
-                    <p className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                    <p className="font-bold text-xs text-slate-800">
                       {priorityBadges[p].label}
                     </p>
                     <p className="text-[11px] text-slate-500 mt-1 leading-snug">
@@ -156,7 +156,7 @@ export default function NewAnnouncementPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200/80 dark:border-slate-800 shadow-sm">
+          <Card className="border-slate-200/80 shadow-sm bg-white">
             <CardHeader>
               <CardTitle>2. Audience Scoping & Targeting</CardTitle>
               <CardDescription>
@@ -167,13 +167,13 @@ export default function NewAnnouncementPage() {
               <input type="hidden" name="universityId" value={selectedUniv.id} />
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
                   Target Audience Scope
                 </label>
                 <select
                   value={targetScope}
                   onChange={(e) => setTargetScope(e.target.value)}
-                  className="flex h-11 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
                 >
                   <option value="all">Institution-Wide (All Verified Students & Staff)</option>
                   <option value="campus">Specific Campus Only</option>
@@ -185,12 +185,12 @@ export default function NewAnnouncementPage() {
 
               {targetScope === "campus" && (
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
                     Target Campus
                   </label>
                   <select
                     name="campusId"
-                    className="flex h-11 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
                   >
                     {selectedUniv.campuses.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -203,12 +203,12 @@ export default function NewAnnouncementPage() {
 
               {targetScope === "faculty" && (
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
                     Target School / Faculty
                   </label>
                   <select
                     name="targetFaculty"
-                    className="flex h-11 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
                   >
                     {selectedUniv.faculties.map((f) => (
                       <option key={f} value={f}>
@@ -221,7 +221,7 @@ export default function NewAnnouncementPage() {
 
               {targetScope === "department" && (
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
                     Target Department
                   </label>
                   <Input
@@ -234,12 +234,12 @@ export default function NewAnnouncementPage() {
 
               {targetScope === "year" && (
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
                     Target Year of Study
                   </label>
                   <select
                     name="targetYear"
-                    className="flex h-11 w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
                   >
                     <option value="1">Year 1 (Freshmen)</option>
                     <option value="2">Year 2 (Sophomores)</option>
@@ -251,7 +251,7 @@ export default function NewAnnouncementPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200/80 dark:border-slate-800 shadow-sm">
+          <Card className="border-slate-200/80 shadow-sm bg-white">
             <CardHeader>
               <CardTitle>3. Announcement Content</CardTitle>
               <CardDescription>Compose the official broadcast message.</CardDescription>
@@ -267,7 +267,7 @@ export default function NewAnnouncementPage() {
               />
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700">
                   Detailed Announcement Message
                 </label>
                 <textarea
@@ -277,7 +277,7 @@ export default function NewAnnouncementPage() {
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   placeholder="Provide full instructions, links, dates, and relevant contacts..."
-                  className="flex w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
                 />
               </div>
 
@@ -291,19 +291,19 @@ export default function NewAnnouncementPage() {
           </Card>
 
           {/* Live Mobile Preview */}
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-900/40 p-4">
+          <div className="rounded-2xl border border-slate-200 bg-slate-100/70 p-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
               <Users className="w-4 h-4 text-blue-600" /> Live Student Mobile Feed Preview
             </h4>
-            <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
+            <div className="max-w-md mx-auto bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
               <div className="flex items-center justify-between">
                 <Badge variant={priorityBadges[priority].variant}>{priorityBadges[priority].label}</Badge>
                 <span className="text-[10px] text-slate-400">Just now</span>
               </div>
-              <h4 className="font-bold text-sm text-slate-900 dark:text-white">
+              <h4 className="font-bold text-sm text-slate-900">
                 {title || "Untitled Announcement"}
               </h4>
-              <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-3">
+              <p className="text-xs text-slate-600 line-clamp-3">
                 {content || "Announcement text preview will appear here..."}
               </p>
             </div>

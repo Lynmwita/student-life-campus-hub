@@ -35,21 +35,21 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#06101E] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8 text-center">
           <div className="w-14 h-14 rounded-xl bg-[#0B1D33] border border-[#C59B27]/40 flex items-center justify-center text-[#FCD34D] mb-3 shadow-xs">
             <GraduationCap className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-serif font-bold tracking-tight text-[#0B1D33] dark:text-white">
+          <h1 className="text-2xl font-serif font-bold tracking-tight text-[#0B1D33]">
             Student Life & Campus Hub
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-sans">
+          <p className="text-xs text-slate-500 mt-1 font-sans">
             Account recovery & security
           </p>
         </div>
 
-        <Card className="border border-[#C59B27]/30 bg-white dark:bg-[#06101E] shadow-xs">
+        <Card className="border border-[#C59B27]/30 bg-white shadow-xs">
           <CardHeader>
             <CardTitle>Reset Your Password</CardTitle>
             <CardDescription>
@@ -59,19 +59,19 @@ export default function ForgotPasswordPage() {
 
           <CardContent>
             {error && (
-              <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 flex items-start gap-2.5 text-red-700 dark:text-red-300 text-xs leading-relaxed">
+              <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2.5 text-red-700 text-xs leading-relaxed">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
             )}
 
             {success ? (
-              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-200 space-y-3">
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 space-y-3">
                 <div className="flex items-center gap-2 font-bold text-sm">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   Password reset link sent!
                 </div>
-                <p className="text-xs leading-relaxed text-emerald-700 dark:text-emerald-300">
+                <p className="text-xs leading-relaxed text-emerald-700">
                   Please check your university or personal email for instructions to choose a new password. The link will expire in 60 minutes.
                 </p>
                 <div className="pt-2">
@@ -105,10 +105,10 @@ export default function ForgotPasswordPage() {
             )}
           </CardContent>
 
-          <CardFooter className="flex flex-col space-y-3 text-center border-t border-slate-100 dark:border-slate-800/80 pt-4">
+          <CardFooter className="flex flex-col space-y-3 text-center border-t border-slate-100 pt-4">
             <Link
               href="/login"
-              className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center justify-center gap-1"
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Back to Sign In
             </Link>

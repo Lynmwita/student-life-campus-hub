@@ -188,7 +188,7 @@ export default function SmartOnboardingWizard({
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#06101E] flex flex-col justify-between py-10 px-4 sm:px-6">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-between py-10 px-4 sm:px-6">
       <div className="max-w-4xl mx-auto w-full space-y-8">
         {/* Top Institutional Header */}
         <div className="text-center space-y-3">
@@ -196,10 +196,10 @@ export default function SmartOnboardingWizard({
             <GraduationCap className="w-3.5 h-3.5 text-[#FCD34D]" />
             Official University Matriculation
           </div>
-          <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-[#0B1D33] dark:text-white">
+          <h1 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-[#0B1D33]">
             Smart Student Onboarding
           </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto leading-relaxed font-sans">
+          <p className="text-sm text-slate-600 max-w-xl mx-auto leading-relaxed font-sans">
             Personalize your collegiate hub in three simple steps: verify your enrolled studies, choose your campus societies, and set your academic alerts.
           </p>
         </div>
@@ -213,8 +213,8 @@ export default function SmartOnboardingWizard({
               onClick={() => setCurrentStep(1)}
               className={`flex items-center gap-2.5 text-xs font-semibold transition-colors ${
                 currentStep === 1
-                  ? "text-[#0B1D33] dark:text-[#FCD34D]"
-                  : "text-slate-600 dark:text-slate-400 hover:text-[#0B1D33]"
+                  ? "text-[#0B1D33]"
+                  : "text-slate-600 hover:text-[#0B1D33]"
               }`}
             >
               <span
@@ -223,7 +223,7 @@ export default function SmartOnboardingWizard({
                     ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
                     : currentStep > 1
                     ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
-                    : "bg-white dark:bg-[#06101E] text-slate-400 border-slate-300 dark:border-slate-800"
+                    : "bg-white text-slate-400 border-slate-300"
                 }`}
               >
                 {currentStep > 1 ? <Check className="w-3.5 h-3.5" /> : "1"}
@@ -241,8 +241,8 @@ export default function SmartOnboardingWizard({
               }}
               className={`flex items-center gap-2.5 text-xs font-semibold transition-colors ${
                 currentStep === 2
-                  ? "text-[#0B1D33] dark:text-[#FCD34D]"
-                  : "text-slate-600 dark:text-slate-400 hover:text-[#0B1D33]"
+                  ? "text-[#0B1D33]"
+                  : "text-slate-600 hover:text-[#0B1D33]"
               }`}
             >
               <span
@@ -251,7 +251,7 @@ export default function SmartOnboardingWizard({
                     ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
                     : currentStep > 2
                     ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
-                    : "bg-white dark:bg-[#06101E] text-slate-400 border-slate-300 dark:border-slate-800"
+                    : "bg-white text-slate-400 border-slate-300"
                 }`}
               >
                 {currentStep > 2 ? <Check className="w-3.5 h-3.5" /> : "2"}
@@ -269,15 +269,15 @@ export default function SmartOnboardingWizard({
               }}
               className={`flex items-center gap-2.5 text-xs font-semibold transition-colors ${
                 currentStep === 3
-                  ? "text-[#0B1D33] dark:text-[#FCD34D]"
-                  : "text-slate-600 dark:text-slate-400 hover:text-[#0B1D33]"
+                  ? "text-[#0B1D33]"
+                  : "text-slate-600 hover:text-[#0B1D33]"
               }`}
             >
               <span
                 className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs border ${
                   currentStep === 3
                     ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
-                    : "bg-white dark:bg-[#06101E] text-slate-400 border-slate-300 dark:border-slate-800"
+                    : "bg-white text-slate-400 border-slate-300"
                 }`}
               >
                 3
@@ -289,7 +289,7 @@ export default function SmartOnboardingWizard({
 
         {/* Error notification alert */}
         {error && (
-          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 flex items-start gap-3 text-red-700 dark:text-red-300 text-xs leading-relaxed">
+          <div className="p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 text-red-700 text-xs leading-relaxed">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -302,10 +302,10 @@ export default function SmartOnboardingWizard({
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#0B1D33] dark:text-white">
+                <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#0B1D33]">
                   Step 1: Confirm Enrolled Academic Studies
                 </h2>
-                <p className="text-xs text-slate-600 dark:text-slate-400 font-sans mt-0.5">
+                <p className="text-xs text-slate-600 font-sans mt-0.5">
                   Pre-filled directly from the University Academic Management System (UAMS) registry.
                 </p>
               </div>
@@ -315,7 +315,7 @@ export default function SmartOnboardingWizard({
             </div>
 
             {/* Academic Credentials Card */}
-            <Card className="border border-[#C59B27]/30 bg-white dark:bg-[#06101E] p-6 shadow-xs space-y-6">
+            <Card className="border border-[#C59B27]/30 bg-white p-6 shadow-xs space-y-6">
               {/* Institution Banner */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b border-[#C59B27]/20 gap-3">
                 <div className="flex items-center gap-3">
@@ -323,16 +323,16 @@ export default function SmartOnboardingWizard({
                     <Building2 className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-serif font-bold text-[#0B1D33] dark:text-white text-base">
+                    <h3 className="font-serif font-bold text-[#0B1D33] text-base">
                       {studies.universityName}
                     </h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-sans">
+                    <p className="text-xs text-slate-600 font-sans">
                       {studies.campusName} • Academic Year 2026/2027
                     </p>
                   </div>
                 </div>
 
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-xs font-semibold">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300 text-xs font-semibold">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                   Active Enrollment
                 </div>
@@ -340,43 +340,43 @@ export default function SmartOnboardingWizard({
 
               {/* Data Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                <div className="space-y-1 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                <div className="space-y-1 p-3 rounded-lg bg-slate-50 border border-slate-200">
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                     Full Student Name
                   </div>
-                  <div className="text-sm font-bold text-[#0B1D33] dark:text-white font-sans">
+                  <div className="text-sm font-bold text-[#0B1D33] font-sans">
                     {studies.fullName}
                   </div>
                   <div className="text-xs text-slate-500 font-sans">{studies.email}</div>
                 </div>
 
-                <div className="space-y-1 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                <div className="space-y-1 p-3 rounded-lg bg-slate-50 border border-slate-200">
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                     Registration Number
                   </div>
-                  <div className="text-sm font-mono font-bold text-[#0B1D33] dark:text-white">
+                  <div className="text-sm font-mono font-bold text-[#0B1D33]">
                     {studies.registrationNumber}
                   </div>
-                  <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                  <div className="text-xs text-emerald-600 font-semibold">
                     Registrar Synced
                   </div>
                 </div>
 
-                <div className="space-y-1 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                <div className="space-y-1 p-3 rounded-lg bg-slate-50 border border-slate-200">
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                     Academic Standing
                   </div>
-                  <div className="text-sm font-bold text-[#0B1D33] dark:text-white font-sans">
+                  <div className="text-sm font-bold text-[#0B1D33] font-sans">
                     Year {studies.yearOfStudy} • Semester {studies.semester}
                   </div>
                   <div className="text-xs text-slate-500 font-sans">Full-Time Undergraduate</div>
                 </div>
 
-                <div className="space-y-1 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 sm:col-span-2">
+                <div className="space-y-1 p-3 rounded-lg bg-slate-50 border border-slate-200 sm:col-span-2">
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                     Degree / Academic Program
                   </div>
-                  <div className="text-sm font-bold text-[#0B1D33] dark:text-white font-sans">
+                  <div className="text-sm font-bold text-[#0B1D33] font-sans">
                     {studies.programOfStudy}
                   </div>
                   <div className="text-xs text-slate-500 font-sans">
@@ -384,11 +384,11 @@ export default function SmartOnboardingWizard({
                   </div>
                 </div>
 
-                <div className="space-y-1 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                <div className="space-y-1 p-3 rounded-lg bg-slate-50 border border-slate-200">
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                     Assigned Campus
                   </div>
-                  <div className="text-sm font-bold text-[#0B1D33] dark:text-white font-sans">
+                  <div className="text-sm font-bold text-[#0B1D33] font-sans">
                     {studies.campusName}
                   </div>
                   <div className="text-xs text-slate-500 font-sans">Timetables mapped</div>
@@ -404,8 +404,8 @@ export default function SmartOnboardingWizard({
                     onChange={(e) => setStudiesConfirmed(e.target.checked)}
                     className="mt-1 h-4 w-4 rounded border-slate-300 text-[#0B1D33] focus:ring-[#C59B27]"
                   />
-                  <div className="text-xs leading-relaxed text-slate-700 dark:text-slate-300 font-sans">
-                    <span className="font-semibold text-[#0B1D33] dark:text-white">
+                  <div className="text-xs leading-relaxed text-slate-700 font-sans">
+                    <span className="font-semibold text-[#0B1D33]">
                       I confirm these academic records match my university admission.
                     </span>{" "}
                     My personalized academic timetable and official notices will be scoped to this department and cohort.
@@ -414,7 +414,7 @@ export default function SmartOnboardingWizard({
               </div>
 
               {/* Discrepancy Note */}
-              <div className="p-3 rounded-lg bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200 leading-relaxed font-sans">
+              <div className="p-3 rounded-lg bg-amber-50/70 border border-amber-200/80 text-xs text-amber-900 leading-relaxed font-sans">
                 <span className="font-semibold">Notice an academic discrepancy?</span> Your profile is synchronized with UAMS. You can safely complete onboarding today, and request adjustments with the Registrar&apos;s office through the student help desk.
               </div>
             </Card>
@@ -441,10 +441,10 @@ export default function SmartOnboardingWizard({
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#0B1D33] dark:text-white">
+                <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#0B1D33]">
                   Step 2: Join Kenyan Campus Societies & Fellowships
                 </h2>
-                <p className="text-xs text-slate-600 dark:text-slate-400 font-sans mt-0.5">
+                <p className="text-xs text-slate-600 font-sans mt-0.5">
                   Select at least 3 communities to join their event feeds, discussion circles, and notices.
                 </p>
               </div>
@@ -453,7 +453,7 @@ export default function SmartOnboardingWizard({
               <div
                 className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-semibold ${
                   meetsStep2Requirement
-                    ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-400"
+                    ? "bg-emerald-50 text-emerald-800 border-emerald-400"
                     : "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
                 }`}
               >
@@ -473,7 +473,7 @@ export default function SmartOnboardingWizard({
                   placeholder="Search societies, sports leagues, tech clubs, fellowships, or patrons..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-white dark:bg-[#06101E] border-[#C59B27]/30 focus:border-[#C59B27] focus:ring-[#C59B27] text-xs h-10"
+                  className="pl-10 bg-white border-[#C59B27]/30 focus:border-[#C59B27] focus:ring-[#C59B27] text-xs h-10"
                 />
               </div>
 
@@ -496,7 +496,7 @@ export default function SmartOnboardingWizard({
                     className={`px-3 py-1.5 rounded-md whitespace-nowrap font-medium text-xs transition-colors border ${
                       selectedCategory === cat.id
                         ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
-                        : "bg-white dark:bg-[#06101E] text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-[#C59B27]/50"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-[#C59B27]/50"
                     }`}
                   >
                     {cat.label}
@@ -516,8 +516,8 @@ export default function SmartOnboardingWizard({
                     onClick={() => toggleCommunity(comm.id)}
                     className={`cursor-pointer rounded-xl p-4 transition-all duration-150 border select-none ${
                       isSelected
-                        ? "border-[#C59B27] bg-[#0B1D33]/[0.03] dark:bg-[#0B1D33]/20 shadow-xs ring-1 ring-[#C59B27]"
-                        : "border-[#C59B27]/30 bg-white dark:bg-[#06101E] hover:border-[#C59B27]/60 shadow-xs"
+                        ? "border-[#C59B27] bg-[#0B1D33]/[0.03] shadow-xs ring-1 ring-[#C59B27]"
+                        : "border-[#C59B27]/30 bg-white hover:border-[#C59B27]/60 shadow-xs"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -531,7 +531,7 @@ export default function SmartOnboardingWizard({
                             {comm.memberCount}
                           </span>
                         </div>
-                        <h3 className="font-sans font-bold text-sm text-[#0B1D33] dark:text-white">
+                        <h3 className="font-sans font-bold text-sm text-[#0B1D33]">
                           {comm.name}
                         </h3>
                       </div>
@@ -543,7 +543,7 @@ export default function SmartOnboardingWizard({
                         className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 border transition-colors ${
                           isSelected
                             ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
-                            : "bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-300 dark:border-slate-700 hover:border-[#C59B27]"
+                            : "bg-slate-50 text-slate-400 border-slate-300 hover:border-[#C59B27]"
                         }`}
                       >
                         {isSelected ? (
@@ -554,12 +554,12 @@ export default function SmartOnboardingWizard({
                       </button>
                     </div>
 
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-sans mt-2 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-slate-600 font-sans mt-2 line-clamp-2 leading-relaxed">
                       {comm.description}
                     </p>
 
                     {/* Metadata line */}
-                    <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 font-sans">
+                    <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-sans">
                       <div>
                         {comm.meetingSchedule} • {comm.venue}
                       </div>
@@ -580,7 +580,7 @@ export default function SmartOnboardingWizard({
                 type="button"
                 variant="outline"
                 onClick={() => setCurrentStep(1)}
-                className="border-[#C59B27]/40 text-[#0B1D33] dark:text-slate-200 text-xs gap-2"
+                className="border-[#C59B27]/40 text-[#0B1D33] text-xs gap-2"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Back to Studies</span>
@@ -605,10 +605,10 @@ export default function SmartOnboardingWizard({
         {currentStep === 3 && (
           <div className="space-y-8">
             <div>
-              <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#0B1D33] dark:text-white">
+              <h2 className="text-xl sm:text-2xl font-serif font-bold text-[#0B1D33]">
                 Step 3: Smart Personalization & Career Alerts
               </h2>
-              <p className="text-xs text-slate-600 dark:text-slate-400 font-sans mt-0.5">
+              <p className="text-xs text-slate-600 font-sans mt-0.5">
                 Curate discipline-specific feeds, notification frequency, and career internship alert channels.
               </p>
             </div>
@@ -617,7 +617,7 @@ export default function SmartOnboardingWizard({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[#C59B27]" />
-                <h3 className="font-serif font-bold text-base text-[#0B1D33] dark:text-white">
+                <h3 className="font-serif font-bold text-base text-[#0B1D33]">
                   Faculty-Matched Recommendations for {studies.faculty}
                 </h3>
               </div>
@@ -631,8 +631,8 @@ export default function SmartOnboardingWizard({
                       onClick={() => toggleCommunity(item.id)}
                       className={`cursor-pointer p-3.5 rounded-xl border transition-all ${
                         isSelected
-                          ? "border-[#C59B27] bg-[#0B1D33]/[0.04] dark:bg-[#0B1D33]/30"
-                          : "border-[#C59B27]/30 bg-white dark:bg-[#06101E] hover:border-[#C59B27]/60"
+                          ? "border-[#C59B27] bg-[#0B1D33]/[0.04]"
+                          : "border-[#C59B27]/30 bg-white hover:border-[#C59B27]/60"
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -640,7 +640,7 @@ export default function SmartOnboardingWizard({
                           <div className="text-[10px] uppercase font-bold text-[#C59B27]">
                             Matched to {studies.department || "Your Major"}
                           </div>
-                          <div className="text-xs font-bold text-[#0B1D33] dark:text-white font-sans">
+                          <div className="text-xs font-bold text-[#0B1D33] font-sans">
                             {item.name}
                           </div>
                         </div>
@@ -651,7 +651,7 @@ export default function SmartOnboardingWizard({
                           {isSelected ? "Added" : "+ Add"}
                         </Badge>
                       </div>
-                      <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans mt-1 line-clamp-1">
+                      <p className="text-[11px] text-slate-600 font-sans mt-1 line-clamp-1">
                         {item.description}
                       </p>
                     </div>
@@ -664,7 +664,7 @@ export default function SmartOnboardingWizard({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Bell className="w-4 h-4 text-[#C59B27]" />
-                <h3 className="font-serif font-bold text-base text-[#0B1D33] dark:text-white">
+                <h3 className="font-serif font-bold text-base text-[#0B1D33]">
                   Official Bulletin & Notification Style
                 </h3>
               </div>
@@ -678,19 +678,19 @@ export default function SmartOnboardingWizard({
                       onClick={() => setNotificationStyle(opt.id)}
                       className={`cursor-pointer p-4 rounded-xl border select-none transition-all ${
                         isSelected
-                          ? "border-[#C59B27] bg-[#0B1D33]/[0.04] dark:bg-[#0B1D33]/30 shadow-xs ring-1 ring-[#C59B27]"
-                          : "border-[#C59B27]/30 bg-white dark:bg-[#06101E] hover:border-[#C59B27]/50"
+                          ? "border-[#C59B27] bg-[#0B1D33]/[0.04] shadow-xs ring-1 ring-[#C59B27]"
+                          : "border-[#C59B27]/30 bg-white hover:border-[#C59B27]/50"
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#0B1D33] dark:text-white font-sans">
+                        <span className="text-xs font-bold text-[#0B1D33] font-sans">
                           {opt.title}
                         </span>
                         {isSelected && (
                           <Check className="w-4 h-4 text-[#C59B27] shrink-0" />
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans mt-1.5 leading-relaxed">
+                      <p className="text-[11px] text-slate-600 font-sans mt-1.5 leading-relaxed">
                         {opt.description}
                       </p>
                     </div>
@@ -703,7 +703,7 @@ export default function SmartOnboardingWizard({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Briefcase className="w-4 h-4 text-[#C59B27]" />
-                <h3 className="font-serif font-bold text-base text-[#0B1D33] dark:text-white">
+                <h3 className="font-serif font-bold text-base text-[#0B1D33]">
                   Targeted Career, Internship & Grant Tracks
                 </h3>
               </div>
@@ -717,8 +717,8 @@ export default function SmartOnboardingWizard({
                       onClick={() => toggleCareerTrack(track.id)}
                       className={`cursor-pointer p-3.5 rounded-xl border select-none transition-all ${
                         isSelected
-                          ? "border-[#C59B27] bg-[#0B1D33]/[0.04] dark:bg-[#0B1D33]/30 ring-1 ring-[#C59B27]"
-                          : "border-[#C59B27]/30 bg-white dark:bg-[#06101E] hover:border-[#C59B27]/60"
+                          ? "border-[#C59B27] bg-[#0B1D33]/[0.04] ring-1 ring-[#C59B27]"
+                          : "border-[#C59B27]/30 bg-white hover:border-[#C59B27]/60"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-1">
@@ -729,16 +729,16 @@ export default function SmartOnboardingWizard({
                           className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
                             isSelected
                               ? "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
-                              : "border-slate-300 dark:border-slate-700"
+                              : "border-slate-300"
                           }`}
                         >
                           {isSelected && <Check className="w-3 h-3 text-[#FCD34D]" />}
                         </div>
                       </div>
-                      <div className="text-xs font-bold text-[#0B1D33] dark:text-white font-sans mt-1">
+                      <div className="text-xs font-bold text-[#0B1D33] font-sans mt-1">
                         {track.title}
                       </div>
-                      <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans mt-1 line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] text-slate-600 font-sans mt-1 line-clamp-2 leading-relaxed">
                         {track.description}
                       </p>
                     </div>
@@ -791,7 +791,7 @@ export default function SmartOnboardingWizard({
       </div>
 
       {/* Collegiate Footer */}
-      <footer className="mt-12 text-center text-xs text-slate-500 dark:text-slate-400 border-t border-[#C59B27]/20 pt-4 font-sans">
+      <footer className="mt-12 text-center text-xs text-slate-500 border-t border-[#C59B27]/20 pt-4 font-sans">
         <p>Summit Metropolitan University • Student Life & Campus Hub</p>
         <p className="text-[11px] text-slate-400 mt-0.5">
           Academic Identity and Course Records Managed via UAMS Registrar Integration

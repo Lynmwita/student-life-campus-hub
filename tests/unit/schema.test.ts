@@ -19,6 +19,7 @@ describe("Database Migrations Integrity", () => {
     expect(files).toContain("20261015000010_student_interests.sql");
     expect(files).toContain("20261015000011_timetables_unique_slot.sql");
     expect(files).toContain("20261015000012_onboarding_preferences.sql");
+    expect(files).toContain("20261015000013_help_desk_and_audit.sql");
   });
 
   it("defines all core tables in 20261015000001_core_schema.sql", () => {

@@ -16,6 +16,7 @@ import {
   Users,
   ArrowRight,
   Compass,
+  LifeBuoy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -122,7 +123,7 @@ export default function StudentDashboardPage() {
   const unreadCount = notices.filter((n) => !n.isRead).length;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#06101E] pb-16">
+    <div className="min-h-screen bg-[#F8FAFC] pb-16">
       {/* Top Navbar */}
       <header className="sticky top-0 z-30 bg-[#0B1D33] text-white border-b border-[#06101E] px-4 py-3 sm:px-6 shadow-xs">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
@@ -141,6 +142,15 @@ export default function StudentDashboardPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Link href="/admin">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs border-slate-700 text-slate-300 hover:text-white hover:bg-[#06101E]"
+              >
+                Staff Console
+              </Button>
+            </Link>
             <Link href="/announcements/new">
               <Button
                 variant="outline"
@@ -174,6 +184,12 @@ export default function StudentDashboardPage() {
             className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
           >
             <Compass className="w-3.5 h-3.5" /> Campus Life & Clubs
+          </Link>
+          <Link
+            href="/help-desk"
+            className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
+          >
+            <LifeBuoy className="w-3.5 h-3.5" /> Help Desk & Inquiries
           </Link>
         </div>
       </div>
@@ -212,7 +228,7 @@ export default function StudentDashboardPage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h3 className="font-serif font-bold text-sm text-[#0B1D33] dark:text-slate-200 flex items-center gap-1.5">
+              <h3 className="font-serif font-bold text-sm text-[#0B1D33] flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-[#C59B27]" />
                 Today&apos;s Lecture Schedule • {todayDayName}
               </h3>
@@ -230,16 +246,16 @@ export default function StudentDashboardPage() {
 
           {loading ? (
             <Card className="p-6 animate-pulse bg-white border-[#C59B27]/20">
-              <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4 mb-3" />
-              <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2" />
-              <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full" />
+              <div className="h-4 bg-slate-200 rounded w-1/4 mb-3" />
+              <div className="h-5 bg-slate-200 rounded w-3/4 mb-2" />
+              <div className="h-4 bg-slate-200 rounded w-full" />
             </Card>
           ) : todaySchedule.length === 0 ? (
-            <Card className="border border-[#C59B27]/30 p-6 bg-white dark:bg-[#06101E]">
+            <Card className="border border-[#C59B27]/30 p-6 bg-white">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-serif font-bold text-sm text-[#0B1D33] dark:text-slate-200">
+                    <span className="font-serif font-bold text-sm text-[#0B1D33]">
                       No Lectures Scheduled for {todayDayName}
                     </span>
                     <Badge variant="default">Free Study Day</Badge>
@@ -250,12 +266,12 @@ export default function StudentDashboardPage() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Link href="/timetable">
-                    <Button variant="outline" size="sm" className="text-xs border-[#C59B27]/40 text-[#0B1D33] dark:text-[#FCD34D]">
+                    <Button variant="outline" size="sm" className="text-xs border-[#C59B27]/40 text-[#0B1D33]">
                       <Calendar className="w-3.5 h-3.5 mr-1 text-[#C59B27]" /> Weekly Timetable
                     </Button>
                   </Link>
                   <Link href="/campus-life">
-                    <Button variant="outline" size="sm" className="text-xs border-[#C59B27]/40 text-[#0B1D33] dark:text-[#FCD34D]">
+                    <Button variant="outline" size="sm" className="text-xs border-[#C59B27]/40 text-[#0B1D33]">
                       <Users className="w-3.5 h-3.5 mr-1 text-[#C59B27]" /> Campus Life
                     </Button>
                   </Link>
@@ -267,30 +283,30 @@ export default function StudentDashboardPage() {
               {todaySchedule.map((entry) => (
                 <Card
                   key={entry.id}
-                  className="p-4 border border-[#C59B27]/30 hover:border-[#C59B27]/70 transition-all bg-white dark:bg-[#06101E] shadow-xs"
+                  className="p-4 border border-[#C59B27]/30 hover:border-[#C59B27]/70 transition-all bg-white shadow-xs"
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-[#0B1D33] dark:text-[#FCD34D] bg-[#0B1D33]/5 dark:bg-white/10 border border-[#C59B27]/30 px-2 py-0.5 rounded">
+                      <span className="font-mono text-xs font-bold text-[#0B1D33] bg-[#0B1D33]/5 border border-[#C59B27]/30 px-2 py-0.5 rounded">
                         {entry.code}
                       </span>
                       <span className="text-xs text-slate-500 font-sans">
                         {entry.creditHours} Credits
                       </span>
                     </div>
-                    <span className="text-xs font-bold font-mono text-[#0B1D33] dark:text-[#FCD34D] flex items-center gap-1 bg-[#0B1D33]/5 dark:bg-white/10 px-2 py-0.5 rounded border border-[#C59B27]/20">
+                    <span className="text-xs font-bold font-mono text-[#0B1D33] flex items-center gap-1 bg-[#0B1D33]/5 px-2 py-0.5 rounded border border-[#C59B27]/20">
                       <Clock className="w-3 h-3 text-[#C59B27]" /> {entry.startTime} - {entry.endTime}
                     </span>
                   </div>
 
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] dark:text-white leading-snug mb-1">
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] leading-snug mb-1">
                     {entry.name}
                   </h4>
 
                   <div className="space-y-1 text-xs text-slate-500 pt-1 border-t border-[#C59B27]/15 mt-2 font-sans">
                     <p className="flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-[#C59B27] shrink-0" />
-                      <span className="font-medium text-slate-700 dark:text-slate-300">{entry.venue}</span>
+                      <span className="font-medium text-slate-700">{entry.venue}</span>
                     </p>
                     <p className="flex items-center gap-1.5">
                       <GraduationCap className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -307,7 +323,7 @@ export default function StudentDashboardPage() {
         <section className="space-y-4 pt-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <h3 className="font-serif font-bold text-sm text-[#0B1D33] dark:text-slate-200 flex items-center gap-1.5">
+              <h3 className="font-serif font-bold text-sm text-[#0B1D33] flex items-center gap-1.5">
                 <Megaphone className="w-4 h-4 text-[#C59B27]" />
                 Targeted Campus Broadcasts
               </h3>
@@ -315,13 +331,13 @@ export default function StudentDashboardPage() {
             </div>
 
             {/* Filter buttons with solid gold indicator style */}
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-lg text-xs border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs border border-slate-200">
               <button
                 onClick={() => setSelectedFilter("all")}
                 className={`px-3 py-1 rounded font-semibold transition-colors ${
                   selectedFilter === "all"
                     ? "bg-[#0B1D33] text-[#FCD34D] shadow-xs border border-[#C59B27]/40"
-                    : "text-slate-600 dark:text-slate-400 hover:text-[#0B1D33]"
+                    : "text-slate-600 hover:text-[#0B1D33]"
                 }`}
               >
                 All Notices
@@ -331,7 +347,7 @@ export default function StudentDashboardPage() {
                 className={`px-3 py-1 rounded font-semibold transition-colors ${
                   selectedFilter === "P1"
                     ? "bg-red-800 text-white shadow-xs"
-                    : "text-slate-600 dark:text-slate-400 hover:text-red-700"
+                    : "text-slate-600 hover:text-red-700"
                 }`}
               >
                 Urgent (P1)
@@ -341,7 +357,7 @@ export default function StudentDashboardPage() {
                 className={`px-3 py-1 rounded font-semibold transition-colors ${
                   selectedFilter === "unread"
                     ? "bg-[#0B1D33] text-[#FCD34D] shadow-xs border border-[#C59B27]/40"
-                    : "text-slate-600 dark:text-slate-400 hover:text-[#0B1D33]"
+                    : "text-slate-600 hover:text-[#0B1D33]"
                 }`}
               >
                 Unread
@@ -365,19 +381,19 @@ export default function StudentDashboardPage() {
               <div className="space-y-3">
                 {[1, 2].map((i) => (
                   <Card key={i} className="p-6 animate-pulse bg-white border-[#C59B27]/20">
-                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/4 mb-3" />
-                    <div className="h-5 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2" />
-                    <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full" />
+                    <div className="h-4 bg-slate-200 rounded w-1/4 mb-3" />
+                    <div className="h-5 bg-slate-200 rounded w-3/4 mb-2" />
+                    <div className="h-4 bg-slate-200 rounded w-full" />
                   </Card>
                 ))}
               </div>
             ) : notices.length === 0 ? (
-              <Card className="border border-[#C59B27]/30 p-8 text-center bg-white dark:bg-[#06101E]">
+              <Card className="border border-[#C59B27]/30 p-8 text-center bg-white">
                 <div className="flex flex-col items-center justify-center space-y-3 max-w-md mx-auto">
                   <div className="w-12 h-12 rounded-xl bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center">
                     <Megaphone className="w-6 h-6" />
                   </div>
-                  <h4 className="font-serif font-bold text-[#0B1D33] dark:text-slate-200 text-sm">
+                  <h4 className="font-serif font-bold text-[#0B1D33] text-sm">
                     No Official Broadcasts at This Time
                   </h4>
                   <p className="text-xs text-slate-500 leading-relaxed">
@@ -385,7 +401,7 @@ export default function StudentDashboardPage() {
                   </p>
                   <div className="pt-2">
                     <Link href="/announcements/new">
-                      <Button variant="outline" size="sm" className="text-xs border-[#C59B27]/40 text-[#0B1D33] dark:text-[#FCD34D]">
+                      <Button variant="outline" size="sm" className="text-xs border-[#C59B27]/40 text-[#0B1D33]">
                         <PlusCircle className="w-3.5 h-3.5 mr-1 text-[#C59B27]" /> Post Campus Broadcast
                       </Button>
                     </Link>
@@ -393,7 +409,7 @@ export default function StudentDashboardPage() {
                 </div>
               </Card>
             ) : filteredNotices.length === 0 ? (
-              <Card className="border border-[#C59B27]/30 p-6 text-center text-xs text-slate-500 bg-white dark:bg-[#06101E]">
+              <Card className="border border-[#C59B27]/30 p-6 text-center text-xs text-slate-500 bg-white">
                 No announcements matching the selected filter.
               </Card>
             ) : (
@@ -402,7 +418,7 @@ export default function StudentDashboardPage() {
                 return (
                   <Card
                     key={notice.id}
-                    className={`transition-all bg-white dark:bg-[#06101E] ${
+                    className={`transition-all bg-white ${
                       isP1
                         ? "border-2 border-red-800/80 bg-red-50/20"
                         : !notice.isRead
@@ -425,7 +441,7 @@ export default function StudentDashboardPage() {
                             <Badge variant="default">P4 Notice</Badge>
                           )}
 
-                          <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                          <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
                             {notice.targetScope}
                           </span>
 
@@ -434,11 +450,11 @@ export default function StudentDashboardPage() {
                           </span>
                         </div>
 
-                        <h4 className="font-serif font-bold text-base text-[#0B1D33] dark:text-white leading-snug">
+                        <h4 className="font-serif font-bold text-base text-[#0B1D33] leading-snug">
                           {notice.title}
                         </h4>
 
-                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
+                        <p className="text-xs text-slate-600 leading-relaxed font-sans">
                           {notice.content}
                         </p>
                       </div>
@@ -449,7 +465,7 @@ export default function StudentDashboardPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleMarkRead(notice.id)}
-                            className="text-xs text-[#0B1D33] dark:text-[#FCD34D] border-[#C59B27]/40 hover:bg-[#0B1D33]/5"
+                            className="text-xs text-[#0B1D33] border-[#C59B27]/40 hover:bg-[#0B1D33]/5"
                           >
                             <CheckCircle className="w-3.5 h-3.5 mr-1 text-[#C59B27]" /> Mark as Read
                           </Button>
@@ -470,13 +486,13 @@ export default function StudentDashboardPage() {
         {/* Quick Links Section */}
         <section className="pt-2 grid sm:grid-cols-2 gap-4">
           <Link href="/timetable" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white dark:bg-[#06101E] shadow-xs">
+            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] dark:text-white group-hover:text-[#C59B27] transition-colors">
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
                     Weekly Timetable Schedules
                   </h4>
                   <p className="text-xs text-slate-500 font-sans">
@@ -488,13 +504,13 @@ export default function StudentDashboardPage() {
           </Link>
 
           <Link href="/campus-life" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white dark:bg-[#06101E] shadow-xs">
+            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] dark:text-white group-hover:text-[#C59B27] transition-colors">
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
                     Clubs, Communities & Events
                   </h4>
                   <p className="text-xs text-slate-500 font-sans">

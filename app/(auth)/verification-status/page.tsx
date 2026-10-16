@@ -17,7 +17,7 @@ export default function VerificationStatusPage() {
       description:
         "Your student registration has been received and is queued for verification by your university administration.",
       actionText: "Check Back Soon",
-      bg: "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800",
+      bg: "bg-amber-50 border-amber-200",
     },
     verified: {
       title: "Registration Verified!",
@@ -26,7 +26,7 @@ export default function VerificationStatusPage() {
       description:
         "Your student enrollment has been officially confirmed. You now have full access to your personalized campus hub.",
       actionText: "Enter Campus Hub",
-      bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800",
+      bg: "bg-emerald-50 border-emerald-200",
     },
     requires_review: {
       title: "Action Required",
@@ -35,7 +35,7 @@ export default function VerificationStatusPage() {
       description:
         "Your university administrator requested clarification on your student credentials or admission letter.",
       actionText: "Update Information",
-      bg: "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800",
+      bg: "bg-amber-50 border-amber-200",
     },
     rejected: {
       title: "Verification Unsuccessful",
@@ -44,20 +44,20 @@ export default function VerificationStatusPage() {
       description:
         "The registration details could not be validated against official university records. Please visit your faculty office.",
       actionText: "Contact Support",
-      bg: "bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800",
+      bg: "bg-rose-50 border-rose-200",
     },
   };
 
   const current = statusConfig[status];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#06101E] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4">
       <div className="w-full max-w-lg">
-        <Card className="border border-[#C59B27]/30 bg-white dark:bg-[#06101E] shadow-xs text-center">
+        <Card className="border border-[#C59B27]/30 bg-white shadow-xs text-center">
           <CardHeader className="flex flex-col items-center pt-8 pb-4">
             <div className="mb-4">{current.icon}</div>
             <div className="mb-2">{current.badge}</div>
-            <CardTitle className="text-2xl font-serif text-[#0B1D33] dark:text-white">{current.title}</CardTitle>
+            <CardTitle className="text-2xl font-serif text-[#0B1D33]">{current.title}</CardTitle>
             <CardDescription className="max-w-md mx-auto text-sm mt-2 font-sans">
               {current.description}
             </CardDescription>
@@ -65,21 +65,21 @@ export default function VerificationStatusPage() {
 
           <CardContent className="space-y-4">
             {/* Timeline */}
-            <div className="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-4 text-left border border-slate-200/60 dark:border-slate-800">
+            <div className="bg-slate-50 rounded-2xl p-4 text-left border border-slate-200/60">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
                 Verification Progress
               </h4>
-              <ol className="relative border-l border-slate-200 dark:border-slate-700 ml-3 space-y-4 text-xs">
+              <ol className="relative border-l border-slate-200 ml-3 space-y-4 text-xs">
                 <li className="ml-4">
                   <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-emerald-500" />
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  <p className="font-semibold text-slate-900">
                     Account Created
                   </p>
                   <p className="text-slate-500">Student account setup completed.</p>
                 </li>
                 <li className="ml-4">
                   <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-blue-500" />
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  <p className="font-semibold text-slate-900">
                     Application Submitted
                   </p>
                   <p className="text-slate-500">Academic credentials linked to university tenant.</p>
@@ -87,7 +87,7 @@ export default function VerificationStatusPage() {
                 <li className="ml-4">
                   <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-amber-400 animate-ping" />
                   <div className="absolute -left-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-amber-500" />
-                  <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  <p className="font-semibold text-slate-900">
                     Staff Verification Review
                   </p>
                   <p className="text-slate-500">University administration verifies registration.</p>
@@ -107,7 +107,7 @@ export default function VerificationStatusPage() {
             <form action={signOutAction} className="w-full">
               <button
                 type="submit"
-                className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 underline-offset-4 hover:underline"
+                className="text-xs text-slate-500 hover:text-slate-700 underline-offset-4 hover:underline"
               >
                 Sign out of this account
               </button>

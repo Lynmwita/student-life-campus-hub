@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-oxford-navy: #0B1D33;
   --color-deep-navy: #06101E;
@@ -19,13 +21,7 @@
   --soft-gold: #FCD34D;
   --slate-secondary: #64748B;
   --font-serif: "Cinzel", "Playfair Display", Georgia, Cambria, "Times New Roman", Times, serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #06101E;
-    --foreground: #F8FAFC;
-  }
+  color-scheme: light;
 }
 
 .font-serif {
@@ -33,6 +29,6 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: #F8FAFC;
+  color: #0B1D33;
 }

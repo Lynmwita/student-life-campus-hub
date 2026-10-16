@@ -43,21 +43,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-[#06101E] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8 text-center">
           <div className="w-14 h-14 rounded-xl bg-[#0B1D33] border border-[#C59B27]/40 flex items-center justify-center text-[#FCD34D] mb-3 shadow-xs">
             <GraduationCap className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-serif font-bold tracking-tight text-[#0B1D33] dark:text-white">
+          <h1 className="text-2xl font-serif font-bold tracking-tight text-[#0B1D33]">
             Student Life & Campus Hub
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-sans">
+          <p className="text-xs text-slate-500 mt-1 font-sans">
             The university follows the student.
           </p>
         </div>
 
-        <Card className="border border-[#C59B27]/30 bg-white dark:bg-[#06101E] shadow-xs">
+        <Card className="border border-[#C59B27]/30 bg-white shadow-xs">
           <CardHeader>
             <CardTitle>Welcome Back</CardTitle>
             <CardDescription>
@@ -67,7 +67,7 @@ export default function LoginPage() {
 
           <CardContent>
             {error && (
-              <div className="mb-5 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 flex items-start gap-2.5 text-red-700 dark:text-red-300 text-xs leading-relaxed">
+              <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2.5 text-red-700 text-xs leading-relaxed">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
@@ -89,7 +89,7 @@ export default function LoginPage() {
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-700">
                     Password
                   </label>
                   <Link
@@ -122,14 +122,14 @@ export default function LoginPage() {
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-3 text-center border-t border-[#C59B27]/15 pt-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
+            <p className="text-xs text-slate-500 font-sans">
               Accounts are provisioned by university administration. Contact your registrar office if you require credentials.
             </p>
           </CardFooter>
         </Card>
 
         {/* Pilot Inspection Demo Credentials */}
-        <div className="mt-6 p-4 rounded-xl border border-[#C59B27]/30 bg-white/70 dark:bg-[#0B1D33]/40 backdrop-blur-xs">
+        <div className="mt-6 p-4 rounded-xl border border-[#C59B27]/30 bg-white/70 backdrop-blur-xs">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-[#C59B27]">
               Pilot Demo Access
@@ -140,18 +140,18 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => fillDemo("student@summit.ac.ke", "StudentPassword123!")}
-              className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] dark:bg-[#06101E] transition-colors"
+              className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
             >
-              <div className="font-semibold text-[#0B1D33] dark:text-white">Student Demo</div>
+              <div className="font-semibold text-[#0B1D33]">Student Demo</div>
               <div className="text-[10px] text-slate-500 truncate">student@summit.ac.ke</div>
               <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Alex Mutua • 3-Step Flow</div>
             </button>
             <button
               type="button"
               onClick={() => fillDemo("registrar@summit.ac.ke", "StaffPassword123!")}
-              className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] dark:bg-[#06101E] transition-colors"
+              className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
             >
-              <div className="font-semibold text-[#0B1D33] dark:text-white">Registrar Demo</div>
+              <div className="font-semibold text-[#0B1D33]">Registrar Demo</div>
               <div className="text-[10px] text-slate-500 truncate">registrar@summit.ac.ke</div>
               <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Academic Affairs • Notice Ops</div>
             </button>

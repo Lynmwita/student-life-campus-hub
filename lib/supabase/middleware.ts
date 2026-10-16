@@ -48,6 +48,8 @@ export async function updateSession(request: NextRequest) {
     "/timetable",
     "/campus-life",
     "/announcements",
+    "/help-desk",
+    "/admin",
   ];
   const isOnboardingRoute =
     pathname === "/onboarding" || pathname.startsWith("/onboarding/");
