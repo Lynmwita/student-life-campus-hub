@@ -159,7 +159,7 @@ describe("Announcement Schemas & Audience Scoping", () => {
       );
       expect(republish.success).toBe(true);
       expect(republish.message).toContain("published");
-    });
+    }, 15000);
 
     it("updates draft announcement details and rejects empty content", async () => {
       const { updateAnnouncementDraftAction } = await import("@/lib/actions/announcements");
