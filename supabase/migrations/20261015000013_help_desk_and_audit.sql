@@ -330,9 +330,9 @@ CREATE POLICY "Admins can view audit log"
     USING (
         public.is_super_admin(auth.uid())
         OR EXISTS (
-            SELECT 1 FROM public.user_profiles up
-            WHERE up.id = auth.uid()
-              AND (up.role = 'admin' OR up.role = 'super_admin')
+            SELECT 1 FROM public.university_memberships m
+            WHERE m.user_id = auth.uid()
+              AND m.role IN ('admin', 'super_admin')
         )
     );
 
