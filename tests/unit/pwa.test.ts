@@ -98,5 +98,56 @@ describe("PWA Manifest & Asset Integrity (Tiny 6a)", () => {
       expect(fs.existsSync(offlinePagePath)).toBe(true);
     });
   });
+
+  describe("PWA Install Banner & Installability UX (Tiny 6c)", () => {
+    it("provides PwaInstallBanner component with 7-day dismissal cooldown and ARIA accessibility", () => {
+      const bannerPath = path.join(process.cwd(), "components/pwa-install-banner.tsx");
+      expect(fs.existsSync(bannerPath)).toBe(true);
+      const content = fs.readFileSync(bannerPath, "utf-8");
+
+      expect(content).toContain("campus_hub_install_dismissed");
+      expect(content).toContain("beforeinstallprompt");
+      expect(content).toContain("appinstalled");
+      expect(content).toContain("display-mode: standalone");
+      expect(content).toContain("role=\"region\"");
+      expect(content).toContain("aria-label=\"App Installation Banner\"");
+      expect(content).toContain("Install Campus Hub");
+      expect(content).toContain("Add to Home Screen");
+    });
+
+    it("ensures root layout mounts PwaInstallBanner and service worker register", () => {
+      const layoutPath = path.join(process.cwd(), "app/layout.tsx");
+      const layoutContent = fs.readFileSync(layoutPath, "utf-8");
+
+      expect(layoutContent).toContain("<PwaInstallBanner />");
+      expect(layoutContent).toContain("<PwaRegister />");
+      expect(layoutContent).toContain("apple-mobile-web-app-capable");
+      expect(layoutContent).toContain("apple-touch-icon");
+    });
+
+    it("verifies full installability checklist criteria", () => {
+      const manifestPath = path.join(process.cwd(), "public/manifest.json");
+      const manifestJson = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+
+      // 1. Valid names
+      expect(manifestJson.name).toBeTruthy();
+      expect(manifestJson.short_name).toBeTruthy();
+
+      // 2. Start URL & Display mode
+      expect(manifestJson.start_url).toBe("/");
+      expect(manifestJson.display).toBe("standalone");
+
+      // 3. Icons (standard 192, 512 + maskable)
+      const sizes = manifestJson.icons.map((i: { sizes: string }) => i.sizes);
+      expect(sizes).toContain("192x192");
+      expect(sizes).toContain("512x512");
+      const hasMaskable = manifestJson.icons.some((i: { purpose?: string }) => i.purpose === "maskable");
+      expect(hasMaskable).toBe(true);
+
+      // 4. Color theme
+      expect(manifestJson.theme_color).toBe("#0B1D33");
+      expect(manifestJson.background_color).toBe("#F8FAFC");
+    });
+  });
 });
 
