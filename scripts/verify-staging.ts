@@ -91,6 +91,12 @@ async function provisionUser(
   return userId;
 }
 
+import crypto from "crypto";
+
+function generateSecureRandomPassword() {
+  return `Sec_${crypto.randomBytes(12).toString("hex")}!9Aa`;
+}
+
 async function runStagingVerification() {
   console.log("==================================================================");
   console.log("   PHASE 7: REAL INFRASTRUCTURE STAGING VERIFICATION");
@@ -103,11 +109,11 @@ async function runStagingVerification() {
   console.log(">>> TINY 7b: Running End-to-End Journeys on Staging Database...");
 
   const studentEmail = `student.staging.${TEST_TIMESTAMP}@summit.ac.ke`;
-  const initialPassword = "InitialStudentPass123!@";
+  const initialPassword = generateSecureRandomPassword();
   const studentName = "Wanjiku Muthoni";
 
   const staffEmail = `staff.staging.${TEST_TIMESTAMP}@summit.ac.ke`;
-  const staffPassword = "StaffStagingPass123!@";
+  const staffPassword = generateSecureRandomPassword();
   const staffName = "Dr. Kiprono Langat";
 
   console.log("1. Provisioning real test student and staff accounts via Supabase Admin...");
@@ -257,7 +263,7 @@ async function runStagingVerification() {
 
   // Journey 4: Password-reset journey works end to end
   console.log("\n5. [Journey 4] Testing Password-Reset Journey End-to-End...");
-  const newPassword = "UpdatedSecurePassword2026!#";
+  const newPassword = generateSecureRandomPassword();
 
   // Step 4a: Generate official recovery link / token via Supabase Auth
   const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
@@ -312,11 +318,11 @@ async function runStagingVerification() {
   console.log(">>> TINY 7c: Running Security Verification on Staging Database...");
 
   const studentBEmail = `student.b.${TEST_TIMESTAMP}@summit.ac.ke`;
-  const studentBPass = "StudentBPass123!@";
+  const studentBPass = generateSecureRandomPassword();
   const studentBId = await provisionUser(studentBEmail, studentBPass, "Brian Otieno", "student");
 
   const staffBEmail = `staff.b.${TEST_TIMESTAMP}@summit.ac.ke`;
-  const staffBPass = "StaffBPass123!@";
+  const staffBPass = generateSecureRandomPassword();
   const staffBId = await provisionUser(staffBEmail, staffBPass, "Prof. Amina Abdi", "staff");
 
   const { data: studentBLogin } = await anonClient.auth.signInWithPassword({
@@ -434,10 +440,11 @@ async function runStagingVerification() {
 
   // Run Sync #1
   const studentEmailSync = sampleSyncPayload.students[0].email;
-  const initialUserId = await provisionUser(studentEmailSync, "TempPass123!@", "James Mwangi", "student");
+  const syncTempPass = generateSecureRandomPassword();
+  const initialUserId = await provisionUser(studentEmailSync, syncTempPass, "James Mwangi", "student");
 
   // Run Sync #2 (Duplicate sync)
-  const secondUserId = await provisionUser(studentEmailSync, "TempPass123!@", "James Mwangi", "student");
+  const secondUserId = await provisionUser(studentEmailSync, syncTempPass, "James Mwangi", "student");
   assert.strictEqual(initialUserId, secondUserId, "Sync must be idempotent: same auth UUID maintained");
 
   const { data: memCount } = await adminClient

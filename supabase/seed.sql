@@ -55,9 +55,8 @@ SET name = EXCLUDED.name,
 -- ------------------------------------------------------------------------------
 -- 4. Seed Official Staff Author for Broadcasts
 -- ------------------------------------------------------------------------------
--- WARNING: The credentials below (e.g. StaffPassword123!) are strictly for local
--- development and automated integration testing. NEVER use hardcoded or default
--- passwords in a production or public staging database.
+-- Note: Seed accounts generate unguessable crypt(gen_random_uuid()::text, gen_salt('bf'))
+-- to strictly ensure zero hardcoded or default passwords exist in database seeds.
 INSERT INTO auth.users (
     id,
     instance_id,
