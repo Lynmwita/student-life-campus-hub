@@ -10,6 +10,7 @@ import {
   Lock,
   PlusCircle,
   GraduationCap,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,6 +30,8 @@ export default function StaffAdminPanelPage() {
   const [auditLogs, setAuditLogs] = React.useState<AuditLogEntry[]>([]);
   const [notices, setNotices] = React.useState<NoticeItem[]>([]);
   const [queueFilter, setQueueFilter] = React.useState<string>("all");
+  const [searchRef, setSearchRef] = React.useState<string>("");
+  const [categoryFilter, setCategoryFilter] = React.useState<string>("all");
   const [loading, setLoading] = React.useState(true);
 
   // Status update modal state
@@ -192,8 +195,19 @@ export default function StaffAdminPanelPage() {
   }
 
   const filteredTickets = tickets.filter((t) => {
+    if (searchRef.trim() && !t.referenceNo.toLowerCase().includes(searchRef.toLowerCase().trim())) {
+      return false;
+    }
+    if (categoryFilter !== "all" && t.category !== categoryFilter) {
+      return false;
+    }
     if (queueFilter === "all") return true;
     if (queueFilter === "sensitive") return t.isSensitive;
+    if (queueFilter === "submitted") return t.status === "submitted";
+    if (queueFilter === "under_review" || queueFilter === "in_review") {
+      return t.status === "under_review" || t.status === "in_review" || t.status === "in_progress";
+    }
+    if (queueFilter === "resolved") return t.status === "resolved" || t.status === "closed";
     return t.status === queueFilter;
   });
 
@@ -327,6 +341,34 @@ export default function StaffAdminPanelPage() {
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                 </button>
+              </div>
+            </div>
+
+            {/* Search by Reference Number & Category Filter Bar */}
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="relative flex-1 w-full">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Input
+                  value={searchRef}
+                  onChange={(e) => setSearchRef(e.target.value)}
+                  placeholder="Search by reference number (e.g. HD-2026-0042)..."
+                  className="pl-9 text-xs h-9 bg-white"
+                />
+              </div>
+              <div className="w-full sm:w-48">
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full text-xs rounded-xl border border-[#C59B27]/40 bg-white text-[#0B1D33] p-2 focus:outline-none focus:ring-2 focus:ring-[#C59B27] h-9"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="academic">Academic</option>
+                  <option value="fees">Fees</option>
+                  <option value="accommodation">Accommodation</option>
+                  <option value="technical">Technical</option>
+                  <option value="complaint">Complaint</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
             </div>
 
@@ -664,6 +706,7 @@ export default function StaffAdminPanelPage() {
                     className="w-full text-xs rounded-xl border border-[#C59B27]/40 bg-white text-[#0B1D33] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
                   >
                     <option value="submitted">Submitted</option>
+                    <option value="in_review">In Review</option>
                     <option value="under_review">Under Review</option>
                     <option value="in_progress">In Progress</option>
                     <option value="resolved">Resolved</option>
