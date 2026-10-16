@@ -465,7 +465,7 @@ async function runStagingVerification() {
     .eq("user_id", studentId)
     .single();
   assert.strictEqual(studentMem?.role, "student", "Role must be student");
-  const isStudentAdmin = studentMem?.role === "admin" || studentMem?.role === "super_admin";
+  const isStudentAdmin = (studentMem?.role as string) === "admin" || (studentMem?.role as string) === "super_admin";
   assert.strictEqual(isStudentAdmin, false, "Students must NOT have admin clearance");
   console.log("   ✓ Route protection: Students lack admin clearance (isAdmin: false) and cannot access /admin.");
 

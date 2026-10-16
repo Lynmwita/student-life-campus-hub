@@ -128,35 +128,37 @@ export default function LoginPage() {
           </CardFooter>
         </Card>
 
-        {/* Pilot Inspection Demo Credentials */}
-        <div className="mt-6 p-4 rounded-xl border border-[#C59B27]/30 bg-white/70 backdrop-blur-xs">
-          <div className="flex items-center justify-between mb-2.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#C59B27]">
-              Pilot Demo Access
-            </span>
-            <span className="text-[10px] text-slate-400 font-mono">SMU Pilot Node</span>
+        {/* Pilot Inspection Demo Credentials - Strictly OFF in production builds */}
+        {process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true" && (
+          <div className="mt-6 p-4 rounded-xl border border-[#C59B27]/30 bg-white/70 backdrop-blur-xs">
+            <div className="flex items-center justify-between mb-2.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[#C59B27]">
+                Pilot Demo Access
+              </span>
+              <span className="text-[10px] text-slate-400 font-mono">SMU Pilot Node</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => fillDemo("student@summit.ac.ke", "StudentPassword123!")}
+                className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
+              >
+                <div className="font-semibold text-[#0B1D33]">Student Demo</div>
+                <div className="text-[10px] text-slate-500 truncate">student@summit.ac.ke</div>
+                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Alex Mutua • 3-Step Flow</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemo("registrar@summit.ac.ke", "StaffPassword123!")}
+                className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
+              >
+                <div className="font-semibold text-[#0B1D33]">Registrar Demo</div>
+                <div className="text-[10px] text-slate-500 truncate">registrar@summit.ac.ke</div>
+                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Academic Affairs • Notice Ops</div>
+              </button>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => fillDemo("student@summit.ac.ke", "StudentPassword123!")}
-              className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
-            >
-              <div className="font-semibold text-[#0B1D33]">Student Demo</div>
-              <div className="text-[10px] text-slate-500 truncate">student@summit.ac.ke</div>
-              <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Alex Mutua • 3-Step Flow</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemo("registrar@summit.ac.ke", "StaffPassword123!")}
-              className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
-            >
-              <div className="font-semibold text-[#0B1D33]">Registrar Demo</div>
-              <div className="text-[10px] text-slate-500 truncate">registrar@summit.ac.ke</div>
-              <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Academic Affairs • Notice Ops</div>
-            </button>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

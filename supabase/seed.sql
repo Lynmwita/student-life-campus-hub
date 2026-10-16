@@ -77,7 +77,7 @@ INSERT INTO auth.users (
     'authenticated',
     'authenticated',
     'registrar@summit.ac.ke',
-    crypt('StaffPassword123!', gen_salt('bf')),
+    crypt(gen_random_uuid()::text, gen_salt('bf')),
     timezone('utc'::text, now()),
     timezone('utc'::text, now()),
     timezone('utc'::text, now()),

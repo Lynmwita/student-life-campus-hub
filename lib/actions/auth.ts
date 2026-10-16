@@ -74,8 +74,12 @@ export async function loginAction(formData: FormData): Promise<ActionResponse> {
     // Network or placeholder error, fall through to check demo credentials
   }
 
-  // If Supabase failed or placeholder URL is in use, verify demo account
-  if (demoAccount && validated.data.password === demoAccount.password) {
+  // Only verify demo account in local development when explicitly enabled
+  const allowDemoFallback =
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true";
+
+  if (allowDemoFallback && demoAccount && validated.data.password === demoAccount.password) {
     const cookieStore = await cookies();
     cookieStore.set("smu_demo_session", emailLower, {
       path: "/",
@@ -92,7 +96,7 @@ export async function loginAction(formData: FormData): Promise<ActionResponse> {
 
   return {
     success: false,
-    error: "Invalid email or password. Use demo credentials to inspect.",
+    error: "Invalid email or password.",
   };
 }
 

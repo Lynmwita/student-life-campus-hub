@@ -161,4 +161,33 @@ describe("Pre-Pilot Staging & Security Verification", () => {
     expect(CAREER_ALERT_TRACKS.length).toBeGreaterThanOrEqual(5);
     expect(NOTIFICATION_STYLE_OPTIONS.length).toBe(3);
   });
+
+  it("V-13: Production Lockdown — Pilot Demo Access quick-fill card is OFF in production builds", () => {
+    const loginPageSource = fs.readFileSync(
+      path.join(rootDir, "app/(auth)/login/page.tsx"),
+      "utf-8"
+    );
+    expect(loginPageSource).toContain('process.env.NODE_ENV !== "production"');
+    expect(loginPageSource).toContain('process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true"');
+  });
+
+  it("V-14: Production Lockdown — Demo passwords do not exist in seed.sql", () => {
+    const seedSource = fs.readFileSync(
+      path.join(rootDir, "supabase/seed.sql"),
+      "utf-8"
+    );
+    expect(seedSource).not.toContain("crypt('StaffPassword123!'");
+    expect(seedSource).not.toContain("crypt('StudentPassword123!'");
+    expect(seedSource).not.toContain("crypt('AdminPassword123!'");
+  });
+
+  it("V-15: Production Lockdown — Auth action strictly blocks demo fallback in production", () => {
+    const authActionSource = fs.readFileSync(
+      path.join(rootDir, "lib/actions/auth.ts"),
+      "utf-8"
+    );
+    expect(authActionSource).toContain('process.env.NODE_ENV !== "production"');
+    expect(authActionSource).toContain('process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true"');
+    expect(authActionSource).toContain('error: "Invalid email or password."');
+  });
 });
