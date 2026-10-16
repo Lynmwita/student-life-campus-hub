@@ -60,4 +60,43 @@ describe("PWA Manifest & Asset Integrity (Tiny 6a)", () => {
     expect(json.theme_color).toBe("#0B1D33");
     expect(json.background_color).toBe("#F8FAFC");
   });
+
+  describe("Service Worker & Offline Fallback (Tiny 6b)", () => {
+    it("provides public/sw.js with offline-first static caching and precaching", () => {
+      const swPath = path.join(process.cwd(), "public/sw.js");
+      expect(fs.existsSync(swPath)).toBe(true);
+      const swContent = fs.readFileSync(swPath, "utf-8");
+
+      expect(swContent).toContain("PRECACHE_ASSETS");
+      expect(swContent).toContain("/offline.html");
+      expect(swContent).toContain("/manifest.json");
+      expect(swContent).toContain("caches.open");
+    });
+
+    it("strictly forbids caching of authenticated and API data requests in public/sw.js", () => {
+      const swPath = path.join(process.cwd(), "public/sw.js");
+      const swContent = fs.readFileSync(swPath, "utf-8");
+
+      expect(swContent).toContain("isPrivateOrAuthenticatedRequest");
+      expect(swContent).toContain("/api/");
+      expect(swContent).toContain("authorization");
+      expect(swContent).toContain("supabase");
+    });
+
+    it("provides an offline fallback HTML page in Academic Navy & Gold", () => {
+      const offlineHtmlPath = path.join(process.cwd(), "public/offline.html");
+      expect(fs.existsSync(offlineHtmlPath)).toBe(true);
+      const html = fs.readFileSync(offlineHtmlPath, "utf-8");
+
+      expect(html).toContain("You&apos;re Currently Offline");
+      expect(html).toContain("#0B1D33"); // Oxford Navy
+      expect(html).toContain("#C59B27"); // Academic Gold
+    });
+
+    it("provides a dedicated Next.js /offline page component", () => {
+      const offlinePagePath = path.join(process.cwd(), "app/offline/page.tsx");
+      expect(fs.existsSync(offlinePagePath)).toBe(true);
+    });
+  });
 });
+
