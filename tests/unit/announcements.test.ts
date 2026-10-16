@@ -130,4 +130,57 @@ describe("Announcement Schemas & Audience Scoping", () => {
       expect(result.data.isPublished).toBe(false);
     }
   });
+
+  describe("Admin Announcements Operations", () => {
+    it("exports getAdminAnnouncementsAction and fetches draft and published notices", async () => {
+      const { getAdminAnnouncementsAction } = await import("@/lib/actions/announcements");
+      const res = await getAdminAnnouncementsAction();
+      expect(res.success).toBe(true);
+      expect(Array.isArray(res.announcements)).toBe(true);
+      expect(res.announcements.length).toBeGreaterThan(0);
+      const hasDraft = res.announcements.some((n) => n.isPublished === false);
+      const hasPublished = res.announcements.some((n) => n.isPublished === true);
+      expect(hasDraft).toBe(true);
+      expect(hasPublished).toBe(true);
+    });
+
+    it("toggles announcement publication state between published and draft", async () => {
+      const { toggleAnnouncementPublishAction } = await import("@/lib/actions/announcements");
+      const res = await toggleAnnouncementPublishAction(
+        "00000000-0000-0000-0000-000000000201",
+        false
+      );
+      expect(res.success).toBe(true);
+      expect(res.message).toContain("unpublished");
+
+      const republish = await toggleAnnouncementPublishAction(
+        "00000000-0000-0000-0000-000000000201",
+        true
+      );
+      expect(republish.success).toBe(true);
+      expect(republish.message).toContain("published");
+    });
+
+    it("updates draft announcement details and rejects empty content", async () => {
+      const { updateAnnouncementDraftAction } = await import("@/lib/actions/announcements");
+      const emptyForm = new FormData();
+      emptyForm.set("title", "");
+      emptyForm.set("content", "");
+      const rejectRes = await updateAnnouncementDraftAction("test-id", emptyForm);
+      expect(rejectRes.success).toBe(false);
+      expect(rejectRes.message).toContain("required");
+
+      const validForm = new FormData();
+      validForm.set("title", "Updated Draft Bursary Window");
+      validForm.set("content", "Updated comprehensive bursary guidelines for semester.");
+      validForm.set("priority", "P2");
+      validForm.set("targetScope", "All Students");
+      const successRes = await updateAnnouncementDraftAction(
+        "00000000-0000-0000-0000-000000000205",
+        validForm
+      );
+      expect(successRes.success).toBe(true);
+      expect(successRes.message).toContain("Draft updated successfully");
+    });
+  });
 });

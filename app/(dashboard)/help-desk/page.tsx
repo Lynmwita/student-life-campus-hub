@@ -692,14 +692,6 @@ export default function StudentHelpDeskPage() {
                   </div>
                 </form>
               )}
-                    variant="primary"
-                    isLoading={submitLoading}
-                    className="text-xs"
-                  >
-                    Submit Request <ArrowRight className="w-3.5 h-3.5 ml-1 text-[#FCD34D]" />
-                  </Button>
-                </div>
-              </form>
             </div>
           </div>
         )}

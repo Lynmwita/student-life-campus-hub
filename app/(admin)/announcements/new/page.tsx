@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Megaphone, AlertCircle, CheckCircle2, ArrowLeft, Send, Users } from "lucide-react";
+import { Megaphone, AlertCircle, CheckCircle2, ArrowLeft, Send, Users, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { createAnnouncementAction } from "@/lib/actions/announcements";
+import { getUserRoleAction } from "@/lib/actions/auth";
 
 const PILOT_UNIVERSITIES = [
   {
@@ -27,12 +28,19 @@ const PILOT_UNIVERSITIES = [
 ];
 
 export default function NewAnnouncementPage() {
+  const [isAdmin, setIsAdmin] = React.useState<boolean | null>(null);
   const [priority, setPriority] = React.useState<"P1" | "P2" | "P3" | "P4">("P3");
   const [targetScope, setTargetScope] = React.useState<string>("all");
   const [title, setTitle] = React.useState<string>("");
   const [content, setContent] = React.useState<string>("");
   const [loading, setLoading] = React.useState(false);
   const [feedback, setFeedback] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  React.useEffect(() => {
+    getUserRoleAction().then((res) => {
+      setIsAdmin(res.isAdmin);
+    });
+  }, []);
 
   const selectedUniv = PILOT_UNIVERSITIES[0];
 
@@ -71,6 +79,35 @@ export default function NewAnnouncementPage() {
     P3: { label: "P3 - Campus Life", variant: "info" as const, desc: "Events, clubs, career fairs, and student affairs." },
     P4: { label: "P4 - General Info", variant: "default" as const, desc: "Routine announcements and advisory notices." },
   };
+
+  if (isAdmin === false) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 font-sans">
+        <div className="p-8 text-center bg-white rounded-2xl border border-red-200/80 shadow-xs max-w-md w-full space-y-4">
+          <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-200">
+            <Lock className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-serif font-bold text-lg text-[#0B1D33]">Access Restricted</h3>
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              Publishing official institutional announcements requires <strong>University Administrator</strong> or <strong>Super Admin</strong> clearance. Staff members without administrative privileges are not authorized to create announcements.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link href="/admin">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs border-[#C59B27]/40 text-[#0B1D33] hover:bg-slate-50"
+              >
+                Return to Admin Console
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 sm:px-6 lg:px-8">

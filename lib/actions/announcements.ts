@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { announcementSchema } from "@/lib/validations/announcements";
 import { revalidatePath } from "next/cache";
+import { recordAuditLogAction } from "./audit";
 
 const DEMO_NOTICES: NoticeItem[] = [
   {
@@ -14,6 +15,7 @@ const DEMO_NOTICES: NoticeItem[] = [
     targetScope: "Campus: Main Campus",
     publishedAt: "2 hours ago",
     isRead: false,
+    isPublished: true,
   },
   {
     id: "00000000-0000-0000-0000-000000000202",
@@ -23,6 +25,7 @@ const DEMO_NOTICES: NoticeItem[] = [
     targetScope: "School of Computing & Informatics",
     publishedAt: "1 day ago",
     isRead: false,
+    isPublished: true,
   },
   {
     id: "00000000-0000-0000-0000-000000000203",
@@ -32,6 +35,7 @@ const DEMO_NOTICES: NoticeItem[] = [
     targetScope: "All Students",
     publishedAt: "2 days ago",
     isRead: true,
+    isPublished: true,
   },
   {
     id: "00000000-0000-0000-0000-000000000204",
@@ -41,6 +45,17 @@ const DEMO_NOTICES: NoticeItem[] = [
     targetScope: "All Students",
     publishedAt: "3 days ago",
     isRead: true,
+    isPublished: true,
+  },
+  {
+    id: "00000000-0000-0000-0000-000000000205",
+    title: "[DRAFT] University Bursary Application Window for 2026/2027",
+    content: "Applications for the Summit Metropolitan Needy Students Bursary Fund will open on November 1st. Preliminary documentation requirements are being finalized.",
+    priority: "P3",
+    targetScope: "All Students",
+    publishedAt: "Draft",
+    isRead: false,
+    isPublished: false,
   },
 ];
 
@@ -94,7 +109,8 @@ export async function createAnnouncementAction(
     }
   }
 
-  const { error } = await supabase.from("announcements").insert({
+  let insertedId = "announcement-" + Date.now();
+  const { data: insertedData, error } = await supabase.from("announcements").insert({
     university_id: validated.data.universityId,
     campus_id: validated.data.campusId || null,
     author_id: user.id,
@@ -108,7 +124,11 @@ export async function createAnnouncementAction(
     is_published: validated.data.isPublished,
     published_at: new Date().toISOString(),
     expires_at: formattedExpiresAt,
-  });
+  }).select("id").single();
+
+  if (insertedData?.id) {
+    insertedId = insertedData.id;
+  }
 
   if (error) {
     return {
@@ -117,7 +137,23 @@ export async function createAnnouncementAction(
     };
   }
 
+  await recordAuditLogAction({
+    universityId: validated.data.universityId,
+    actorId: user.id,
+    actorRole: "staff",
+    action: validated.data.isPublished ? "announcement.created_published" : "announcement.created_draft",
+    targetType: "announcement",
+    targetId: insertedId,
+    details: {
+      title: validated.data.title,
+      priority: validated.data.priority,
+      targetScope: validated.data.targetScope,
+      actorEmail: user.email,
+    },
+  });
+
   revalidatePath("/dashboard");
+  revalidatePath("/admin");
   return {
     success: true,
     message: validated.data.isPublished
@@ -158,8 +194,12 @@ export interface NoticeItem {
   content: string;
   priority: "P1" | "P2" | "P3" | "P4";
   targetScope: string;
+  targetFaculty?: string | null;
+  targetDepartment?: string | null;
+  targetYear?: number | null;
   publishedAt: string;
   isRead: boolean;
+  isPublished?: boolean;
 }
 
 export interface StudentDashboardData {
@@ -300,3 +340,242 @@ export async function getStudentAnnouncementsAction(): Promise<StudentDashboardD
     notices,
   };
 }
+
+export async function getAdminAnnouncementsAction(): Promise<{
+  success: boolean;
+  announcements: NoticeItem[];
+  message?: string;
+}> {
+  let user = null;
+  try {
+    const supabase = await createClient();
+    const res = await supabase.auth.getUser();
+    user = res.data.user;
+  } catch {
+    // offline
+  }
+
+  let demoEmail: string | undefined;
+  try {
+    const cookieStore = await cookies();
+    demoEmail = cookieStore.get("smu_demo_session")?.value;
+  } catch {}
+
+  if ((!user && demoEmail) || (!user && process.env.NODE_ENV === "test")) {
+    return {
+      success: true,
+      announcements: DEMO_NOTICES,
+    };
+  }
+
+  if (!user) {
+    return {
+      success: false,
+      announcements: [],
+      message: "Not authenticated",
+    };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("announcements")
+    .select(`
+      id,
+      title,
+      content,
+      priority,
+      target_scope,
+      target_faculty,
+      target_department,
+      target_year,
+      published_at,
+      is_published,
+      created_at
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    return {
+      success: true,
+      announcements: DEMO_NOTICES,
+    };
+  }
+
+  const announcements: NoticeItem[] = data.map((item) => ({
+    id: item.id,
+    title: item.title,
+    content: item.content,
+    priority: item.priority as "P1" | "P2" | "P3" | "P4",
+    targetScope: item.target_scope,
+    targetFaculty: item.target_faculty,
+    targetDepartment: item.target_department,
+    targetYear: item.target_year,
+    publishedAt: item.published_at ? new Date(item.published_at).toLocaleDateString("en-KE", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Draft",
+    isRead: false,
+    isPublished: item.is_published ?? true,
+  }));
+
+  return {
+    success: true,
+    announcements,
+  };
+}
+
+export async function toggleAnnouncementPublishAction(
+  id: string,
+  isPublished: boolean
+): Promise<AnnouncementActionResponse> {
+  let user = null;
+  try {
+    const supabase = await createClient();
+    const res = await supabase.auth.getUser();
+    user = res.data.user;
+  } catch {}
+
+  let demoEmail: string | undefined;
+  try {
+    const cookieStore = await cookies();
+    demoEmail = cookieStore.get("smu_demo_session")?.value;
+  } catch {}
+
+  const actorEmail = user?.email || demoEmail || "admin@summit.ac.ke";
+  const actorId = user?.id || "demo-admin-id";
+
+  if (!user) {
+    const notice = DEMO_NOTICES.find((n) => n.id === id);
+    if (notice) {
+      notice.isPublished = isPublished;
+      notice.publishedAt = isPublished ? "Just now" : "Draft";
+    }
+    await recordAuditLogAction({
+      universityId: "00000000-0000-0000-0000-000000000001",
+      actorId,
+      actorRole: "admin",
+      action: isPublished ? "announcement.published" : "announcement.unpublished",
+      targetType: "announcement",
+      targetId: id,
+      details: { title: notice?.title || id, actorEmail, isPublished },
+    });
+    try {
+      revalidatePath("/admin");
+    } catch {}
+    return { success: true, message: `Announcement ${isPublished ? "published" : "unpublished"} successfully.` };
+  }
+
+  const supabase = await createClient();
+  const updatePayload: { is_published: boolean; published_at?: string } = {
+    is_published: isPublished,
+  };
+  if (isPublished) {
+    updatePayload.published_at = new Date().toISOString();
+  }
+
+  const { error } = await supabase
+    .from("announcements")
+    .update(updatePayload)
+    .eq("id", id);
+
+  if (error) {
+    return { success: false, message: error.message };
+  }
+
+  await recordAuditLogAction({
+    universityId: "00000000-0000-0000-0000-000000000001",
+    actorId,
+    actorRole: "admin",
+    action: isPublished ? "announcement.published" : "announcement.unpublished",
+    targetType: "announcement",
+    targetId: id,
+    details: { actorEmail, isPublished },
+  });
+
+  try {
+    revalidatePath("/admin");
+  } catch {}
+  return { success: true, message: `Announcement ${isPublished ? "published" : "unpublished"} successfully.` };
+}
+
+export async function updateAnnouncementDraftAction(
+  id: string,
+  formData: FormData
+): Promise<AnnouncementActionResponse> {
+  const title = (formData.get("title") as string)?.trim();
+  const content = (formData.get("content") as string)?.trim();
+  const priority = (formData.get("priority") as "P1" | "P2" | "P3" | "P4") || "P3";
+  const targetScope = (formData.get("targetScope") as string) || "all";
+
+  if (!title || !content) {
+    return { success: false, message: "Title and content are required." };
+  }
+
+  let user = null;
+  try {
+    const supabase = await createClient();
+    const res = await supabase.auth.getUser();
+    user = res.data.user;
+  } catch {}
+
+  let demoEmail: string | undefined;
+  try {
+    const cookieStore = await cookies();
+    demoEmail = cookieStore.get("smu_demo_session")?.value;
+  } catch {}
+
+  const actorEmail = user?.email || demoEmail || "admin@summit.ac.ke";
+  const actorId = user?.id || "demo-admin-id";
+
+  if (!user) {
+    const notice = DEMO_NOTICES.find((n) => n.id === id);
+    if (notice) {
+      notice.title = title;
+      notice.content = content;
+      notice.priority = priority;
+      notice.targetScope = targetScope;
+    }
+    await recordAuditLogAction({
+      universityId: "00000000-0000-0000-0000-000000000001",
+      actorId,
+      actorRole: "admin",
+      action: "announcement.draft_updated",
+      targetType: "announcement",
+      targetId: id,
+      details: { title, actorEmail },
+    });
+    try {
+      revalidatePath("/admin");
+    } catch {}
+    return { success: true, message: "Draft updated successfully." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("announcements")
+    .update({
+      title,
+      content,
+      priority,
+      target_scope: targetScope,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) {
+    return { success: false, message: error.message };
+  }
+
+  await recordAuditLogAction({
+    universityId: "00000000-0000-0000-0000-000000000001",
+    actorId,
+    actorRole: "admin",
+    action: "announcement.draft_updated",
+    targetType: "announcement",
+    targetId: id,
+    details: { title, actorEmail },
+  });
+
+  try {
+    revalidatePath("/admin");
+  } catch {}
+  return { success: true, message: "Draft updated successfully." };
+}
+

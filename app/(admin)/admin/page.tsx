@@ -11,6 +11,10 @@ import {
   PlusCircle,
   GraduationCap,
   Search,
+  CheckCircle2,
+  AlertCircle,
+  Edit,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,7 +26,13 @@ import {
 } from "@/lib/actions/helpdesk";
 import { getAuditLogsAction, type AuditLogEntry } from "@/lib/actions/audit";
 import { syncUamsDataAction, type UamsSyncResponse } from "@/lib/actions/sync";
-import { getStudentAnnouncementsAction, type NoticeItem } from "@/lib/actions/announcements";
+import {
+  getAdminAnnouncementsAction,
+  toggleAnnouncementPublishAction,
+  updateAnnouncementDraftAction,
+  type NoticeItem,
+} from "@/lib/actions/announcements";
+import { getUserRoleAction } from "@/lib/actions/auth";
 
 export default function StaffAdminPanelPage() {
   const [activeTab, setActiveTab] = React.useState<"queue" | "bulletins" | "sync" | "audit">("queue");
@@ -34,6 +44,14 @@ export default function StaffAdminPanelPage() {
   const [categoryFilter, setCategoryFilter] = React.useState<string>("all");
   const [loading, setLoading] = React.useState(true);
 
+  // User role state
+  const [userRoleInfo, setUserRoleInfo] = React.useState<{
+    isAuthenticated: boolean;
+    role: string | null;
+    isAdmin: boolean;
+    email?: string | null;
+  }>({ isAuthenticated: false, role: null, isAdmin: true, email: null });
+
   // Status update modal state
   const [selectedTicket, setSelectedTicket] = React.useState<TicketItem | null>(null);
   const [newStatus, setNewStatus] = React.useState<string>("in_progress");
@@ -44,24 +62,43 @@ export default function StaffAdminPanelPage() {
   const [statusSuccess, setStatusSuccess] = React.useState<string | null>(null);
 
   // Sync state
-  const [isDryRun, setIsDryRun] = React.useState(true);
+  const [isDryRun, setIsDryRun] = React.useState(false);
   const [syncLoading, setSyncLoading] = React.useState(false);
   const [syncResult, setSyncResult] = React.useState<UamsSyncResponse | null>(null);
   const [syncError, setSyncError] = React.useState<string | null>(null);
+  const [lastSyncTime, setLastSyncTime] = React.useState<string | null>(null);
+
+  // Announcement manager state
+  const [announcementActionLoading, setAnnouncementActionLoading] = React.useState(false);
+  const [announcementActionMessage, setAnnouncementActionMessage] = React.useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const [selectedDraftForEdit, setSelectedDraftForEdit] = React.useState<NoticeItem | null>(null);
+  const [editDraftTitle, setEditDraftTitle] = React.useState("");
+  const [editDraftContent, setEditDraftContent] = React.useState("");
+  const [editDraftPriority, setEditDraftPriority] = React.useState<"P1" | "P2" | "P3" | "P4">("P3");
+  const [editDraftScope, setEditDraftScope] = React.useState("all");
+
+  // Audit filter state
+  const [searchActor, setSearchActor] = React.useState("");
+  const [auditActionFilter, setAuditActionFilter] = React.useState("all");
 
   React.useEffect(() => {
     let ignore = false;
     async function loadInitialData() {
       try {
-        const [ticketsRes, auditRes, noticesRes] = await Promise.all([
+        const [authRes, ticketsRes, auditRes, noticesRes] = await Promise.all([
+          getUserRoleAction(),
           getStaffTicketQueueAction(),
           getAuditLogsAction(),
-          getStudentAnnouncementsAction(),
+          getAdminAnnouncementsAction(),
         ]);
         if (!ignore) {
+          setUserRoleInfo(authRes);
           if (ticketsRes.success) setTickets(ticketsRes.tickets);
           if (auditRes.success) setAuditLogs(auditRes.logs);
-          if (noticesRes.success) setNotices(noticesRes.notices);
+          if (noticesRes.success) setNotices(noticesRes.announcements);
         }
       } catch (err) {
         console.error("Failed to load staff console data", err);
@@ -184,6 +221,11 @@ export default function StaffAdminPanelPage() {
     try {
       const res = await syncUamsDataAction(samplePayload);
       setSyncResult(res);
+      setLastSyncTime(
+        new Date().toLocaleDateString("en-KE", { month: "short", day: "numeric", year: "numeric" }) +
+          " at " +
+          new Date().toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })
+      );
       // Reload audit log
       const auditRefreshed = await getAuditLogsAction();
       if (auditRefreshed.success) setAuditLogs(auditRefreshed.logs);
@@ -192,6 +234,115 @@ export default function StaffAdminPanelPage() {
     } finally {
       setSyncLoading(false);
     }
+  }
+
+  async function handleTogglePublish(notice: NoticeItem) {
+    const nextState = !notice.isPublished;
+    setAnnouncementActionLoading(true);
+    setAnnouncementActionMessage(null);
+    try {
+      const res = await toggleAnnouncementPublishAction(notice.id, nextState);
+      if (res.success) {
+        setNotices((prev) =>
+          prev.map((n) =>
+            n.id === notice.id
+              ? {
+                  ...n,
+                  isPublished: nextState,
+                  publishedAt: nextState ? "Just now" : "Draft",
+                }
+              : n
+          )
+        );
+        const auditRes = await getAuditLogsAction();
+        if (auditRes.success) setAuditLogs(auditRes.logs);
+        setAnnouncementActionMessage({ type: "success", text: res.message });
+      } else {
+        setAnnouncementActionMessage({ type: "error", text: res.message });
+      }
+    } catch {
+      setAnnouncementActionMessage({ type: "error", text: "Failed to update publication status." });
+    } finally {
+      setAnnouncementActionLoading(false);
+    }
+  }
+
+  function handleOpenEditDraft(notice: NoticeItem) {
+    setSelectedDraftForEdit(notice);
+    setEditDraftTitle(notice.title);
+    setEditDraftContent(notice.content);
+    setEditDraftPriority(notice.priority);
+    setEditDraftScope(notice.targetScope || "all");
+  }
+
+  async function handleSaveDraftSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedDraftForEdit) return;
+    setAnnouncementActionLoading(true);
+    setAnnouncementActionMessage(null);
+
+    const formData = new FormData();
+    formData.set("title", editDraftTitle);
+    formData.set("content", editDraftContent);
+    formData.set("priority", editDraftPriority);
+    formData.set("targetScope", editDraftScope);
+
+    try {
+      const res = await updateAnnouncementDraftAction(selectedDraftForEdit.id, formData);
+      if (res.success) {
+        setNotices((prev) =>
+          prev.map((n) =>
+            n.id === selectedDraftForEdit.id
+              ? {
+                  ...n,
+                  title: editDraftTitle,
+                  content: editDraftContent,
+                  priority: editDraftPriority,
+                  targetScope: editDraftScope,
+                }
+              : n
+          )
+        );
+        setSelectedDraftForEdit(null);
+        const auditRes = await getAuditLogsAction();
+        if (auditRes.success) setAuditLogs(auditRes.logs);
+        setAnnouncementActionMessage({ type: "success", text: res.message });
+      } else {
+        setAnnouncementActionMessage({ type: "error", text: res.message });
+      }
+    } catch {
+      setAnnouncementActionMessage({ type: "error", text: "Failed to save draft." });
+    } finally {
+      setAnnouncementActionLoading(false);
+    }
+  }
+
+  const isAuthorized = userRoleInfo.isAdmin;
+
+  function renderNotAuthorizedCard(sectionName: string) {
+    return (
+      <Card className="p-8 text-center bg-white border border-red-200/80 shadow-xs max-w-lg mx-auto my-12 space-y-4 font-sans">
+        <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-200">
+          <Lock className="w-6 h-6" />
+        </div>
+        <div>
+          <h3 className="font-serif font-bold text-lg text-[#0B1D33]">Access Restricted</h3>
+          <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
+            The <strong>{sectionName}</strong> module requires <strong>University Administrator</strong> or <strong>Super Admin</strong> clearance. Staff accounts without administrative privileges are not authorized to view or manage this section.
+          </p>
+        </div>
+        <div className="pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setActiveTab("queue")}
+            className="text-xs border-[#C59B27]/40 text-[#0B1D33] hover:bg-slate-50"
+          >
+            Return to Help Desk Queue
+          </Button>
+        </div>
+      </Card>
+    );
   }
 
   const filteredTickets = tickets.filter((t) => {
@@ -209,6 +360,20 @@ export default function StaffAdminPanelPage() {
     }
     if (queueFilter === "resolved") return t.status === "resolved" || t.status === "closed";
     return t.status === queueFilter;
+  });
+
+  const filteredAuditLogs = auditLogs.filter((log) => {
+    if (auditActionFilter !== "all" && log.action !== auditActionFilter) {
+      return false;
+    }
+    if (searchActor.trim()) {
+      const q = searchActor.toLowerCase().trim();
+      const inActor = log.actorName.toLowerCase().includes(q) || log.actorRole.toLowerCase().includes(q);
+      const inTarget = (log.targetType + " " + (log.targetId || "")).toLowerCase().includes(q);
+      const inDetails = typeof log.details === "object" ? JSON.stringify(log.details).toLowerCase().includes(q) : false;
+      return inActor || inTarget || inDetails;
+    }
+    return true;
   });
 
   return (
@@ -447,138 +612,260 @@ export default function StaffAdminPanelPage() {
           </div>
         )}
 
-        {/* TAB 2: OFFICIAL BULLETINS */}
+        {/* TAB 2: ANNOUNCEMENTS MANAGER */}
         {activeTab === "bulletins" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-[#C59B27]/20 pb-3">
-              <div>
-                <h2 className="text-xl font-serif font-bold text-[#0B1D33]">
-                  Official Campus Bulletins & Urgent Announcements
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Institutional broadcasts published to student portals across Summit Metropolitan University.
-                </p>
-              </div>
-              <Link href="/announcements/new">
-                <Button variant="primary" size="sm" className="text-xs gap-1.5">
-                  <PlusCircle className="w-3.5 h-3.5 text-[#FCD34D]" /> Compose New Notice
-                </Button>
-              </Link>
-            </div>
-
-            <div className="space-y-3">
-              {notices.map((n) => (
-                <Card
-                  key={n.id}
-                  className="p-4 border-[#C59B27]/25 bg-white shadow-xs"
-                >
-                  <div className="flex items-start justify-between gap-3 mb-1">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40">
-                        {n.priority}
-                      </span>
-                      <span className="text-xs text-slate-400 font-sans">• Scope: {n.targetScope}</span>
-                    </div>
-                    <span className="text-xs text-slate-400">{n.publishedAt}</span>
-                  </div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
-                    {n.title}
-                  </h4>
-                  <p className="text-xs text-slate-600 font-sans mt-1 leading-relaxed">
-                    {n.content}
+          !isAuthorized ? (
+            renderNotAuthorizedCard("Announcements Manager")
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#C59B27]/20 pb-3">
+                <div>
+                  <h2 className="text-xl font-serif font-bold text-[#0B1D33]">
+                    Announcements & Bulletins Manager
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Institutional broadcasts published to student portals across Summit Metropolitan University.
                   </p>
-                </Card>
-              ))}
+                </div>
+                <Link href="/announcements/new">
+                  <Button variant="primary" size="sm" className="text-xs gap-1.5 shrink-0">
+                    <PlusCircle className="w-3.5 h-3.5 text-[#FCD34D]" /> Create Announcement
+                  </Button>
+                </Link>
+              </div>
+
+              {announcementActionMessage && (
+                <div
+                  className={`p-3 rounded-xl text-xs flex items-center justify-between border ${
+                    announcementActionMessage.type === "success"
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      : "bg-red-50 text-red-800 border-red-200"
+                  }`}
+                >
+                  <span>{announcementActionMessage.text}</span>
+                  <button
+                    onClick={() => setAnnouncementActionMessage(null)}
+                    className="font-semibold underline ml-3"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {notices.map((n) => {
+                  const isPublished = n.isPublished ?? true;
+                  return (
+                    <Card
+                      key={n.id}
+                      className="p-4 border-[#C59B27]/25 bg-white shadow-xs space-y-2.5 hover:border-[#C59B27]/50 transition-colors"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Status Badge */}
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${
+                              isPublished
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                : "bg-amber-50 text-amber-700 border-amber-300"
+                            }`}
+                          >
+                            {isPublished ? "Published" : "Draft"}
+                          </span>
+
+                          {/* Priority Badge */}
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40">
+                            {n.priority}
+                          </span>
+
+                          <span className="text-xs text-slate-500 font-sans">
+                            Audience: <strong className="text-slate-700">{n.targetScope}</strong>
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-slate-400 font-mono">
+                            {n.publishedAt}
+                          </span>
+
+                          {/* Edit Draft Button */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleOpenEditDraft(n)}
+                            className="text-[11px] h-7 px-2 border-slate-300 text-slate-700 hover:bg-slate-50"
+                          >
+                            <Edit className="w-3 h-3 mr-1 text-slate-500" /> Edit Draft
+                          </Button>
+
+                          {/* Publish / Unpublish Toggle */}
+                          <Button
+                            variant={isPublished ? "outline" : "primary"}
+                            size="sm"
+                            disabled={announcementActionLoading}
+                            onClick={() => handleTogglePublish(n)}
+                            className={`text-[11px] h-7 px-2.5 font-medium ${
+                              isPublished
+                                ? "border-amber-300 text-amber-800 hover:bg-amber-50"
+                                : "bg-[#0B1D33] text-[#FCD34D] hover:bg-[#06101E]"
+                            }`}
+                          >
+                            {isPublished ? "Unpublish" : "Publish Now"}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
+                          {n.title}
+                        </h4>
+                        <p className="text-xs text-slate-600 font-sans mt-1 leading-relaxed">
+                          {n.content}
+                        </p>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )
         )}
 
         {/* TAB 3: UAMS INGESTION & SYNC */}
         {activeTab === "sync" && (
-          <div className="space-y-4">
-            <div className="border-b border-[#C59B27]/20 pb-3">
-              <h2 className="text-xl font-serif font-bold text-[#0B1D33]">
-                University Academic Management System (UAMS) Sync
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Execute automated synchronization against UAMS v1 data contract. Natural-key upsert ensures non-destructive student identity and timetable updates.
-              </p>
-            </div>
-
-            <Card className="p-6 border-[#C59B27]/30 bg-white shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-[#C59B27]/15 pb-4">
-                <div>
-                  <h3 className="font-serif font-bold text-sm text-[#0B1D33]">
-                    Ingestion Trigger Control
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Validates schema payload version 1, natural keys (email, course codes, timetable slots).
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={isDryRun}
-                      onChange={(e) => setIsDryRun(e.target.checked)}
-                      className="rounded text-[#C59B27] focus:ring-[#C59B27]"
-                    />
-                    Dry Run Mode (Validate only)
-                  </label>
-                  <Button
-                    onClick={handleTriggerSync}
-                    variant="primary"
-                    size="sm"
-                    isLoading={syncLoading}
-                    className="text-xs gap-1.5"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 text-[#FCD34D]" /> Execute UAMS Ingestion
-                  </Button>
-                </div>
+          !isAuthorized ? (
+            renderNotAuthorizedCard("UAMS Ingestion & Synchronization")
+          ) : (
+            <div className="space-y-4">
+              <div className="border-b border-[#C59B27]/20 pb-3">
+                <h2 className="text-xl font-serif font-bold text-[#0B1D33]">
+                  University Academic Management System (UAMS) Sync
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Execute automated student, course unit, and timetable synchronization against the UAMS v1 data contract.
+                </p>
               </div>
 
-              {syncError && (
-                <div className="p-3 rounded-lg bg-red-950/40 border border-red-800 text-red-300 text-xs">
-                  {syncError}
-                </div>
-              )}
-
-              {syncResult && (
-                <div className="p-4 rounded-xl border border-emerald-800/40 bg-emerald-950/20 text-xs space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-emerald-400">
-                      Sync Completed ({syncResult.dry_run ? "DRY RUN MODE" : "COMMITTED TO DATABASE"})
-                    </span>
-                    <span className="text-[11px] text-emerald-300">{syncResult.message}</span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-emerald-900/40 font-mono text-[11px]">
-                    <div className="p-2 rounded bg-[#06101E] border border-emerald-800/30">
-                      <span className="text-slate-400 block">Students</span>
-                      <span className="font-bold text-white">
-                        Processed: {syncResult.counts.students_processed} • Upserted: {syncResult.counts.students_inserted + syncResult.counts.students_updated}
-                      </span>
-                    </div>
-                    <div className="p-2 rounded bg-[#06101E] border border-emerald-800/30">
-                      <span className="text-slate-400 block">Course Units</span>
-                      <span className="font-bold text-white">
-                        Processed: {syncResult.counts.course_units_processed} • Upserted: {syncResult.counts.course_units_inserted + syncResult.counts.course_units_updated}
-                      </span>
-                    </div>
-                    <div className="p-2 rounded bg-[#06101E] border border-emerald-800/30">
-                      <span className="text-slate-400 block">Timetable Slots</span>
-                      <span className="font-bold text-white">
-                        Processed: {syncResult.counts.timetables_processed} • Upserted: {syncResult.counts.timetables_inserted + syncResult.counts.timetables_updated}
+              <Card className="p-6 border-[#C59B27]/30 bg-white shadow-xs space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#C59B27]/15 pb-4">
+                  <div>
+                    <h3 className="font-serif font-bold text-base text-[#0B1D33]">
+                      Manual Student Data Synchronization Trigger
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Instantly reconciles student identities, unit registrations, and timetable slots.
+                    </p>
+                    <div className="flex items-center gap-2 mt-2 text-xs text-slate-600 font-mono">
+                      <Clock className="w-3.5 h-3.5 text-[#C59B27]" />
+                      <span>
+                        Last Sync Time:{" "}
+                        <strong className="text-[#0B1D33]">
+                          {lastSyncTime || "October 16, 2026, 08:30 AM (Baseline)"}
+                        </strong>
                       </span>
                     </div>
                   </div>
-                </div>
-              )}
 
-              <div className="space-y-1.5 pt-2">
-                <span className="text-xs font-semibold uppercase text-slate-400">Sample Ingestion Payload Preview</span>
-                <pre className="p-3 rounded-lg bg-[#06101E] text-[#FCD34D] text-[11px] font-mono border border-[#C59B27]/20 overflow-x-auto">
+                  <div className="flex items-center gap-3 shrink-0">
+                    <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isDryRun}
+                        onChange={(e) => setIsDryRun(e.target.checked)}
+                        className="rounded text-[#C59B27] focus:ring-[#C59B27]"
+                      />
+                      Dry Run (Validate Only)
+                    </label>
+                    <Button
+                      onClick={handleTriggerSync}
+                      variant="primary"
+                      size="sm"
+                      isLoading={syncLoading}
+                      className="text-xs gap-1.5 shadow-sm"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-[#FCD34D]" /> Sync Student Data from UAMS
+                    </Button>
+                  </div>
+                </div>
+
+                {syncError && (
+                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span>{syncError}</span>
+                  </div>
+                )}
+
+                {syncResult && (
+                  <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/70 text-xs space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="font-bold text-emerald-900 text-sm">
+                          UAMS Synchronization Completed
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white text-emerald-800 border border-emerald-300">
+                          {syncResult.dry_run ? "DRY RUN MODE" : "COMMITTED TO DATABASE"}
+                        </span>
+                      </div>
+                      <span className="text-emerald-700 text-xs">{syncResult.message}</span>
+                    </div>
+
+                    {/* Results Metrics Display */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[11px]">
+                      <div className="p-2.5 rounded-lg bg-white border border-emerald-200 shadow-2xs">
+                        <span className="text-slate-500 block text-[10px] uppercase">Students Synced</span>
+                        <span className="font-bold text-[#0B1D33] text-sm">
+                          {syncResult.counts.students_inserted + syncResult.counts.students_updated}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          Processed: {syncResult.counts.students_processed}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-white border border-emerald-200 shadow-2xs">
+                        <span className="text-slate-500 block text-[10px] uppercase">Course Units</span>
+                        <span className="font-bold text-[#0B1D33] text-sm">
+                          {syncResult.counts.course_units_inserted + syncResult.counts.course_units_updated}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          Processed: {syncResult.counts.course_units_processed}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-white border border-emerald-200 shadow-2xs">
+                        <span className="text-slate-500 block text-[10px] uppercase">Timetable Slots</span>
+                        <span className="font-bold text-[#0B1D33] text-sm">
+                          {syncResult.counts.timetables_inserted + syncResult.counts.timetables_updated}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          Processed: {syncResult.counts.timetables_processed}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-white border border-emerald-200 shadow-2xs">
+                        <span className="text-slate-500 block text-[10px] uppercase">Sync Result</span>
+                        <span className="font-bold text-emerald-700 text-sm">
+                          {syncResult.counts.students_inserted +
+                            syncResult.counts.students_updated +
+                            syncResult.counts.course_units_inserted +
+                            syncResult.counts.course_units_updated +
+                            syncResult.counts.timetables_inserted +
+                            syncResult.counts.timetables_updated}{" "}
+                          Success
+                        </span>
+                        <span className="text-[10px] text-slate-500 block mt-0.5">
+                          Errors: {syncResult.errors?.length || 0}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-xs font-semibold uppercase text-slate-500">
+                    Sample Ingestion Payload Preview
+                  </span>
+                  <pre className="p-3 rounded-lg bg-[#06101E] text-[#FCD34D] text-[11px] font-mono border border-[#C59B27]/20 overflow-x-auto">
 {JSON.stringify(
   {
     version: 1,
@@ -600,6 +887,11 @@ export default function StaffAdminPanelPage() {
         name: "Object-Oriented Analysis & Design",
         credit_hours: 3,
       },
+      {
+        code: "COMP 214",
+        name: "Database Systems & Architecture",
+        credit_hours: 3,
+      },
     ],
     timetables: [
       {
@@ -613,55 +905,112 @@ export default function StaffAdminPanelPage() {
   null,
   2
 )}
-                </pre>
-              </div>
-            </Card>
-          </div>
+                  </pre>
+                </div>
+              </Card>
+            </div>
+          )
         )}
 
-        {/* TAB 4: AUDIT LOG */}
+        {/* TAB 4: AUDIT LOG VIEWER */}
         {activeTab === "audit" && (
-          <div className="space-y-4">
-            <div className="border-b border-[#C59B27]/20 pb-3">
-              <h2 className="text-xl font-serif font-bold text-[#0B1D33]">
-                Institutional Compliance & Security Audit Log
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Immutable event stream recording sensitive complaint views, ticket status mutations, staff assignments, and sync executions.
-              </p>
-            </div>
-
-            <div className="space-y-2.5">
-              {auditLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className="p-3.5 rounded-xl border border-[#C59B27]/20 bg-white flex items-start justify-between gap-3 text-xs shadow-xs font-sans"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/30">
-                        {log.action.toUpperCase()}
-                      </span>
-                      <span className="font-semibold text-[#0B1D33]">
-                        {log.actorName} ({log.actorRole})
-                      </span>
-                      {log.targetId && (
-                        <span className="font-mono text-slate-400 text-[10px]">
-                          Target: {log.targetId}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-slate-600 font-mono text-[11px]">
-                      Details: {JSON.stringify(log.details)}
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-slate-400 whitespace-nowrap">
-                    {new Date(log.createdAt).toLocaleString()}
-                  </span>
+          !isAuthorized ? (
+            renderNotAuthorizedCard("Audit Log Viewer")
+          ) : (
+            <div className="space-y-4">
+              <div className="border-b border-[#C59B27]/20 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-serif font-bold text-[#0B1D33]">
+                    Institutional Compliance & Security Audit Log
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Immutable event stream recording sensitive complaint views, ticket status mutations, staff assignments, and sync executions.
+                  </p>
                 </div>
-              ))}
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono">
+                  <Shield className="w-4 h-4 text-[#C59B27]" />
+                  <span>Read-only compliance log (No edit or deletion permitted)</span>
+                </div>
+              </div>
+
+              {/* Filter and Search Bar */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-3.5 rounded-xl border border-[#C59B27]/20 shadow-xs">
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                  <Input
+                    value={searchActor}
+                    onChange={(e) => setSearchActor(e.target.value)}
+                    placeholder="Search by actor name, role, email, or details..."
+                    className="pl-9 text-xs"
+                  />
+                </div>
+
+                <div>
+                  <select
+                    value={auditActionFilter}
+                    onChange={(e) => setAuditActionFilter(e.target.value)}
+                    className="w-full text-xs rounded-xl border border-slate-300 bg-white text-[#0B1D33] p-2 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
+                  >
+                    <option value="all">All Action Types</option>
+                    <option value="uams_sync_completed">uams_sync_completed</option>
+                    <option value="announcement.published">announcement.published</option>
+                    <option value="announcement.unpublished">announcement.unpublished</option>
+                    <option value="announcement.draft_updated">announcement.draft_updated</option>
+                    <option value="announcement.created_published">announcement.created_published</option>
+                    <option value="announcement.created_draft">announcement.created_draft</option>
+                    <option value="view_sensitive_complaint">view_sensitive_complaint</option>
+                    <option value="ticket.status_change">ticket.status_change</option>
+                    <option value="ticket.assigned">ticket.assigned</option>
+                    <option value="ticket.reply">ticket.reply</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Audit Log Entries List (Read-only) */}
+              <div className="space-y-2.5">
+                {filteredAuditLogs.length === 0 ? (
+                  <div className="p-8 text-center bg-white rounded-xl border border-dashed border-slate-300 text-xs text-slate-500">
+                    No audit log entries match the selected actor or action criteria.
+                  </div>
+                ) : (
+                  filteredAuditLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="p-3.5 rounded-xl border border-[#C59B27]/20 bg-white flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-xs shadow-xs font-sans hover:border-[#C59B27]/40 transition-colors"
+                    >
+                      <div className="space-y-1.5 max-w-3xl">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/30">
+                            {log.action}
+                          </span>
+                          <span className="font-semibold text-[#0B1D33]">
+                            {log.actorName}
+                          </span>
+                          <span className="text-[11px] px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                            {log.actorRole}
+                          </span>
+                          {log.targetId && (
+                            <span className="font-mono text-slate-500 text-[11px]">
+                              Target: {log.targetType}/{log.targetId}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-slate-600 font-mono text-[11px] bg-slate-50 p-2 rounded-lg border border-slate-100 break-all">
+                          {JSON.stringify(log.details)}
+                        </div>
+                      </div>
+                      <span className="text-[11px] text-slate-400 whitespace-nowrap font-mono shrink-0">
+                        {new Date(log.createdAt).toLocaleString("en-KE", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-          </div>
+          )
         )}
 
         {/* Update Status Modal */}
@@ -754,6 +1103,114 @@ export default function StaffAdminPanelPage() {
                     type="submit"
                     variant="primary"
                     isLoading={statusLoading}
+                    className="text-xs"
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Draft Modal */}
+        {selectedDraftForEdit && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs font-sans">
+            <div className="w-full max-w-lg bg-white border border-[#C59B27]/50 rounded-2xl shadow-xl overflow-hidden">
+              <div className="bg-[#0B1D33] px-6 py-4 border-b border-[#C59B27]/30 flex items-center justify-between text-white">
+                <div>
+                  <h3 className="font-serif font-bold text-sm">Edit Announcement Draft</h3>
+                  <span className="text-[11px] text-[#FCD34D] font-mono">
+                    {selectedDraftForEdit.id}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDraftForEdit(null)}
+                  className="text-slate-400 hover:text-white font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveDraftSubmit} className="p-6 space-y-4">
+                <div>
+                  <label className="text-xs font-semibold uppercase text-slate-700 block mb-1">
+                    Announcement Title
+                  </label>
+                  <Input
+                    value={editDraftTitle}
+                    onChange={(e) => setEditDraftTitle(e.target.value)}
+                    required
+                    className="text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold uppercase text-slate-700 block mb-1">
+                    Content / Message
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={editDraftContent}
+                    onChange={(e) => setEditDraftContent(e.target.value)}
+                    required
+                    className="w-full text-xs rounded-xl border border-[#C59B27]/40 bg-white text-[#0B1D33] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold uppercase text-slate-700 block mb-1">
+                      Priority
+                    </label>
+                    <select
+                      value={editDraftPriority}
+                      onChange={(e) => setEditDraftPriority(e.target.value as "P1" | "P2" | "P3" | "P4")}
+                      className="w-full text-xs rounded-xl border border-[#C59B27]/40 bg-white text-[#0B1D33] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
+                    >
+                      <option value="P1">P1 - Urgent Notice</option>
+                      <option value="P2">P2 - Academic Alert</option>
+                      <option value="P3">P3 - Campus Life</option>
+                      <option value="P4">P4 - General Info</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold uppercase text-slate-700 block mb-1">
+                      Audience Scope
+                    </label>
+                    <select
+                      value={editDraftScope}
+                      onChange={(e) => setEditDraftScope(e.target.value)}
+                      className="w-full text-xs rounded-xl border border-[#C59B27]/40 bg-white text-[#0B1D33] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
+                    >
+                      <option value="All Students">All Students</option>
+                      <option value="Campus: Main Campus">Campus: Main Campus</option>
+                      <option value="School of Computing & Informatics">School of Computing & Informatics</option>
+                      <option value="School of Business & Economics">School of Business & Economics</option>
+                      <option value="School of Engineering & Architecture">School of Engineering & Architecture</option>
+                      <option value="Year 1">Year 1</option>
+                      <option value="Year 2">Year 2</option>
+                      <option value="Year 3">Year 3</option>
+                      <option value="Year 4">Year 4</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t border-[#C59B27]/20">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setSelectedDraftForEdit(null)}
+                    className="text-xs border-slate-400"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    isLoading={announcementActionLoading}
                     className="text-xs"
                   >
                     Save Changes

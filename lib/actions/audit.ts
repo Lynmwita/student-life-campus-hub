@@ -115,7 +115,7 @@ export async function getAuditLogsAction(): Promise<AuditLogsResponse> {
   }
 
   // Allow staff / admin demo session
-  if (!user && demoEmail && (demoRole === "staff" || demoRole === "super_admin" || demoEmail === "registrar@summit.ac.ke")) {
+  if (!user && demoEmail && (demoRole === "staff" || demoRole === "admin" || demoRole === "super_admin" || demoEmail === "registrar@summit.ac.ke")) {
     return {
       success: true,
       logs: DEMO_AUDIT_LOGS,
@@ -139,7 +139,7 @@ export async function getAuditLogsAction(): Promise<AuditLogsResponse> {
     .eq("user_id", user.id)
     .single();
 
-  if (!membership || (membership.role !== "staff" && membership.role !== "super_admin")) {
+  if (!membership || (membership.role !== "staff" && membership.role !== "admin" && membership.role !== "super_admin")) {
     return {
       success: false,
       message: "Forbidden: Only staff and university administrators can inspect audit records.",

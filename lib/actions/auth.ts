@@ -180,3 +180,53 @@ export async function updatePasswordAction(
     success: true,
   };
 }
+
+export async function getUserRoleAction(): Promise<{
+  isAuthenticated: boolean;
+  role: "student" | "staff" | "admin" | "super_admin";
+  email?: string;
+  isAdmin: boolean;
+}> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("role, email")
+        .eq("id", user.id)
+        .single();
+
+      const role = (profile?.role || "student") as "student" | "staff" | "admin" | "super_admin";
+      return {
+        isAuthenticated: true,
+        role,
+        email: user.email || profile?.email,
+        isAdmin: role === "admin" || role === "super_admin",
+      };
+    }
+  } catch {
+    // offline fallback
+  }
+
+  const cookieStore = await cookies();
+  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+  const demoRole = cookieStore.get("smu_demo_role")?.value;
+
+  if (demoEmail) {
+    const role = (demoRole || (demoEmail.includes("registrar") || demoEmail.includes("admin") ? "admin" : demoEmail.includes("staff") ? "staff" : "student")) as "student" | "staff" | "admin" | "super_admin";
+    return {
+      isAuthenticated: true,
+      role,
+      email: demoEmail,
+      isAdmin: role === "admin" || role === "super_admin",
+    };
+  }
+
+  return {
+    isAuthenticated: false,
+    role: "student",
+    isAdmin: false,
+  };
+}
