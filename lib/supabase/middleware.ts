@@ -1,10 +1,60 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { checkRateLimit } from "@/lib/security/rate-limit";
+
+export const SECURITY_HEADERS: Record<string, string> = {
+  "Content-Security-Policy": [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; "),
+  "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+};
+
+export function applySecurityHeaders(res: NextResponse): NextResponse {
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    res.headers.set(key, value);
+  }
+  return res;
+}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   });
+
+  const pathname = request.nextUrl.pathname;
+
+  // Rate limit sensitive API endpoints
+  if (pathname.startsWith("/api/")) {
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "127.0.0.1";
+    const rl = checkRateLimit(`api:${ip}`, 60, 60 * 1000);
+    if (!rl.success) {
+      const rateLimitResponse = NextResponse.json(
+        { error: "Too many requests. Please slow down." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rl.retryAfterSeconds || 60),
+          },
+        }
+      );
+      return applySecurityHeaders(rateLimitResponse);
+    }
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,7 +64,7 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           supabaseResponse = NextResponse.next({
             request,
@@ -40,8 +90,6 @@ export async function updateSession(request: NextRequest) {
   const demoOnboarded = request.cookies.get("smu_demo_onboarded")?.value;
   const isAuthenticated = Boolean(user || demoSession);
 
-  const pathname = request.nextUrl.pathname;
-
   // 1. Protected routes definitions
   const protectedRoutes = [
     "/dashboard",
@@ -61,7 +109,7 @@ export async function updateSession(request: NextRequest) {
   if (isProtected && !isAuthenticated) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return applySecurityHeaders(NextResponse.redirect(url));
   }
 
   // 3. Authenticated users visiting auth routes (/login, /register)
@@ -72,7 +120,7 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     if (demoSession) {
       url.pathname = demoSession === "student@summit.ac.ke" && !demoOnboarded ? "/onboarding" : "/dashboard";
-      return NextResponse.redirect(url);
+      return applySecurityHeaders(NextResponse.redirect(url));
     }
 
     if (user) {
@@ -86,7 +134,7 @@ export async function updateSession(request: NextRequest) {
       } else {
         url.pathname = "/dashboard";
       }
-      return NextResponse.redirect(url);
+      return applySecurityHeaders(NextResponse.redirect(url));
     }
   }
 
@@ -101,9 +149,9 @@ export async function updateSession(request: NextRequest) {
     if (!count || count === 0) {
       const url = request.nextUrl.clone();
       url.pathname = "/onboarding";
-      return NextResponse.redirect(url);
+      return applySecurityHeaders(NextResponse.redirect(url));
     }
   }
 
-  return supabaseResponse;
+  return applySecurityHeaders(supabaseResponse);
 }

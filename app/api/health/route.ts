@@ -1,7 +1,22 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit, getClientIp } from "@/lib/security/rate-limit";
 
 export async function GET() {
+  const ip = await getClientIp();
+  const rateLimit = checkRateLimit(`api:health:${ip}`, 60, 60 * 1000);
+  if (!rateLimit.success) {
+    return NextResponse.json(
+      { error: "Too many requests. Health endpoint is rate-limited." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimit.retryAfterSeconds || 60),
+        },
+      }
+    );
+  }
+
   const startTime = Date.now();
   let dbStatus = "unknown";
   let dbLatencyMs = 0;

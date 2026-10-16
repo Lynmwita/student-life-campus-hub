@@ -14,6 +14,11 @@ export interface ActionResponse {
 }
 
 import { cookies } from "next/headers";
+import {
+  checkRateLimit,
+  resetRateLimit,
+  getClientIp,
+} from "@/lib/security/rate-limit";
 
 const DEMO_ACCOUNTS: Record<string, { role: string; redirectUrl: string; password: string }> = {
   "student@summit.ac.ke": {
@@ -39,6 +44,15 @@ const DEMO_ACCOUNTS: Record<string, { role: string; redirectUrl: string; passwor
 };
 
 export async function loginAction(formData: FormData): Promise<ActionResponse> {
+  const ip = await getClientIp();
+  const rateLimit = checkRateLimit(`login:${ip}`, 5, 60 * 1000);
+  if (!rateLimit.success) {
+    return {
+      success: false,
+      error: `Too many login attempts. Please wait ${rateLimit.retryAfterSeconds || 60} seconds before trying again.`,
+    };
+  }
+
   const rawData = {
     email: formData.get("email"),
     password: formData.get("password"),
@@ -64,6 +78,7 @@ export async function loginAction(formData: FormData): Promise<ActionResponse> {
     });
 
     if (!error) {
+      resetRateLimit(`login:${ip}`);
       redirect("/dashboard");
     }
   } catch (err: unknown) {
@@ -80,6 +95,7 @@ export async function loginAction(formData: FormData): Promise<ActionResponse> {
     process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true";
 
   if (allowDemoFallback && demoAccount && validated.data.password === demoAccount.password) {
+    resetRateLimit(`login:${ip}`);
     const cookieStore = await cookies();
     cookieStore.set("smu_demo_session", emailLower, {
       path: "/",
@@ -122,6 +138,15 @@ export async function signOutAction() {
 export async function requestPasswordResetAction(
   formData: FormData
 ): Promise<ActionResponse> {
+  const ip = await getClientIp();
+  const rateLimit = checkRateLimit(`pwd_reset:${ip}`, 3, 60 * 1000);
+  if (!rateLimit.success) {
+    return {
+      success: false,
+      error: `Too many password reset requests. Please wait ${rateLimit.retryAfterSeconds || 60} seconds before trying again.`,
+    };
+  }
+
   const rawData = {
     email: formData.get("email"),
   };

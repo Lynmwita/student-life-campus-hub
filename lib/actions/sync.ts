@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cookies } from "next/headers";
 import { recordAuditLogAction } from "./audit";
+import { checkRateLimit, getClientIp } from "@/lib/security/rate-limit";
 import {
   uamsSyncPayloadSchema,
   type UamsSyncPayload,
@@ -158,6 +159,18 @@ export async function syncUamsDataAction(
   } catch {}
 
   if (!user && demoEmail && (demoRole === "admin" || demoRole === "super_admin" || demoRole === "staff" || demoEmail === "registrar@summit.ac.ke")) {
+    const throttle = checkRateLimit(`sync:demo:${demoEmail}`, 5, 60 * 1000);
+    if (!throttle.success) {
+      return {
+        success: false,
+        dry_run: isDryRun,
+        counts: initialCounts,
+        errors: [
+          `UAMS synchronization throttled. Please wait ${throttle.retryAfterSeconds || 60} seconds before triggering another sync.`,
+        ],
+        message: "Rate limit exceeded: UAMS synchronization is throttled.",
+      };
+    }
     const simulatedCounts: SyncCounts = {
       students_processed: payload.students.length,
       students_inserted: payload.students.length,
@@ -202,6 +215,22 @@ export async function syncUamsDataAction(
         "Unauthenticated request. UAMS synchronization requires an authenticated session.",
       ],
       message: "Unauthorized: Unauthenticated callers are rejected.",
+    };
+  }
+
+  // 2. Throttle protection: prevent hammering of UAMS sync trigger
+  const clientIp = await getClientIp();
+  const throttleKey = `sync:${user.id || clientIp}`;
+  const throttle = checkRateLimit(throttleKey, 5, 60 * 1000);
+  if (!throttle.success) {
+    return {
+      success: false,
+      dry_run: isDryRun,
+      counts: initialCounts,
+      errors: [
+        `UAMS synchronization throttled. Please wait ${throttle.retryAfterSeconds || 60} seconds before triggering another sync.`,
+      ],
+      message: "Rate limit exceeded: UAMS synchronization is throttled.",
     };
   }
 
