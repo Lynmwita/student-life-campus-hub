@@ -4,6 +4,11 @@ const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}
 
 export const HELPDESK_CATEGORIES = [
   "academic",
+  "fees",
+  "accommodation",
+  "technical",
+  "complaint",
+  "other",
   "facilities",
   "welfare",
   "finance_aid",
@@ -18,6 +23,7 @@ export const HELPDESK_PRIORITIES = ["P1", "P2", "P3", "P4"] as const;
 
 export const HELPDESK_STATUSES = [
   "submitted",
+  "in_review",
   "under_review",
   "in_progress",
   "resolved",

@@ -41,6 +41,7 @@ export default function StudentHelpDeskPage() {
   const [submitLoading, setSubmitLoading] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = React.useState<string | null>(null);
+  const [submittedRef, setSubmittedRef] = React.useState<string | null>(null);
   const [replyMessage, setReplyMessage] = React.useState("");
   const [replyLoading, setReplyLoading] = React.useState(false);
   const [category, setCategory] = React.useState<string>("academic");
@@ -96,17 +97,13 @@ export default function StudentHelpDeskPage() {
     try {
       const res = await createHelpTicketAction(formData);
       if (res.success && res.referenceNo) {
-        setSubmitSuccess(`Ticket ${res.referenceNo} submitted successfully.`);
+        setSubmittedRef(res.referenceNo);
         // Refresh ticket list
         const refreshed = await getStudentTicketsAction();
         if (refreshed.success) {
           setTickets(refreshed.tickets);
           loadTicketDetail(res.referenceNo);
         }
-        setTimeout(() => {
-          setIsSubmitModalOpen(false);
-          setSubmitSuccess(null);
-        }, 1500);
       } else {
         setSubmitError(res.message || "Failed to submit help ticket.");
       }
@@ -320,20 +317,22 @@ export default function StudentHelpDeskPage() {
                       </span>
                       <div className="flex items-center gap-1.5">
                         {t.isSensitive && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-950/40 text-red-400 border border-red-800">
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-800 border border-rose-300">
                             <Lock className="w-2.5 h-2.5" /> Sensitive
                           </span>
                         )}
                         <span
                           className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                            t.status === "resolved"
-                              ? "bg-emerald-950/40 text-emerald-400 border-emerald-800"
-                              : t.status === "in_progress"
-                              ? "bg-amber-950/40 text-[#FCD34D] border-[#C59B27]"
-                              : "bg-[#0B1D33] text-slate-300 border-slate-700"
+                            t.status === "resolved" || t.status === "closed"
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                              : t.status === "in_review" || t.status === "under_review" || t.status === "in_progress"
+                              ? "bg-amber-50 text-amber-800 border-amber-300"
+                              : "bg-[#0B1D33] text-[#FCD34D] border-[#C59B27]"
                           }`}
                         >
-                          {t.status.replace("_", " ").toUpperCase()}
+                          {t.status === "in_review" || t.status === "under_review" || t.status === "in_progress"
+                            ? "IN REVIEW"
+                            : t.status.replace("_", " ").toUpperCase()}
                         </span>
                       </div>
                     </div>
@@ -451,21 +450,36 @@ export default function StudentHelpDeskPage() {
                         <div className="w-5 h-5 rounded-full bg-[#0B1D33] border-2 border-[#C59B27] flex items-center justify-center shrink-0 z-10 text-[#FCD34D]">
                           <CheckCircle className="w-3 h-3" />
                         </div>
-                        <div className="flex-1 bg-slate-50 p-3 rounded-lg border border-[#C59B27]/15 text-xs">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-semibold text-[#0B1D33]">
-                              {item.authorName} • <span className="capitalize text-[#C59B27] font-normal">{item.authorRole}</span>
-                            </span>
+                        <div className={`flex-1 p-3.5 rounded-xl border text-xs ${
+                          item.authorRole === "staff" || item.authorRole === "admin"
+                            ? "bg-[#0B1D33]/[0.02] border-[#C59B27]/40 shadow-xs"
+                            : "bg-white border-slate-200"
+                        }`}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-[#0B1D33]">
+                                {item.authorName}
+                              </span>
+                              {item.authorRole === "staff" || item.authorRole === "admin" ? (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40">
+                                  STAFF REPLY
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-slate-500 font-sans">
+                                  (Student)
+                                </span>
+                              )}
+                            </div>
                             <span className="text-[10px] text-slate-400">
                               {new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             </span>
                           </div>
                           {item.statusTo && (
-                            <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#06101E] text-[#FCD34D] border border-[#C59B27]/30 mb-1">
-                              Status: {item.statusTo.replace("_", " ")}
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/30 mb-1.5">
+                              Status Transition: {item.statusTo.replace("_", " ").toUpperCase()}
                             </span>
                           )}
-                          <p className="text-slate-600 font-sans leading-relaxed">
+                          <p className="text-slate-700 font-sans leading-relaxed">
                             {item.message}
                           </p>
                         </div>
@@ -528,112 +542,156 @@ export default function StudentHelpDeskPage() {
                 </button>
               </div>
 
-              <form onSubmit={handleCreateTicket} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-                {submitError && (
-                  <div className="p-3 rounded-lg bg-red-950/40 border border-red-800 text-red-300 text-xs">
-                    {submitError}
+              {submittedRef ? (
+                <div className="p-8 text-center space-y-4">
+                  <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border border-emerald-300">
+                    <CheckCircle className="w-8 h-8 stroke-[2.5]" />
                   </div>
-                )}
-                {submitSuccess && (
-                  <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-800 text-emerald-300 text-xs">
-                    {submitSuccess}
+                  <div className="space-y-1">
+                    <h3 className="font-serif font-bold text-lg text-[#0B1D33]">
+                      Help Request Submitted Successfully
+                    </h3>
+                    <p className="text-xs text-slate-500 font-sans">
+                      Your institutional tracking reference number has been assigned:
+                    </p>
                   </div>
-                )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-semibold uppercase text-slate-700 block mb-1">
-                      Category
-                    </label>
-                    <select
-                      name="category"
-                      value={category}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setCategory(val);
-                        if (val === "lecturer_conduct" || val === "sensitive_complaint") {
-                          setIsSensitive(true);
-                        }
+                  <div className="py-4 px-6 rounded-2xl bg-[#0B1D33] text-white border-2 border-[#C59B27] inline-block shadow-md my-2">
+                    <div className="text-3xl sm:text-4xl font-mono font-bold tracking-widest text-[#FCD34D]">
+                      {submittedRef}
+                    </div>
+                    <div className="text-[10px] text-slate-300 font-sans uppercase tracking-wider mt-1">
+                      Official University Reference Number
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-600 max-w-sm mx-auto font-sans leading-relaxed">
+                    This reference code is permanently saved in your student portal. You can view progress, review timelines, and communicate with university officers.
+                  </p>
+
+                  <div className="pt-3">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      onClick={() => {
+                        setSubmittedRef(null);
+                        setIsSubmitModalOpen(false);
                       }}
-                      className="w-full text-xs rounded-xl border border-[#C59B27]/40 bg-white text-[#0B1D33] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
+                      className="text-xs px-8 py-2.5 h-auto font-semibold"
                     >
-                      <option value="academic">Academic & Units</option>
-                      <option value="facilities">Campus Facilities & Labs</option>
-                      <option value="it_support">IT & Portal Access</option>
-                      <option value="finance_aid">Financial / Fees Aid</option>
-                      <option value="hostel">Hostels & Accommodation</option>
-                      <option value="lecturer_conduct">Lecturer Conduct / Exam Dispute (Confidential)</option>
-                      <option value="sensitive_complaint">Sensitive Student Grievance (Confidential)</option>
-                      <option value="general">General Inquiries</option>
-                    </select>
+                      View in My Requests
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleCreateTicket} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                  {submitError && (
+                    <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
+                      {submitError}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-semibold uppercase text-slate-700 block mb-1">
+                        Category
+                      </label>
+                      <select
+                        name="category"
+                        value={category}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCategory(val);
+                          if (val === "complaint" || val === "lecturer_conduct" || val === "sensitive_complaint") {
+                            setIsSensitive(true);
+                          }
+                        }}
+                        className="w-full text-xs rounded-xl border border-[#C59B27]/40 bg-white text-[#0B1D33] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
+                      >
+                        <option value="academic">Academic</option>
+                        <option value="fees">Fees</option>
+                        <option value="accommodation">Accommodation</option>
+                        <option value="technical">Technical</option>
+                        <option value="complaint">Complaint</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold uppercase text-slate-700 block mb-1">
+                        Priority Level
+                      </label>
+                      <select
+                        name="priority"
+                        defaultValue="P3"
+                        className="w-full text-xs rounded-xl border border-[#C59B27]/40 bg-white text-[#0B1D33] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
+                      >
+                        <option value="P1">P1 - Urgent</option>
+                        <option value="P2">P2 - High</option>
+                        <option value="P3">P3 - Medium</option>
+                        <option value="P4">P4 - Low</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Input
+                      label="Subject Title"
+                      name="subject"
+                      required
+                      placeholder="e.g. Course registration conflict or missing marks"
+                      className="text-xs"
+                    />
                   </div>
 
                   <div>
                     <label className="text-xs font-semibold uppercase text-slate-700 block mb-1">
-                      Priority Level
+                      Detailed Statement / Description
                     </label>
-                    <select
-                      name="priority"
-                      defaultValue="P3"
-                      className="w-full text-xs rounded-xl border border-[#C59B27]/40 bg-white text-[#0B1D33] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
-                    >
-                      <option value="P1">P1 - Urgent (Exam clash / Critical)</option>
-                      <option value="P2">P2 - High (Classroom or coursework)</option>
-                      <option value="P3">P3 - Medium (Standard inquiry)</option>
-                      <option value="P4">P4 - Low (General request)</option>
-                    </select>
+                    <textarea
+                      name="description"
+                      required
+                      rows={4}
+                      placeholder="Describe the issue with specific dates, units, or details..."
+                      className="w-full text-xs rounded-xl border border-[#C59B27]/40 bg-white text-[#0B1D33] p-3 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
+                    />
                   </div>
-                </div>
 
-                <div>
-                  <Input
-                    label="Subject Title"
-                    name="subject"
-                    required
-                    placeholder="e.g. Coursework marks discrepancy in COMP 214"
-                    className="text-xs"
-                  />
-                </div>
+                  {/* Discreet Sensitive/Private Toggle */}
+                  <div className="p-3.5 rounded-xl border border-[#C59B27]/30 bg-amber-50/40 flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="isSensitive"
+                      checked={isSensitive}
+                      onChange={(e) => setIsSensitive(e.target.checked)}
+                      className="mt-0.5 rounded text-[#0B1D33] focus:ring-[#C59B27] border-slate-300"
+                    />
+                    <label htmlFor="isSensitive" className="text-xs leading-relaxed text-slate-700 select-none cursor-pointer">
+                      <strong className="text-[#0B1D33] block">This is sensitive/private</strong>
+                      Restrict visibility exclusively to the assigned staff officer and authorized administrators.
+                    </label>
+                  </div>
 
-                <div>
-                  <label className="text-xs font-semibold uppercase text-slate-700 block mb-1">
-                    Detailed Statement / Issue Description
-                  </label>
-                  <textarea
-                    name="description"
-                    required
-                    rows={4}
-                    placeholder="Provide exact facts, dates, unit codes, lab venues, or staff names where applicable..."
-                    className="w-full text-xs rounded-xl border border-[#C59B27]/40 bg-white text-[#0B1D33] p-3 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
-                  />
-                </div>
-
-                {/* Confidential Sensitive Checkbox */}
-                <div className="p-3 rounded-xl border border-[#C59B27]/30 bg-[#0B1D33]/30 flex items-start gap-2.5">
-                  <input
-                    type="checkbox"
-                    id="isSensitive"
-                    checked={isSensitive}
-                    onChange={(e) => setIsSensitive(e.target.checked)}
-                    className="mt-0.5 rounded text-[#C59B27] focus:ring-[#C59B27]"
-                  />
-                  <label htmlFor="isSensitive" className="text-xs leading-relaxed text-slate-300 select-none cursor-pointer">
-                    <strong className="text-[#FCD34D] block">Mark as Confidential Sensitive Complaint</strong>
-                    Only assigned staff and senior university administrators will be granted clearance to inspect this record.
-                  </label>
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2 border-t border-[#C59B27]/20">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsSubmitModalOpen(false)}
-                    className="text-xs border-slate-600"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
+                  <div className="flex justify-end gap-2 pt-2 border-t border-[#C59B27]/20">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsSubmitModalOpen(false)}
+                      className="text-xs border-slate-300"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      isLoading={submitLoading}
+                      className="text-xs"
+                    >
+                      Submit Request <ArrowRight className="w-3.5 h-3.5 ml-1 text-[#FCD34D]" />
+                    </Button>
+                  </div>
+                </form>
+              )}
                     variant="primary"
                     isLoading={submitLoading}
                     className="text-xs"
