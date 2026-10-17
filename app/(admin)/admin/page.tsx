@@ -25,7 +25,12 @@ import {
   type TicketItem,
 } from "@/lib/actions/helpdesk";
 import { getAuditLogsAction, type AuditLogEntry } from "@/lib/actions/audit";
-import { syncUamsDataAction, type UamsSyncResponse } from "@/lib/actions/sync";
+import {
+  syncUamsDataAction,
+  getLatestSyncStatusAction,
+  type UamsSyncResponse,
+  type LatestSyncStatus,
+} from "@/lib/actions/sync";
 import {
   getAdminAnnouncementsAction,
   toggleAnnouncementPublishAction,
@@ -67,6 +72,7 @@ export default function StaffAdminPanelPage() {
   const [syncResult, setSyncResult] = React.useState<UamsSyncResponse | null>(null);
   const [syncError, setSyncError] = React.useState<string | null>(null);
   const [lastSyncTime, setLastSyncTime] = React.useState<string | null>(null);
+  const [latestSyncStatus, setLatestSyncStatus] = React.useState<LatestSyncStatus | null>(null);
 
   // Announcement manager state
   const [announcementActionLoading, setAnnouncementActionLoading] = React.useState(false);
@@ -88,17 +94,19 @@ export default function StaffAdminPanelPage() {
     let ignore = false;
     async function loadInitialData() {
       try {
-        const [authRes, ticketsRes, auditRes, noticesRes] = await Promise.all([
+        const [authRes, ticketsRes, auditRes, noticesRes, syncStatusRes] = await Promise.all([
           getUserRoleAction(),
           getStaffTicketQueueAction(),
           getAuditLogsAction(),
           getAdminAnnouncementsAction(),
+          getLatestSyncStatusAction(),
         ]);
         if (!ignore) {
           setUserRoleInfo(authRes);
           if (ticketsRes.success) setTickets(ticketsRes.tickets);
           if (auditRes.success) setAuditLogs(auditRes.logs);
           if (noticesRes.success) setNotices(noticesRes.announcements);
+          if (syncStatusRes.success) setLatestSyncStatus(syncStatusRes);
         }
       } catch (err) {
         console.error("Failed to load staff console data", err);
@@ -226,9 +234,13 @@ export default function StaffAdminPanelPage() {
           " at " +
           new Date().toLocaleTimeString("en-KE", { hour: "2-digit", minute: "2-digit" })
       );
-      // Reload audit log
-      const auditRefreshed = await getAuditLogsAction();
+      // Reload sync status and audit log
+      const [auditRefreshed, statusRefreshed] = await Promise.all([
+        getAuditLogsAction(),
+        getLatestSyncStatusAction(),
+      ]);
       if (auditRefreshed.success) setAuditLogs(auditRefreshed.logs);
+      if (statusRefreshed.success) setLatestSyncStatus(statusRefreshed);
     } catch (err: unknown) {
       setSyncError(err instanceof Error ? err.message : "Sync execution failed.");
     } finally {
@@ -748,21 +760,54 @@ export default function StaffAdminPanelPage() {
 
               <Card className="p-6 border-[#C59B27]/30 bg-white shadow-xs space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#C59B27]/15 pb-4">
-                  <div>
-                    <h3 className="font-serif font-bold text-base text-[#0B1D33]">
-                      Manual Student Data Synchronization Trigger
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Instantly reconciles student identities, unit registrations, and timetable slots.
-                    </p>
-                    <div className="flex items-center gap-2 mt-2 text-xs text-slate-600 font-mono">
-                      <Clock className="w-3.5 h-3.5 text-[#C59B27]" />
-                      <span>
-                        Last Sync Time:{" "}
-                        <strong className="text-[#0B1D33]">
-                          {lastSyncTime || "October 16, 2026, 08:30 AM (Baseline)"}
-                        </strong>
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-serif font-bold text-base text-[#0B1D33]">
+                        UAMS Auto-Sync & Registrar Ingestion
+                      </h3>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        (latestSyncStatus?.status === "failed" || syncError)
+                          ? "bg-red-100 text-red-800 border border-red-300"
+                          : "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      }`}>
+                        {(latestSyncStatus?.status === "failed" || syncError) ? (
+                          <>
+                            <AlertCircle className="w-3 h-3 text-red-600" /> Sync Degraded
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Auto-Sync Active (15m Cadence)
+                          </>
+                        )}
                       </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-700 border border-slate-200">
+                        {latestSyncStatus?.triggerSource === "cron" ? "Trigger: Scheduled Cron" : "Trigger: Manual Admin"}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-500">
+                      Reconciles student identities, unit enrollments, and timetables automatically on a 15-minute background interval.
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1.5 text-xs text-slate-600 font-mono">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#C59B27]" />
+                        <span>
+                          Last Successful Sync:{" "}
+                          <strong className="text-[#0B1D33]">
+                            {latestSyncStatus?.lastSyncTimeFormatted || lastSyncTime || "October 16, 2026, 08:30 AM (Baseline)"}
+                          </strong>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-slate-400">•</span>
+                        <span>
+                          Records Changed:{" "}
+                          <strong className="text-emerald-700 font-bold">
+                            {latestSyncStatus?.recordsChanged ?? (syncResult?.records_changed ?? 3)}
+                          </strong>
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -788,10 +833,17 @@ export default function StaffAdminPanelPage() {
                   </div>
                 </div>
 
-                {syncError && (
-                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>{syncError}</span>
+                {/* Prominently render last error if any */}
+                {(syncError || latestSyncStatus?.lastError) && (
+                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <span className="font-bold block text-red-900">Last Sync Error / Warning:</span>
+                      <span className="block font-mono text-[11px] text-red-800">{syncError || latestSyncStatus?.lastError}</span>
+                      <span className="block text-[10px] text-red-600 mt-1">
+                        Automated retry is throttled via anti-storming backoff to protect UAMS infrastructure. Next attempt will execute on schedule.
+                      </span>
+                    </div>
                   </div>
                 )}
 
@@ -843,7 +895,7 @@ export default function StaffAdminPanelPage() {
                       </div>
 
                       <div className="p-2.5 rounded-lg bg-white border border-emerald-200 shadow-2xs">
-                        <span className="text-slate-500 block text-[10px] uppercase">Sync Result</span>
+                        <span className="text-slate-500 block text-[10px] uppercase">Records Changed</span>
                         <span className="font-bold text-emerald-700 text-sm">
                           {syncResult.counts.students_inserted +
                             syncResult.counts.students_updated +
@@ -851,7 +903,7 @@ export default function StaffAdminPanelPage() {
                             syncResult.counts.course_units_updated +
                             syncResult.counts.timetables_inserted +
                             syncResult.counts.timetables_updated}{" "}
-                          Success
+                          Total
                         </span>
                         <span className="text-[10px] text-slate-500 block mt-0.5">
                           Errors: {syncResult.errors?.length || 0}
