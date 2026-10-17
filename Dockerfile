@@ -23,6 +23,8 @@ ENV NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder-anon-key
 ENV NEXT_PUBLIC_APP_NAME="Student Life & Campus Hub"
 ENV NEXT_PUBLIC_APP_URL=http://localhost:3000
+ENV NEXT_PUBLIC_ENABLE_DEMO_AUTH="false"
+ENV CRON_SECRET="docker-build-cron-secret-placeholder"
 ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
