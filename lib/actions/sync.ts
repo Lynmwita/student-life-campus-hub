@@ -173,9 +173,16 @@ interface SyncedTimetableEntity {
   lecturerName: string;
 }
 
-const localSyncedStudents = new Map<string, SyncedStudentEntity>();
-const localSyncedCourseUnits = new Map<string, SyncedCourseUnitEntity>();
-const localSyncedTimetables = new Map<string, SyncedTimetableEntity>();
+const globalForSync = globalThis as unknown as {
+  __syncRunsHistory?: SyncRunRecord[];
+  __localSyncedStudents?: Map<string, SyncedStudentEntity>;
+  __localSyncedCourseUnits?: Map<string, SyncedCourseUnitEntity>;
+  __localSyncedTimetables?: Map<string, SyncedTimetableEntity>;
+};
+
+const localSyncedStudents = (globalForSync.__localSyncedStudents ??= new Map<string, SyncedStudentEntity>());
+const localSyncedCourseUnits = (globalForSync.__localSyncedCourseUnits ??= new Map<string, SyncedCourseUnitEntity>());
+const localSyncedTimetables = (globalForSync.__localSyncedTimetables ??= new Map<string, SyncedTimetableEntity>());
 
 /**
  * Reset sync lock and cooldown state for test suite execution.
@@ -197,7 +204,7 @@ export async function resetSyncStoreForTesting(): Promise<void> {
 }
 
 // In-memory sync run history for fast access and testing
-const syncRunsHistory: SyncRunRecord[] = [
+const syncRunsHistory: SyncRunRecord[] = (globalForSync.__syncRunsHistory ??= [
   {
     id: "sync-baseline-2026-10-16",
     startedAt: "2026-10-16T08:30:00.000Z",
@@ -219,7 +226,7 @@ const syncRunsHistory: SyncRunRecord[] = [
     errors: [],
     errorMessage: null,
   },
-];
+]);
 
 /**
  * Reusable core execution function for UAMS synchronization.
