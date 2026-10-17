@@ -40,6 +40,7 @@ The application requires the following environment variables:
 | `NEXT_PUBLIC_SUPABASE_URL` | Public (Client + Server) | Staging / Prod | HTTPS endpoint of the Supabase project. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public (Client + Server) | Staging / Prod | Supabase public anonymous key (guarded by Row-Level Security). |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret (Server Only)** | Staging / Prod | Service role key for admin sync operations. **NEVER expose to client**. |
+| `CRON_SECRET` | **Secret (Server Only)** | Staging / Prod | Secret token guarding `POST /api/sync/uams`. Must be a strong 256-bit random string (`openssl rand -hex 32`) in production. **NEVER reuse staging secret**. |
 | `UAMS_SYNC_SECRET` | **Secret (Server Only)** | Staging / Prod | Shared secret header (`x-sync-secret`) authorizing registrar sync requests. |
 | `NEXT_PUBLIC_APP_NAME` | Public | Staging / Prod | Institution name display (`"Student Life & Campus Hub"`). |
 | `NEXT_PUBLIC_APP_URL` | Public | Staging / Prod | Canonical URL (`https://hub.summit.ac.ke` or staging equivalent). |

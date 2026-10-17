@@ -61,6 +61,10 @@
   - Verified against staging database: `SELECT count(*) FROM auth.users WHERE encrypted_password = crypt('StaffPassword123!', encrypted_password)...` returns **0**.
   - `seed.sql` sanitized to use random UUID cryptographic salts.
   - Fallback mock accounts in `lib/actions/auth.ts` strictly disabled in production builds.
+- [ ] **Cryptographic CRON_SECRET Rotation (Pre-Launch):**
+  - Generate a dedicated 256-bit high-entropy secret (`openssl rand -hex 32`) for `CRON_SECRET`.
+  - Injected strictly into hosting platform secret management (e.g. Vercel Environment Variables and GitHub Actions Secrets).
+  - Strictly prohibited from using default or staging secret (`staging-cron-secret-2026`) in production.
 
 ---
 
