@@ -36,9 +36,14 @@ const DEMO_ACCOUNTS: Record<string, { role: string; redirectUrl: string; passwor
     redirectUrl: "/announcements/new",
     password: "StaffPassword123!",
   },
+  "admin@summit.ac.ke": {
+    role: "admin",
+    redirectUrl: "/admin",
+    password: "AdminPassword123!",
+  },
   "root@studenthub.ac.ke": {
     role: "super_admin",
-    redirectUrl: "/dashboard",
+    redirectUrl: "/admin",
     password: "AdminPassword123!",
   },
 };

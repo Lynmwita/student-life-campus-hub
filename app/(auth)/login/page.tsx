@@ -140,12 +140,12 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => fillDemo("student@summit.ac.ke", "StudentPassword123!")}
+                onClick={() => fillDemo("admin@summit.ac.ke", "AdminPassword123!")}
                 className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
               >
-                <div className="font-semibold text-[#0B1D33]">Student Demo</div>
-                <div className="text-[10px] text-slate-500 truncate">student@summit.ac.ke</div>
-                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Alex Mutua • 3-Step Flow</div>
+                <div className="font-semibold text-[#0B1D33]">Admin Demo</div>
+                <div className="text-[10px] text-slate-500 truncate">admin@summit.ac.ke</div>
+                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Super Admin • /admin</div>
               </button>
               <button
                 type="button"
@@ -155,6 +155,24 @@ export default function LoginPage() {
                 <div className="font-semibold text-[#0B1D33]">Registrar Demo</div>
                 <div className="text-[10px] text-slate-500 truncate">registrar@summit.ac.ke</div>
                 <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Academic Affairs • Notice Ops</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemo("alex.mutua@summit.ac.ke", "StudentPassword123!")}
+                className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
+              >
+                <div className="font-semibold text-[#0B1D33]">Student Demo</div>
+                <div className="text-[10px] text-slate-500 truncate">alex.mutua@summit.ac.ke</div>
+                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Active Student • /dashboard</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemo("student@summit.ac.ke", "StudentPassword123!")}
+                className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
+              >
+                <div className="font-semibold text-[#0B1D33]">Onboarding Flow</div>
+                <div className="text-[10px] text-slate-500 truncate">student@summit.ac.ke</div>
+                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">New Student • 3-Step Flow</div>
               </button>
             </div>
           </div>
