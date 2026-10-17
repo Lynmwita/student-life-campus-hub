@@ -87,6 +87,51 @@ describe("Phase 11 — Live Registrar Client & Adapter", () => {
     );
   });
 
+  it("automatically adapts upstream payload when formatted with nested envelopes and legacy field keys", async () => {
+    const rawSisResponse = {
+      status: "success",
+      data: {
+        studentList: [
+          {
+            student_email: "  SAMUEL.K@SUMMIT.AC.KE  ",
+            name: "Samuel Kariuki",
+            student_id: "smu/bit/2026/012",
+            school: "School of Computing & Informatics",
+            programme: "Information Technology",
+            academic_year_level: "Year 3",
+          },
+        ],
+        units: [
+          {
+            unit_code: "bit 301",
+            title: "Network Security & Cryptography",
+            faculty: "School of Computing & Informatics",
+            department: "Information Technology",
+            year: "3",
+            term: "SEM_1",
+          },
+        ],
+      },
+    };
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => rawSisResponse,
+    } as unknown as Response);
+
+    const result = await fetchRegistrarFeed({
+      apiUrl: "https://sis.summit.ac.ke/api/v1/feed",
+    });
+
+    expect(result.source).toBe("live_api");
+    expect(result.data.students[0].email).toBe("samuel.k@summit.ac.ke");
+    expect(result.data.students[0].registration_number).toBe("SMU/BIT/2026/012");
+    expect(result.data.course_units[0].code).toBe("BIT 301");
+    expect(result.data.course_units[0].semester).toBe(1);
+    expect(result.error).toBeUndefined();
+  });
+
   it("gracefully falls back to local_store when live endpoint returns HTTP 500 error", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,

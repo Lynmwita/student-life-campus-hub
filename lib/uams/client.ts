@@ -1,5 +1,6 @@
 import { uamsSyncPayloadSchema, type UamsSyncPayload } from "@/lib/validations/sync";
 import { getUamsRegistrarData } from "./registrar-store";
+import { normalizeRegistrarPayload } from "./adapter";
 
 export interface RegistrarFeedResult {
   source: "live_api" | "local_store";
@@ -73,10 +74,31 @@ export async function fetchRegistrarFeed(
     }
 
     const json = await response.json();
-    const parsed = uamsSyncPayloadSchema.safeParse(json);
+    let parsed = uamsSyncPayloadSchema.safeParse(json);
 
+    // If direct parse fails, attempt normalization through the SIS adapter
     if (!parsed.success) {
-      const issues = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+      if (!json || typeof json !== "object" || typeof (json as any).students === "string") {
+        const issues = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+        const errorMsg = `Upstream UAMS payload failed contract validation: ${issues}`;
+        console.warn(`[UAMS CLIENT] ${errorMsg}. Falling back to local registrar store.`);
+        return {
+          source: "local_store",
+          data: await getUamsRegistrarData(),
+          apiUrl,
+          latencyMs: Date.now() - startTime,
+          error: errorMsg,
+        };
+      }
+
+      const normalized = normalizeRegistrarPayload(json);
+      parsed = uamsSyncPayloadSchema.safeParse(normalized);
+    }
+
+    if (!parsed.success || (parsed.data.students.length === 0 && parsed.data.course_units.length === 0)) {
+      const issues = parsed.success
+        ? "Normalized payload contains 0 student and course records"
+        : parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
       const errorMsg = `Upstream UAMS payload failed contract validation: ${issues}`;
       console.warn(`[UAMS CLIENT] ${errorMsg}. Falling back to local registrar store.`);
       return {
