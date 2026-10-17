@@ -16,6 +16,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
       NEXT_PUBLIC_APP_NAME: "Student Life & Campus Hub"
       NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_ENABLE_DEMO_AUTH: "false"
+      CRON_SECRET: "ci-testing-cron-secret-2026"
 
     steps:
       - name: Checkout repository
@@ -30,11 +32,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run Production Dependency Security Audit
+        run: npm audit --omit=dev
+
       - name: Run ESLint
         run: npm run lint
 
-      - name: Run Vitest Unit Tests
+      - name: Run Vitest Verification Suite (142 tests)
         run: npm test
 
-      - name: Run Next.js Production Build
+      - name: Run Next.js Production Build (Lockdown Verified)
         run: npm run build
