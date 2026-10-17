@@ -1,0 +1,47 @@
+name: UAMS Automated Synchronization
+
+on:
+  schedule:
+    # Executes every 15 minutes to reconcile registrar updates with the student hub
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run sync in dry-run mode (validate only)'
+        required: false
+        default: 'false'
+
+jobs:
+  trigger-uams-sync:
+    name: Trigger Automated UAMS Sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Secure Sync Trigger
+        env:
+          APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'https://campus-hub.summit.ac.ke' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "::error::CRON_SECRET secret is not configured in GitHub repository secrets."
+            exit 1
+          fi
+
+          echo "Triggering UAMS auto-sync at $APP_URL/api/sync/uams..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$APP_URL/api/sync/uams" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            -d "{\"version\": 1, \"dry_run\": $DRY_RUN}")
+
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "Response Body: $BODY"
+
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "::error::UAMS synchronization failed with HTTP status $HTTP_STATUS: $BODY"
+            exit 1
+          fi
+
+          echo "✓ Automated UAMS synchronization completed successfully."
