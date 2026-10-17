@@ -783,6 +783,13 @@ export default function StaffAdminPanelPage() {
                       <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-700 border border-slate-200">
                         {latestSyncStatus?.triggerSource === "cron" ? "Trigger: Scheduled Cron" : "Trigger: Manual Admin"}
                       </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-50 text-blue-700 border border-blue-200">
+                        {latestSyncStatus?.feedSource === "live_api"
+                          ? "Feed: Live SIS API"
+                          : latestSyncStatus?.feedSource === "local_store"
+                          ? "Feed: Local Verified Store"
+                          : "Feed: Direct Ingestion"}
+                      </span>
                     </div>
 
                     <p className="text-xs text-slate-500">

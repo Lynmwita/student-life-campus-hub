@@ -11,6 +11,8 @@ import {
   type UamsSyncPayload,
 } from "@/lib/validations/sync";
 import { getUamsRegistrarData } from "@/lib/uams/registrar-store";
+import { fetchRegistrarFeed } from "@/lib/uams/client";
+import { normalizeRegistrarPayload } from "@/lib/uams/adapter";
 
 /**
  * Searches for an existing Supabase Auth user by email across all pages.
@@ -101,6 +103,7 @@ export interface UamsSyncResponse {
   records_changed?: number;
   run_id?: string;
   trigger_source?: "cron" | "manual" | "api";
+  feed_source?: "live_api" | "local_store" | "payload_direct";
 }
 
 export interface ExecuteSyncOptions {
@@ -122,6 +125,7 @@ export interface SyncRunRecord {
   counts: SyncCounts;
   errors?: string[];
   errorMessage?: string | null;
+  feedSource?: "live_api" | "local_store" | "payload_direct";
 }
 
 export interface LatestSyncStatus {
@@ -132,6 +136,7 @@ export interface LatestSyncStatus {
   recordsChanged: number;
   lastError: string | null;
   triggerSource: "cron" | "manual" | "api";
+  feedSource?: "live_api" | "local_store" | "payload_direct";
   counts: SyncCounts;
   totalRuns: number;
 }
@@ -225,6 +230,7 @@ const syncRunsHistory: SyncRunRecord[] = (globalForSync.__syncRunsHistory ??= [
     },
     errors: [],
     errorMessage: null,
+    feedSource: "local_store",
   },
 ]);
 
@@ -284,12 +290,16 @@ export async function executeUamsSync(
   }
 
   isSyncInProgress = true;
+  let feedSource: "live_api" | "local_store" | "payload_direct" = "payload_direct";
 
   try {
-    // 3. Resolve Payload (use provided payload or fetch authoritative registrar feed)
+    // 3. Resolve Payload (use provided payload or fetch authoritative registrar feed via client)
     let rawPayload = options.payload;
+
     if (!rawPayload) {
-      rawPayload = await getUamsRegistrarData();
+      const feedResult = await fetchRegistrarFeed();
+      rawPayload = feedResult.data;
+      feedSource = feedResult.source;
     }
 
     const parsed = uamsSyncPayloadSchema.safeParse(rawPayload);
@@ -309,6 +319,7 @@ export async function executeUamsSync(
         counts: initialCounts,
         errors: errorMessages,
         errorMessage: "UAMS payload failed contract schema validation.",
+        feedSource,
       };
       syncRunsHistory.unshift(failureRecord);
 
@@ -321,6 +332,7 @@ export async function executeUamsSync(
         errors: errorMessages,
         message: "UAMS payload failed contract schema validation.",
         trigger_source: triggerSource,
+        feed_source: feedSource,
       };
     }
 
@@ -345,6 +357,7 @@ export async function executeUamsSync(
         },
         message: `Dry run completed successfully. Contract valid: ${payload.students.length} students, ${payload.course_units.length} course units, and ${payload.timetables.length} timetable entries verified.`,
         trigger_source: triggerSource,
+        feed_source: feedSource,
       };
     }
 
@@ -764,6 +777,7 @@ export async function executeUamsSync(
       counts,
       errors: syncErrors.length > 0 ? syncErrors : undefined,
       errorMessage: syncErrors.length > 0 ? syncErrors.join("; ") : null,
+      feedSource,
     };
     syncRunsHistory.unshift(runRecord);
 
@@ -779,6 +793,7 @@ export async function executeUamsSync(
         targetId: runId,
         details: {
           triggerSource,
+          feedSource,
           actorEmail: options.actorEmail || "scheduler@summit.ac.ke",
           recordsChanged,
           counts,
@@ -799,6 +814,7 @@ export async function executeUamsSync(
       records_changed: recordsChanged,
       run_id: runId,
       trigger_source: triggerSource,
+      feed_source: feedSource,
       message:
         isSuccess
           ? `UAMS sync executed: ${counts.students_inserted + counts.students_updated} students, ${counts.course_units_inserted + counts.course_units_updated} course units, and ${counts.timetables_inserted + counts.timetables_updated} timetable entries synced.`
@@ -819,6 +835,7 @@ export async function executeUamsSync(
       counts: initialCounts,
       errors: [errorMessage],
       errorMessage,
+      feedSource,
     };
     syncRunsHistory.unshift(fatalRecord);
 
@@ -831,6 +848,7 @@ export async function executeUamsSync(
       errors: [errorMessage],
       message: `Fatal error during UAMS sync: ${errorMessage}`,
       trigger_source: triggerSource,
+      feed_source: feedSource,
     };
   } finally {
     isSyncInProgress = false;
@@ -1065,6 +1083,7 @@ export async function getLatestSyncStatusAction(): Promise<LatestSyncStatus> {
     recordsChanged: latest.recordsChanged,
     lastError: latest.errorMessage || null,
     triggerSource: latest.triggerSource,
+    feedSource: latest.feedSource || (latest.triggerSource === "manual" ? "payload_direct" : "local_store"),
     counts: latest.counts,
     totalRuns: syncRunsHistory.length,
   };
