@@ -120,7 +120,7 @@ Defined and enforced via Zod schemas in `lib/validations/auth.ts`:
 
 ## 5. Security Verification Test Suite
 
-All 12 test suites and 128 automated unit & integration tests pass with zero errors:
+All 15 test suites and 142 automated unit & integration tests pass with zero errors:
 
 ```text
  ✓ tests/unit/utils.test.ts (3 tests)
@@ -135,9 +135,12 @@ All 12 test suites and 128 automated unit & integration tests pass with zero err
  ✓ tests/unit/pwa.test.ts (11 tests)
  ✓ tests/unit/announcements.test.ts (11 tests)
  ✓ tests/unit/security-hardening.test.ts (12 tests)
+ ✓ tests/unit/sync-endpoint.test.ts (6 tests)
+ ✓ tests/unit/sync-scheduler.test.ts (4 tests)
+ ✓ tests/unit/sync-proof.test.ts (4 tests)
 
- Test Files  12 passed (12)
-      Tests  128 passed (128)
+ Test Files  15 passed (15)
+      Tests  142 passed (142)
 ```
 
 In addition, Next.js standalone production build completes with 0 errors (`npm run build`).
