@@ -61,10 +61,27 @@
   - Verified against staging database: `SELECT count(*) FROM auth.users WHERE encrypted_password = crypt('StaffPassword123!', encrypted_password)...` returns **0**.
   - `seed.sql` sanitized to use random UUID cryptographic salts.
   - Fallback mock accounts in `lib/actions/auth.ts` strictly disabled in production builds.
-- [ ] **Cryptographic CRON_SECRET Rotation (Pre-Launch):**
-  - Generate a dedicated 256-bit high-entropy secret (`openssl rand -hex 32`) for `CRON_SECRET`.
+- [x] **Cryptographic Secret Generator & Rotation Protocol (Step 10.1):**
+  - High-entropy 256-bit generator script implemented in `scripts/generate-production-secrets.sh`.
   - Injected strictly into hosting platform secret management (e.g. Vercel Environment Variables and GitHub Actions Secrets).
-  - Strictly prohibited from using default or staging secret (`staging-cron-secret-2026`) in production.
+  - Production deployments strictly prohibit using default or staging secret in production.
+
+---
+
+## 5. Cloud Deployment & Operational Readiness (Phase 10)
+- [x] **Canonical Domain Alignment (Step 10.3):**
+  - Standardized strictly across `.github/workflows/uams-sync.yml`, `DEPLOYMENT.md`, and secret templates to `https://hub.summit.ac.ke`.
+- [x] **Hardened Standalone Container (Step 10.3):**
+  - `output: "standalone"` verified in `.next/standalone` with non-root user `nextjs:nodejs` (UID 1001).
+- [x] **Operational Health & Latency Probe (Step 10.3):**
+  - Active at `/api/health` with 1,000ms database safety timeout and rate-limit protection.
+- [x] **Automated 15-Minute UAMS Scheduler (Phase 8 / Step 10.2):**
+  - Dual triggers: Vercel Pro crons and GitHub Actions runner (`uams-sync.yml`) guarded by `Authorization: Bearer <CRON_SECRET>`.
+- [x] **Anti-Storming Circuit Breakers:**
+  - In-flight execution lock blocks concurrent runs (`409 Conflict`).
+  - 60-second backoff cooldown activates on failure (`429 Too Many Requests`).
+- [x] **Automated Pre-Flight Gate (`scripts/verify-preflight.ts`):**
+  - Programmatic audit verifies all 8 production gates with 100% pass rate.
 
 ---
 
@@ -75,4 +92,9 @@
 | **7a** | Real hosted Supabase staging database | Sequential psql DDL pipeline (`scripts/migrate-staging.sh`) | **VERIFIED** |
 | **7b** | 4 End-to-End staging user journeys | `scripts/verify-staging.ts` (All 4 Journeys passed) | **VERIFIED** |
 | **7c** | Real RLS & locked-door sensitive isolation | `scripts/verify-staging.ts` (0-row leak confirmed) | **VERIFIED** |
-| **7d** | Production lockdown (demo card OFF, zero demo passwords) | `tests/unit/prepilot-verification.test.ts` (116 tests passing) | **VERIFIED** |
+| **7d** | Production lockdown (demo card OFF, zero demo passwords) | `tests/unit/prepilot-verification.test.ts` (142 tests passing) | **VERIFIED** |
+| **9a-c** | Hardening & Security Audit | Signed `SECURITY_AUDIT.md` (0 criticals/highs) | **VERIFIED** |
+| **10.1** | Cryptographic secrets generator | `scripts/generate-production-secrets.sh` (256-bit tokens) | **VERIFIED** |
+| **10.2** | Automated CI/CD & Cron workflow | `.github/workflows/ci.yml` & `uams-sync.yml` | **VERIFIED** |
+| **10.3** | Standalone runtime & canonical domain | `hub.summit.ac.ke` unified & Docker standalone container | **VERIFIED** |
+| **10.4** | Production Pre-Flight Suite | `scripts/verify-preflight.ts` (8/8 Gates Passed) | **VERIFIED** |
