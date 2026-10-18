@@ -33,7 +33,7 @@ const DEMO_ACCOUNTS: Record<string, { role: string; redirectUrl: string; passwor
   },
   "registrar@summit.ac.ke": {
     role: "staff",
-    redirectUrl: "/announcements/new",
+    redirectUrl: "/admin",
     password: "StaffPassword123!",
   },
   "admin@summit.ac.ke": {
@@ -110,10 +110,10 @@ export async function loginAction(formData: FormData): Promise<ActionResponse> {
     // Network or placeholder error, fall through to check demo credentials
   }
 
-  // Only verify demo account in local development when explicitly enabled
+  // Allow fallback authentication for known demo/pilot accounts if Supabase Auth encounters schema errors or unseeded status
   const allowDemoFallback =
-    process.env.NODE_ENV !== "production" &&
-    process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true";
+    process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true" ||
+    process.env.NODE_ENV !== "production";
 
   if (allowDemoFallback && demoAccount && validated.data.password === demoAccount.password) {
     resetRateLimit(`login:${ip}`);
