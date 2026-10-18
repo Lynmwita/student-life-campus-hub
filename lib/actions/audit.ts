@@ -74,16 +74,18 @@ export async function recordAuditLogAction(params: {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
-      .from("audit_logs")
+      .from("audit_log")
       .insert({
-        university_id: params.universityId,
-        actor_id: params.actorId,
-        actor_role: params.actorRole,
+        actor_id: params.actorId.startsWith("00000000-0000-0000-0000") ? null : params.actorId,
         action: params.action,
-        target_type: params.targetType,
-        target_id: params.targetId || null,
-        details: params.details || {},
-        ip_address: params.ipAddress || null,
+        entity_type: params.targetType,
+        entity_id: params.targetId || null,
+        details: {
+          ...params.details,
+          university_id: params.universityId,
+          actor_role: params.actorRole,
+          ip_address: params.ipAddress || null,
+        },
       })
       .select("id")
       .single();
@@ -148,20 +150,17 @@ export async function getAuditLogsAction(): Promise<AuditLogsResponse> {
   }
 
   const { data: logs, error } = await supabase
-    .from("audit_logs")
+    .from("audit_log")
     .select(`
       id,
-      university_id,
       actor_id,
-      actor_role,
       action,
-      target_type,
-      target_id,
+      entity_type,
+      entity_id,
       details,
       created_at,
       user_profiles (full_name)
     `)
-    .eq("university_id", membership.university_id)
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -176,13 +175,13 @@ export async function getAuditLogsAction(): Promise<AuditLogsResponse> {
     success: true,
     logs: logs.map((l) => ({
       id: l.id,
-      universityId: l.university_id,
-      actorId: l.actor_id,
-      actorName: (l.user_profiles as unknown as { full_name?: string } | null)?.full_name || "Staff Member",
-      actorRole: l.actor_role,
+      universityId: membership.university_id,
+      actorId: l.actor_id || "00000000-0000-0000-0000-000000000100",
+      actorName: (l.user_profiles as unknown as { full_name?: string } | null)?.full_name || "System Operator",
+      actorRole: ((l.details as Record<string, unknown>)?.actor_role as string) || "staff",
       action: l.action,
-      targetType: l.target_type,
-      targetId: l.target_id,
+      targetType: l.entity_type,
+      targetId: l.entity_id,
       details: (l.details as Record<string, unknown>) || {},
       createdAt: l.created_at,
     })),

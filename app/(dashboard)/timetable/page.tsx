@@ -30,6 +30,7 @@ const DAYS: Array<{ id: number; name: string; short: string }> = [
   { id: 4, name: "Thursday", short: "Thu" },
   { id: 5, name: "Friday", short: "Fri" },
   { id: 6, name: "Saturday", short: "Sat" },
+  { id: 0, name: "Sunday", short: "Sun" },
 ];
 
 export default function TimetablePage() {
@@ -39,9 +40,9 @@ export default function TimetablePage() {
   const [universityName, setUniversityName] = React.useState("Summit Metropolitan University");
   const [campusName, setCampusName] = React.useState("Main Campus (Westlands)");
 
-  // Default to today's day of week (Monday if weekend)
+  // Default to today's day of week (0 = Sunday, 1..6 = Mon..Sat)
   const currentJsDay = typeof window !== "undefined" ? new Date().getDay() : 1;
-  const initialDay = currentJsDay >= 1 && currentJsDay <= 6 ? currentJsDay : 1;
+  const initialDay = currentJsDay >= 0 && currentJsDay <= 6 ? currentJsDay : 1;
   const [selectedDay, setSelectedDay] = React.useState<number>(initialDay);
 
   React.useEffect(() => {
@@ -187,10 +188,12 @@ export default function TimetablePage() {
                   <Calendar className="w-5 h-5" />
                 </div>
                 <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
-                  No Classes Scheduled for {selectedDayMeta.name}
+                  {selectedDay === 0 ? "Free Study Day — No Lectures Scheduled" : `No Classes Scheduled for ${selectedDayMeta.name}`}
                 </h4>
                 <p className="text-xs text-slate-500">
-                  Enjoy your independent study, lab research, or explore campus life clubs.
+                  {selectedDay === 0
+                    ? "Sunday is reserved for independent study, assignment revision, and campus activities."
+                    : "Enjoy your independent study, lab research, or explore campus life clubs."}
                 </p>
               </div>
             </Card>

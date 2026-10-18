@@ -338,9 +338,33 @@ export async function executeUamsSync(
 
     const payload: UamsSyncPayload = parsed.data;
     const isDryRun = options.dryRun ?? payload.dry_run ?? false;
+    const isTestEnv = process.env.VITEST === "true" || process.env.NODE_ENV === "test";
 
     // Handle dry-run mode without writes or database access
     if (isDryRun) {
+      if (!isTestEnv) {
+        await recordAuditLogAction({
+          universityId: DEFAULT_PILOT_UNIVERSITY_ID,
+          actorId: options.actorId || "00000000-0000-0000-0000-000000000000",
+          actorRole: options.actorRole || "staff",
+          action: "uams_sync_dry_run",
+          targetType: "uams_sync",
+          targetId: runId,
+          details: {
+            triggerSource,
+            feedSource,
+            actorEmail: options.actorEmail || "admin@summit.ac.ke",
+            recordsVerified: payload.students.length + payload.course_units.length + payload.timetables.length,
+            counts: {
+              students_processed: payload.students.length,
+              course_units_processed: payload.course_units.length,
+              timetables_processed: payload.timetables.length,
+            },
+            mode: "dry_run",
+          },
+        });
+      }
+
       return {
         success: true,
         dry_run: true,
@@ -360,8 +384,6 @@ export async function executeUamsSync(
         feed_source: feedSource,
       };
     }
-
-    const isTestEnv = process.env.VITEST === "true" || process.env.NODE_ENV === "test";
 
     let universityId = DEFAULT_PILOT_UNIVERSITY_ID;
     const campusMap = new Map<string, string>();
