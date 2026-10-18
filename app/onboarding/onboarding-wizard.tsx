@@ -386,19 +386,32 @@ export default function SmartOnboardingWizard({
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                     Full Student Name
                   </div>
-                  <div className="text-sm font-bold text-[#0B1D33] font-sans">
-                    {studies.fullName}
-                  </div>
-                  <div className="text-xs text-slate-500 font-sans">{studies.email}</div>
+                  {loadingStudies ? (
+                    <div className="space-y-1.5 py-0.5">
+                      <div className="h-4 bg-slate-200 rounded animate-pulse w-3/4" />
+                      <div className="h-3 bg-slate-200 rounded animate-pulse w-1/2" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-sm font-bold text-[#0B1D33] font-sans">
+                        {studies.fullName}
+                      </div>
+                      <div className="text-xs text-slate-500 font-sans">{studies.email}</div>
+                    </>
+                  )}
                 </div>
 
                 <div className="space-y-1 p-3 rounded-lg bg-slate-50 border border-slate-200">
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                     Registration Number
                   </div>
-                  <div className="text-sm font-mono font-bold text-[#0B1D33]">
-                    {studies.registrationNumber}
-                  </div>
+                  {loadingStudies ? (
+                    <div className="h-5 bg-slate-200 rounded animate-pulse w-2/3 my-0.5" />
+                  ) : (
+                    <div className="text-sm font-mono font-bold text-[#0B1D33]">
+                      {studies.registrationNumber}
+                    </div>
+                  )}
                   <div className="text-xs text-emerald-600 font-semibold">
                     Registrar Synced
                   </div>
@@ -408,9 +421,13 @@ export default function SmartOnboardingWizard({
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                     Academic Standing
                   </div>
-                  <div className="text-sm font-bold text-[#0B1D33] font-sans">
-                    Year {studies.yearOfStudy}{" • "}Semester {studies.semester}
-                  </div>
+                  {loadingStudies ? (
+                    <div className="h-5 bg-slate-200 rounded animate-pulse w-1/2 my-0.5" />
+                  ) : (
+                    <div className="text-sm font-bold text-[#0B1D33] font-sans">
+                      Year {studies.yearOfStudy}{" • "}Semester {studies.semester}
+                    </div>
+                  )}
                   <div className="text-xs text-slate-500 font-sans">Full-Time Undergraduate</div>
                 </div>
 
@@ -418,21 +435,34 @@ export default function SmartOnboardingWizard({
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                     Degree / Academic Program
                   </div>
-                  <div className="text-sm font-bold text-[#0B1D33] font-sans">
-                    {studies.programOfStudy}
-                  </div>
-                  <div className="text-xs text-slate-500 font-sans">
-                    {studies.faculty}{" • "}{studies.department}
-                  </div>
+                  {loadingStudies ? (
+                    <div className="space-y-1.5 py-0.5">
+                      <div className="h-4 bg-slate-200 rounded animate-pulse w-5/6" />
+                      <div className="h-3 bg-slate-200 rounded animate-pulse w-2/3" />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-sm font-bold text-[#0B1D33] font-sans">
+                        {studies.programOfStudy}
+                      </div>
+                      <div className="text-xs text-slate-500 font-sans">
+                        {studies.faculty}{" • "}{studies.department}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="space-y-1 p-3 rounded-lg bg-slate-50 border border-slate-200">
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                     Assigned Campus
                   </div>
-                  <div className="text-sm font-bold text-[#0B1D33] font-sans">
-                    {studies.campusName}
-                  </div>
+                  {loadingStudies ? (
+                    <div className="h-5 bg-slate-200 rounded animate-pulse w-3/4 my-0.5" />
+                  ) : (
+                    <div className="text-sm font-bold text-[#0B1D33] font-sans">
+                      {studies.campusName}
+                    </div>
+                  )}
                   <div className="text-xs text-slate-500 font-sans">Timetables mapped</div>
                 </div>
               </div>
