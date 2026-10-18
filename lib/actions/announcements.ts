@@ -47,16 +47,6 @@ const DEMO_NOTICES: NoticeItem[] = [
     isRead: true,
     isPublished: true,
   },
-  {
-    id: "00000000-0000-0000-0000-000000000205",
-    title: "[DRAFT] University Bursary Application Window for 2026/2027",
-    content: "Applications for the Summit Metropolitan Needy Students Bursary Fund will open on November 1st. Preliminary documentation requirements are being finalized.",
-    priority: "P3",
-    targetScope: "All Students",
-    publishedAt: "Draft",
-    isRead: false,
-    isPublished: false,
-  },
 ];
 
 export interface AnnouncementActionResponse {

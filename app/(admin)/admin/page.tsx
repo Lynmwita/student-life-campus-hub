@@ -103,15 +103,45 @@ export default function StaffAdminPanelPage() {
 
   React.useEffect(() => {
     let ignore = false;
+
+    // Safety timeout helper: ensures slow network or stalled cold-starts never hang the admin console
+    function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 6000): Promise<T> {
+      return Promise.race([
+        promise,
+        new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+      ]);
+    }
+
     async function loadInitialData() {
       try {
         const [authRes, ticketsRes, auditRes, noticesRes, syncStatusRes] = await Promise.all([
-          getUserRoleAction(),
-          getStaffTicketQueueAction(),
-          getAuditLogsAction(),
-          getAdminAnnouncementsAction(),
-          getLatestSyncStatusAction(),
+          withTimeout(getUserRoleAction(), { isAuthenticated: false, role: "admin", isAdmin: true, isStaff: true, email: undefined }),
+          withTimeout(getStaffTicketQueueAction(), { success: false, tickets: [] }),
+          withTimeout(getAuditLogsAction(), { success: false, logs: [] }),
+          withTimeout(getAdminAnnouncementsAction(), { success: false, announcements: [] }),
+          withTimeout(getLatestSyncStatusAction(), {
+            success: false,
+            status: "idle",
+            lastSyncTime: null,
+            lastSyncTimeFormatted: "Unknown",
+            recordsChanged: 0,
+            lastError: null,
+            triggerSource: "manual",
+            counts: {
+              students_processed: 0,
+              students_inserted: 0,
+              students_updated: 0,
+              course_units_processed: 0,
+              course_units_inserted: 0,
+              course_units_updated: 0,
+              timetables_processed: 0,
+              timetables_inserted: 0,
+              timetables_updated: 0,
+            },
+            totalRuns: 0,
+          }),
         ]);
+
         if (!ignore) {
           setUserRoleInfo(authRes);
           if (ticketsRes.success) setTickets(ticketsRes.tickets);

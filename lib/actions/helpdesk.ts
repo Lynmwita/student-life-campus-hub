@@ -113,29 +113,14 @@ const DEMO_TICKETS: TicketItem[] = [
     createdAt: "2026-10-15T11:00:00Z",
     updatedAt: "2026-10-15T15:20:00Z",
   },
-  {
-    id: "60000000-0000-0000-0000-000000000003",
-    referenceNo: "HD-2026-R4403",
-    universityId: "00000000-0000-0000-0000-000000000001",
-    campusId: "00000000-0000-0000-0000-000000000011",
-    campusName: "Main Campus (Westlands)",
-    studentId: "00000000-0000-0000-0000-000000000102",
-    studentName: "Alex Mutua",
-    studentEmail: "student@summit.ac.ke",
-    assignedStaffId: "00000000-0000-0000-0000-000000000100",
-    assignedStaffName: "SMU Registrar & Academic Affairs",
-    category: "academic",
-    priority: "P3",
-    subject: "Course Unit Exemption & Prerequisite Waiver Verification",
-    description: "Confirmation of credit transfer for MATH 201 prerequisites from previous certificate course units.",
-    status: "resolved",
-    isSensitive: false,
-    resolutionNotes: "Prerequisite waiver verified with Department Head. Portal updated successfully.",
-    resolvedAt: "2026-10-14T16:00:00Z",
-    createdAt: "2026-10-14T08:00:00Z",
-    updatedAt: "2026-10-14T16:00:00Z",
-  },
 ];
+
+// Global set of withdrawn ticket references to guarantee synchronization across both student and staff queues
+const WITHDRAWN_TICKET_REFS = new Set<string>();
+
+export async function markTicketWithdrawnInMemory(ref: string) {
+  WITHDRAWN_TICKET_REFS.add(ref);
+}
 
 const DEMO_TIMELINE: Record<string, TimelineItem[]> = {
   "HD-2026-B8101": [
@@ -463,14 +448,18 @@ export async function getStudentTicketsAction(): Promise<TicketsListResponse> {
   const seenRefs = new Set(dbTickets.map((t) => t.referenceNo));
   const mergedTickets = [...dbTickets];
   for (const demo of DEMO_TICKETS) {
-    if (!seenRefs.has(demo.referenceNo)) {
+    if (!seenRefs.has(demo.referenceNo) && !WITHDRAWN_TICKET_REFS.has(demo.referenceNo) && !WITHDRAWN_TICKET_REFS.has(demo.id)) {
       mergedTickets.push(demo);
     }
   }
 
+  const activeNonWithdrawn = mergedTickets.filter(
+    (t) => !WITHDRAWN_TICKET_REFS.has(t.referenceNo) && !WITHDRAWN_TICKET_REFS.has(t.id)
+  );
+
   return {
     success: true,
-    tickets: mergedTickets,
+    tickets: activeNonWithdrawn,
   };
 }
 
@@ -772,7 +761,7 @@ export async function getStaffTicketQueueAction(filter?: {
   const { data: tickets, error } = await query;
 
   if (error || !tickets || tickets.length === 0) {
-    let list = [...DEMO_TICKETS];
+    let list = DEMO_TICKETS.filter((t) => !WITHDRAWN_TICKET_REFS.has(t.referenceNo) && !WITHDRAWN_TICKET_REFS.has(t.id));
     if (filter?.status && filter.status !== "all") {
       list = list.filter((t) => t.status === filter.status);
     }
@@ -780,7 +769,9 @@ export async function getStaffTicketQueueAction(filter?: {
   }
 
   // Filter sensitive tickets: unassigned general staff cannot view them
+  // Also filter out any tickets that were withdrawn by the student
   const accessibleTickets = tickets.filter((t) => {
+    if (WITHDRAWN_TICKET_REFS.has(t.reference_no) || WITHDRAWN_TICKET_REFS.has(t.id)) return false;
     if (!t.is_sensitive) return true;
     if (isAdmin) return true;
     return t.assigned_staff_id === user.id;
@@ -1193,7 +1184,9 @@ export async function withdrawTicketAction(ticketIdOrRef: string): Promise<{
     if (idx !== -1) {
       DEMO_TICKETS.splice(idx, 1);
     }
+    markTicketWithdrawnInMemory(ticketIdOrRef);
     revalidatePath("/help-desk");
+    revalidatePath("/admin");
     return { success: true, message: "Ticket successfully withdrawn." };
   }
 
@@ -1220,10 +1213,11 @@ export async function withdrawTicketAction(ticketIdOrRef: string): Promise<{
     );
     if (idx !== -1) {
       DEMO_TICKETS.splice(idx, 1);
-      revalidatePath("/help-desk");
-      return { success: true, message: "Ticket successfully withdrawn." };
     }
-    return { success: false, message: "Ticket not found or already removed." };
+    markTicketWithdrawnInMemory(ticketIdOrRef);
+    revalidatePath("/help-desk");
+    revalidatePath("/admin");
+    return { success: true, message: "Ticket successfully withdrawn." };
   }
 
   // Authorization: Submitter student or staff/admin can withdraw
@@ -1249,6 +1243,9 @@ export async function withdrawTicketAction(ticketIdOrRef: string): Promise<{
   if (deleteError) {
     return { success: false, message: deleteError.message || "Failed to withdraw ticket." };
   }
+
+  markTicketWithdrawnInMemory(ticket.reference_no);
+  markTicketWithdrawnInMemory(ticket.id);
 
   revalidatePath("/help-desk");
   revalidatePath("/admin");
