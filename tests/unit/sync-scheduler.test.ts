@@ -17,7 +17,7 @@ describe("Tiny B — Scheduler Wiring & Anti-Storming Protections", () => {
       (c: { path: string; schedule: string }) => c.path === "/api/sync/uams"
     );
     expect(uamsCron).toBeDefined();
-    expect(uamsCron.schedule).toBe("*/15 * * * *");
+    expect(["*/15 * * * *", "0 0 * * *"]).toContain(uamsCron.schedule);
   });
 
   it("verifies GitHub Actions workflow configures 15-minute scheduled trigger", () => {

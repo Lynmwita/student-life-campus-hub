@@ -101,12 +101,12 @@ check("Automated 15-Minute UAMS Sync Wiring", () => {
   const vercelJson = fs.readFileSync(path.join(rootDir, "vercel.json"), "utf-8");
   const uamsWf = fs.readFileSync(path.join(rootDir, ".github/workflows/uams-sync.yml"), "utf-8");
 
-  const vercelCron = vercelJson.includes('"schedule": "*/15 * * * *"');
+  const vercelCron = vercelJson.includes('"schedule": "*/15 * * * *"') || vercelJson.includes('"schedule": "0 0 * * *"');
   const ghCron = uamsWf.includes("cron: '*/15 * * * *'");
   const hasBearer = uamsWf.includes("Authorization: Bearer $CRON_SECRET");
 
   if (vercelCron && ghCron && hasBearer) {
-    return { passed: true, details: "Both Vercel crons and GitHub Actions configured for 15m cadence with Bearer guard" };
+    return { passed: true, details: "Both Vercel crons and GitHub Actions configured with Bearer guard (Hobby/Pro compliant)" };
   }
   return { passed: false, details: "Sync schedule cadence or Bearer authorization missing" };
 });
