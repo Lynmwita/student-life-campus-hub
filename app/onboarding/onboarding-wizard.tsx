@@ -39,15 +39,15 @@ import {
 } from "@/lib/actions/interests";
 
 const DEFAULT_STUDIES: StudentStudiesData = {
-  fullName: "Alex Mutua",
-  email: "alex.mutua@summit.ac.ke",
-  registrationNumber: "BIT/2023/8849",
+  fullName: "Student",
+  email: "",
+  registrationNumber: "Pending Registration",
   universityName: "Summit Metropolitan University",
   campusName: "Main Campus (Westlands, Nairobi)",
   faculty: "School of Computing & Informatics",
   department: "Information Technology",
   programOfStudy: "Bachelor of Science in Information Technology",
-  yearOfStudy: 2,
+  yearOfStudy: 1,
   semester: 1,
   verificationStatus: "verified",
   isPreFilled: true,
@@ -85,6 +85,7 @@ export default function SmartOnboardingWizard({
   const [studies, setStudies] = React.useState<StudentStudiesData>(
     initialStudies || DEFAULT_STUDIES
   );
+  const [loadingStudies, setLoadingStudies] = React.useState(!initialStudies);
 
   // Step 1 State: Studies Confirmation (starts unchecked)
   const [studiesConfirmed, setStudiesConfirmed] = React.useState(false);
@@ -130,6 +131,8 @@ export default function SmartOnboardingWizard({
         }
       } catch (e) {
         console.error("Failed to load student studies in wizard", e);
+      } finally {
+        if (!ignore) setLoadingStudies(false);
       }
     }
     load();

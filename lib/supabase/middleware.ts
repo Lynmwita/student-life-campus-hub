@@ -97,6 +97,7 @@ export async function updateSession(request: NextRequest) {
     "/campus-life",
     "/announcements",
     "/help-desk",
+    "/profile",
     "/admin",
   ];
   const isOnboardingRoute =

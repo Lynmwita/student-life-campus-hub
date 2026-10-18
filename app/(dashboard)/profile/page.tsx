@@ -44,14 +44,16 @@ export default function ProfilePage() {
         ]);
 
         if (!ignore) {
-          if (roleRes.isAuthenticated) {
-            setUserInfo({
-              email: roleRes.email,
-              fullName: roleRes.fullName,
-              role: roleRes.role,
-              registrationNumber: roleRes.registrationNumber,
-            });
+          if (!roleRes.isAuthenticated) {
+            window.location.href = "/login";
+            return;
           }
+          setUserInfo({
+            email: roleRes.email,
+            fullName: roleRes.fullName,
+            role: roleRes.role,
+            registrationNumber: roleRes.registrationNumber,
+          });
           if (studiesRes.success && studiesRes.studies) {
             setStudies(studiesRes.studies);
           }

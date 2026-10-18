@@ -615,7 +615,7 @@ export async function executeUamsSync(
                   must_reset_password: true,
                 },
               }),
-              300
+              3000
             );
 
             if (authRes?.data?.user) {
@@ -641,7 +641,7 @@ export async function executeUamsSync(
                 },
                 { onConflict: "id" }
               ),
-              300
+              1500
             );
 
             await withDbTimeout(
@@ -659,7 +659,7 @@ export async function executeUamsSync(
                 },
                 { onConflict: "user_id, university_id" }
               ),
-              300
+              1500
             );
           }
         } catch {
