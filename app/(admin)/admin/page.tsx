@@ -716,10 +716,10 @@ export default function StaffAdminPanelPage() {
             </div>
 
             {/* Sensitive Complaint Isolation Alert */}
-            <div className="p-3.5 rounded-xl border border-red-900/40 bg-red-950/20 text-xs flex items-start gap-2.5 text-red-300">
-              <Lock className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
+            <div className="p-3.5 rounded-xl border border-rose-300 bg-rose-50 text-xs flex items-start gap-2.5 text-rose-950 shadow-xs">
+              <Lock className="w-4 h-4 shrink-0 mt-0.5 text-rose-700" />
               <div>
-                <strong className="text-red-200 block">Strict Privacy Notice:</strong>
+                <strong className="text-rose-900 block font-semibold">Strict Privacy Notice:</strong>
                 Complaints tagged with Confidential Sensitive Complaint are restricted to the assigned investigator and senior administrative staff. Unauthorized inspection is logged in the compliance audit trail.
               </div>
             </div>
@@ -745,8 +745,8 @@ export default function StaffAdminPanelPage() {
                           </span>
                           <span className="text-xs text-slate-500 font-sans">• {t.studentName} ({t.studentEmail})</span>
                           {t.isSensitive && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-red-950/50 text-red-300 border border-red-800">
-                              <Lock className="w-2.5 h-2.5" /> Confidential Sensitive
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-100 text-rose-950 border border-rose-300">
+                              <Lock className="w-2.5 h-2.5 text-rose-700" /> Confidential Sensitive
                             </span>
                           )}
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#0B1D33] text-slate-200 border border-slate-700 capitalize">
