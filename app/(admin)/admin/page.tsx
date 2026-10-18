@@ -23,6 +23,11 @@ import {
   BarChart3,
   Activity,
   UserCheck,
+  UserPlus,
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,6 +41,7 @@ import { getAuditLogsAction, type AuditLogEntry } from "@/lib/actions/audit";
 import {
   syncUamsDataAction,
   getLatestSyncStatusAction,
+  registerStudentAction,
   type UamsSyncResponse,
   type LatestSyncStatus,
 } from "@/lib/actions/sync";
@@ -84,6 +90,31 @@ export default function StaffAdminPanelPage() {
   const [syncError, setSyncError] = React.useState<string | null>(null);
   const [lastSyncTime, setLastSyncTime] = React.useState<string | null>(null);
   const [latestSyncStatus, setLatestSyncStatus] = React.useState<LatestSyncStatus | null>(null);
+
+  // Register Student Modal State
+  const [showRegisterModal, setShowRegisterModal] = React.useState(false);
+  const [registerFullName, setRegisterFullName] = React.useState("");
+  const [registerEmail, setRegisterEmail] = React.useState("");
+  const [registerRegNo, setRegisterRegNo] = React.useState("");
+  const [registerFaculty, setRegisterFaculty] = React.useState("School of Computing & Informatics");
+  const [registerDepartment, setRegisterDepartment] = React.useState("Information Technology");
+  const [registerYearOfStudy, setRegisterYearOfStudy] = React.useState<number>(1);
+  const [registerCampusCode, setRegisterCampusCode] = React.useState("SMU-MAIN");
+  const [registerPassword, setRegisterPassword] = React.useState("StudentPassword123!");
+  const [showRegisterPassword, setShowRegisterPassword] = React.useState(false);
+  const [registerLoading, setRegisterLoading] = React.useState(false);
+  const [registerError, setRegisterError] = React.useState<string | null>(null);
+  const [registerSuccess, setRegisterSuccess] = React.useState<{
+    fullName: string;
+    email: string;
+    registrationNumber: string;
+    faculty: string;
+    department: string;
+    yearOfStudy: number;
+    campusCode: string;
+    initialPassword: string;
+  } | null>(null);
+  const [copiedCredentials, setCopiedCredentials] = React.useState(false);
 
   // Announcement manager state
   const [announcementActionLoading, setAnnouncementActionLoading] = React.useState(false);
@@ -297,6 +328,124 @@ export default function StaffAdminPanelPage() {
     } finally {
       setSyncLoading(false);
     }
+  }
+
+  function handleGeneratePassword() {
+    const randomSuffix = Math.floor(100 + Math.random() * 900);
+    setRegisterPassword(`StudentPassword${randomSuffix}!`);
+  }
+
+  function handleResetRegisterForm() {
+    setRegisterFullName("");
+    setRegisterEmail("");
+    setRegisterRegNo("");
+    setRegisterFaculty("School of Computing & Informatics");
+    setRegisterDepartment("Information Technology");
+    setRegisterYearOfStudy(1);
+    setRegisterCampusCode("SMU-MAIN");
+    setRegisterPassword("StudentPassword123!");
+    setShowRegisterPassword(false);
+    setRegisterError(null);
+    setRegisterSuccess(null);
+    setCopiedCredentials(false);
+  }
+
+  async function handleRegisterStudentSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setRegisterError(null);
+
+    const fullName = registerFullName.trim();
+    const email = registerEmail.trim().toLowerCase();
+    const regNo = registerRegNo.trim().toUpperCase();
+    const faculty = registerFaculty.trim();
+    const department = registerDepartment.trim();
+    const yearOfStudy = Number(registerYearOfStudy) || 1;
+    const campusCode = registerCampusCode.trim().toUpperCase() || "SMU-MAIN";
+    const password = registerPassword.trim();
+
+    if (!fullName || fullName.length < 2) {
+      setRegisterError("Full name is required (minimum 2 characters).");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      setRegisterError("A valid institutional email address is required.");
+      return;
+    }
+    if (!regNo || regNo.length < 3) {
+      setRegisterError("Registration number is required (minimum 3 characters).");
+      return;
+    }
+    if (!faculty) {
+      setRegisterError("Faculty is required.");
+      return;
+    }
+    if (!department) {
+      setRegisterError("Department is required.");
+      return;
+    }
+    if (yearOfStudy < 1 || yearOfStudy > 6) {
+      setRegisterError("Year of study must be between 1 and 6.");
+      return;
+    }
+    if (!password || password.length < 8) {
+      setRegisterError("Initial password must be at least 8 characters.");
+      return;
+    }
+
+    setRegisterLoading(true);
+    try {
+      const res = await registerStudentAction({
+        fullName,
+        email,
+        registrationNumber: regNo,
+        faculty,
+        department,
+        yearOfStudy,
+        campusCode,
+        initialPassword: password,
+      });
+
+      if (!res.success) {
+        setRegisterError(res.error || "Failed to register student.");
+        setRegisterLoading(false);
+        return;
+      }
+
+      setRegisterSuccess(
+        res.student || {
+          fullName,
+          email,
+          registrationNumber: regNo,
+          faculty,
+          department,
+          yearOfStudy,
+          campusCode,
+          initialPassword: password,
+        }
+      );
+
+      // Refresh audit logs and sync status immediately
+      const [auditRefreshed, statusRefreshed] = await Promise.all([
+        getAuditLogsAction(),
+        getLatestSyncStatusAction(),
+      ]);
+      if (auditRefreshed.success) setAuditLogs(auditRefreshed.logs);
+      if (statusRefreshed.success) setLatestSyncStatus(statusRefreshed);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setRegisterError(message);
+    } finally {
+      setRegisterLoading(false);
+    }
+  }
+
+  function handleCopyCredentials() {
+    if (!registerSuccess) return;
+    const text = `Summit Metropolitan University Student Credentials\nFull Name: ${registerSuccess.fullName}\nRegistration Number: ${registerSuccess.registrationNumber}\nEmail: ${registerSuccess.email}\nInitial Password: ${registerSuccess.initialPassword}\nPortal: ${typeof window !== "undefined" ? window.location.origin : ""}/login`;
+    navigator.clipboard.writeText(text);
+    setCopiedCredentials(true);
+    setTimeout(() => setCopiedCredentials(false), 2500);
   }
 
   async function handleTogglePublish(notice: NoticeItem) {
@@ -1056,6 +1205,19 @@ export default function StaffAdminPanelPage() {
                     >
                       <RefreshCw className="w-3.5 h-3.5 text-[#FCD34D]" /> Sync Student Data from UAMS
                     </Button>
+                    {(userRoleInfo.isAdmin || userRoleInfo.isStaff || userRoleInfo.role === "staff" || userRoleInfo.role === "admin") && (
+                      <Button
+                        onClick={() => {
+                          handleResetRegisterForm();
+                          setShowRegisterModal(true);
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs gap-1.5 border-[#C59B27]/50 text-[#0B1D33] hover:bg-[#C59B27]/10 shadow-xs font-semibold"
+                      >
+                        <UserPlus className="w-3.5 h-3.5 text-[#C59B27]" /> Register Student
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -1230,6 +1392,7 @@ export default function StaffAdminPanelPage() {
                     className="w-full text-xs rounded-xl border border-slate-300 bg-white text-[#0B1D33] p-2 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
                   >
                     <option value="all">All Action Types</option>
+                    <option value="student_registered">student_registered</option>
                     <option value="uams_sync_completed">uams_sync_completed</option>
                     <option value="announcement.published">announcement.published</option>
                     <option value="announcement.unpublished">announcement.unpublished</option>
@@ -1694,6 +1857,314 @@ export default function StaffAdminPanelPage() {
                   </Button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Register Student Modal */}
+        {showRegisterModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs font-sans">
+            <div className="w-full max-w-lg bg-white border border-[#C59B27]/50 rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+              {/* Modal Header */}
+              <div className="bg-[#0B1D33] px-6 py-4 border-b border-[#C59B27]/30 flex items-center justify-between text-white shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#C59B27]/20 border border-[#C59B27]/40 flex items-center justify-center text-[#FCD34D]">
+                    <UserPlus className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif font-bold text-sm">Register Student</h3>
+                    <span className="text-[11px] text-[#FCD34D] font-mono">
+                      Staff Console • UAMS Academic Ingestion
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowRegisterModal(false)}
+                  className="text-slate-400 hover:text-white font-bold p-1 transition-colors"
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 overflow-y-auto space-y-4">
+                {/* Error Banner */}
+                {registerError && (
+                  <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <span className="font-bold block text-red-900">Registration Notice:</span>
+                      <span className="block text-red-800">{registerError}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Success View */}
+                {registerSuccess ? (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs space-y-2">
+                      <div className="flex items-center gap-2 font-bold text-emerald-950 text-sm">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                        Student Registered Successfully
+                      </div>
+                      <p className="leading-relaxed">
+                        Student registered: <strong>{registerSuccess.fullName}</strong> ({registerSuccess.registrationNumber}). They can sign in with their email and the initial password.
+                      </p>
+                    </div>
+
+                    {/* Credentials Summary Card */}
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
+                      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                        Initial Credentials & Academic Record
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-slate-500 block text-[11px]">Full Name:</span>
+                          <strong className="text-[#0B1D33]">{registerSuccess.fullName}</strong>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[11px]">Registration No:</span>
+                          <strong className="font-mono text-[#0B1D33]">{registerSuccess.registrationNumber}</strong>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[11px]">Email Address:</span>
+                          <strong className="font-mono text-[#0B1D33]">{registerSuccess.email}</strong>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[11px]">Initial Password:</span>
+                          <strong className="font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                            {registerSuccess.initialPassword}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[11px]">Academic Cohort:</span>
+                          <span className="text-[#0B1D33]">Year {registerSuccess.yearOfStudy} • {registerSuccess.department}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[11px]">Campus:</span>
+                          <span className="text-[#0B1D33]">{registerSuccess.campusCode}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
+                      <Button
+                        type="button"
+                        onClick={handleCopyCredentials}
+                        variant="primary"
+                        className="w-full sm:w-auto text-xs gap-1.5 shadow-sm"
+                      >
+                        {copiedCredentials ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-300" /> Credentials Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5 text-[#FCD34D]" /> Copy Credentials
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleResetRegisterForm}
+                        variant="outline"
+                        className="w-full sm:w-auto text-xs"
+                      >
+                        Register Another Student
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setShowRegisterModal(false)}
+                        variant="ghost"
+                        className="w-full sm:w-auto text-xs ml-auto"
+                      >
+                        Done
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Form View */
+                  <form onSubmit={handleRegisterStudentSubmit} className="space-y-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">
+                          Full Name <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          value={registerFullName}
+                          onChange={(e) => setRegisterFullName(e.target.value)}
+                          placeholder="e.g. Brian Otieno"
+                          required
+                          className="text-xs"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">
+                          Registration Number <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          value={registerRegNo}
+                          onChange={(e) => setRegisterRegNo(e.target.value)}
+                          placeholder="e.g. SMU/BIT/2026/1002"
+                          required
+                          className="text-xs font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1">
+                        Institutional Email <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        type="email"
+                        value={registerEmail}
+                        onChange={(e) => setRegisterEmail(e.target.value)}
+                        placeholder="e.g. brian.otieno@summit.ac.ke"
+                        required
+                        className="text-xs"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">
+                          Faculty <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={registerFaculty}
+                          onChange={(e) => setRegisterFaculty(e.target.value)}
+                          className="w-full text-xs rounded-xl border border-slate-300 bg-white text-[#0B1D33] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
+                        >
+                          <option value="School of Computing & Informatics">School of Computing & Informatics</option>
+                          <option value="School of Engineering">School of Engineering</option>
+                          <option value="Faculty of Science & Technology">Faculty of Science & Technology</option>
+                          <option value="School of Business">School of Business</option>
+                          <option value="School of Mathematics & Statistics">School of Mathematics & Statistics</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">
+                          Department <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={registerDepartment}
+                          onChange={(e) => setRegisterDepartment(e.target.value)}
+                          className="w-full text-xs rounded-xl border border-slate-300 bg-white text-[#0B1D33] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
+                        >
+                          <option value="Information Technology">Information Technology</option>
+                          <option value="Computer Science">Computer Science</option>
+                          <option value="Software Engineering">Software Engineering</option>
+                          <option value="Electrical & Information Engineering">Electrical & Information Engineering</option>
+                          <option value="Business Information Technology">Business Information Technology</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">
+                          Year of Study <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={registerYearOfStudy}
+                          onChange={(e) => setRegisterYearOfStudy(Number(e.target.value))}
+                          className="w-full text-xs rounded-xl border border-slate-300 bg-white text-[#0B1D33] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
+                        >
+                          <option value={1}>Year 1 (Freshman)</option>
+                          <option value={2}>Year 2 (Sophomore)</option>
+                          <option value={3}>Year 3 (Junior)</option>
+                          <option value={4}>Year 4 (Senior)</option>
+                          <option value={5}>Year 5</option>
+                          <option value={6}>Year 6</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-slate-700 block mb-1">
+                          Assigned Campus <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={registerCampusCode}
+                          onChange={(e) => setRegisterCampusCode(e.target.value)}
+                          className="w-full text-xs rounded-xl border border-slate-300 bg-white text-[#0B1D33] p-2.5 focus:outline-none focus:ring-2 focus:ring-[#C59B27]"
+                        >
+                          <option value="SMU-MAIN">SMU-MAIN (Main Campus, Westlands)</option>
+                          <option value="SMU-CBD">SMU-CBD (CBD Campus, Nairobi)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Initial Password with Toggle & Generator */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-semibold text-slate-700">
+                          Initial Password <span className="text-red-500">*</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleGeneratePassword}
+                          className="text-[11px] font-semibold text-[#C59B27] hover:underline"
+                        >
+                          Generate
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          type={showRegisterPassword ? "text" : "password"}
+                          value={registerPassword}
+                          onChange={(e) => setRegisterPassword(e.target.value)}
+                          placeholder="min. 8 characters"
+                          required
+                          className="text-xs pr-10 font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          aria-label="Toggle password visibility"
+                        >
+                          {showRegisterPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        Student will be prompted to reset their password upon initial session login.
+                      </span>
+                    </div>
+
+                    {/* Submit buttons */}
+                    <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-200">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRegisterModal(false)}
+                        className="text-xs"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        size="sm"
+                        isLoading={registerLoading}
+                        className="text-xs gap-1.5 shadow-sm"
+                      >
+                        <UserPlus className="w-3.5 h-3.5 text-[#FCD34D]" /> Register & Ingest Student
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
         )}

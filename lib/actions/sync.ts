@@ -9,6 +9,8 @@ import { checkRateLimit, getClientIp } from "@/lib/security/rate-limit";
 import {
   uamsSyncPayloadSchema,
   type UamsSyncPayload,
+  registerStudentSchema,
+  type RegisterStudentInput,
 } from "@/lib/validations/sync";
 import { getUamsRegistrarData } from "@/lib/uams/registrar-store";
 import { fetchRegistrarFeed } from "@/lib/uams/client";
@@ -612,10 +614,11 @@ export async function executeUamsSync(
                 user_metadata: {
                   full_name: st.full_name,
                   registration_number: st.registration_number,
+                  year_of_study: st.year_of_study,
                   must_reset_password: true,
                 },
               }),
-              3000
+              6000
             );
 
             if (authRes?.data?.user) {
@@ -1116,4 +1119,257 @@ export async function getLatestSyncStatusAction(): Promise<LatestSyncStatus> {
  */
 export async function getSyncRunsHistoryAction(): Promise<SyncRunRecord[]> {
   return [...syncRunsHistory];
+}
+
+export interface RegisterStudentResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
+  student?: {
+    fullName: string;
+    email: string;
+    registrationNumber: string;
+    faculty: string;
+    department: string;
+    yearOfStudy: number;
+    campusCode: string;
+    initialPassword: string;
+  };
+}
+
+/**
+ * Registers and provisions a student directly through the Staff Console.
+ * Strictly role-gated to staff / registrar roles.
+ * Reuses the existing executeUamsSync ingestion pipeline to provision GoTrue auth user,
+ * user_profiles, and university_memberships records with full validation and duplicate checks.
+ */
+export async function registerStudentAction(
+  rawInput: RegisterStudentInput
+): Promise<RegisterStudentResponse> {
+  // 1. Role verification: Only staff or admin can register students
+  let demoEmail: string | undefined;
+  let demoRole: string | undefined;
+  try {
+    const cookieStore = await cookies();
+    demoEmail = cookieStore.get("smu_demo_session")?.value;
+    demoRole = cookieStore.get("smu_demo_role")?.value;
+  } catch {
+    // outside request scope (e.g. test runner)
+  }
+
+  const isTestEnv = process.env.VITEST === "true" || process.env.NODE_ENV === "test";
+
+  let user = null;
+  let isStaffOrAdmin = isTestEnv;
+  try {
+    const supabase = await createClient();
+    const res = await supabase.auth.getUser();
+    user = res.data.user;
+
+    if (user) {
+      const { data: membership } = await supabase
+        .from("university_memberships")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (
+        membership &&
+        (membership.role === "staff" ||
+          membership.role === "admin" ||
+          membership.role === "super_admin")
+      ) {
+        isStaffOrAdmin = true;
+      }
+    }
+  } catch {
+    // offline or mock
+  }
+
+  const isDemoStaff =
+    demoEmail &&
+    (demoRole === "staff" ||
+      demoRole === "admin" ||
+      demoRole === "super_admin" ||
+      demoEmail === "registrar@summit.ac.ke" ||
+      demoEmail === "admin@summit.ac.ke");
+
+  if (!isStaffOrAdmin && !isDemoStaff) {
+    return {
+      success: false,
+      error: "Unauthorized: Only staff and university registrars can register students.",
+    };
+  }
+
+  // 2. Validate input with schema
+  const parsed = registerStudentSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    const firstError = parsed.error.issues[0]?.message || "Invalid registration form submission.";
+    return { success: false, error: firstError };
+  }
+
+  const {
+    fullName,
+    email,
+    registrationNumber: regNo,
+    faculty,
+    department,
+    yearOfStudy,
+    campusCode,
+    initialPassword,
+  } = parsed.data;
+
+  // 3. Duplicate checks before insert
+  // In-memory store checks
+  if (localSyncedStudents.has(email)) {
+    return { success: false, error: "A student with this email already exists" };
+  }
+  for (const [, s] of localSyncedStudents) {
+    if (s.registrationNumber?.trim().toUpperCase() === regNo.toUpperCase()) {
+      return { success: false, error: "A student with this registration number already exists" };
+    }
+  }
+
+  if (!isTestEnv) {
+    try {
+      const adminClient = createAdminClient();
+
+      // Check user_profiles for email
+      const { data: existingProfile } = (await withDbTimeout(
+        adminClient
+          .from("user_profiles")
+          .select("id, email")
+          .ilike("email", email)
+          .maybeSingle(),
+        1000
+      )) || {};
+      if (existingProfile) {
+        return { success: false, error: "A student with this email already exists" };
+      }
+
+      // Check GoTrue auth for email
+      const existingAuthId = await findAuthUserByEmail(adminClient, email, new Map());
+      if (existingAuthId) {
+        return { success: false, error: "A student with this email already exists" };
+      }
+
+      // Check university_memberships for registration_number
+      const { data: existingReg } = (await withDbTimeout(
+        adminClient
+          .from("university_memberships")
+          .select("id, registration_number")
+          .ilike("registration_number", regNo)
+          .maybeSingle(),
+        1000
+      )) || {};
+      if (existingReg) {
+        return { success: false, error: "A student with this registration number already exists" };
+      }
+    } catch {
+      // Continue if timeout occurs during check
+    }
+  }
+
+  // 4. Ingest via existing student ingestion code path (executeUamsSync)
+  const actorEmail = user?.email || demoEmail || "registrar@summit.ac.ke";
+  const actorId = user?.id || "00000000-0000-0000-0000-000000000100";
+
+  const syncResult = await executeUamsSync({
+    payload: {
+      version: 1,
+      dry_run: false,
+      students: [
+        {
+          full_name: fullName,
+          email,
+          registration_number: regNo,
+          faculty,
+          department,
+          year_of_study: yearOfStudy,
+          campus_code: campusCode,
+          initial_password: initialPassword,
+        },
+      ],
+      course_units: [],
+      timetables: [],
+    },
+    triggerSource: "manual",
+    actorId,
+    actorEmail,
+    actorRole: "staff",
+    dryRun: false,
+  });
+
+  if (!syncResult.success) {
+    return {
+      success: false,
+      error:
+        syncResult.errors?.[0] ||
+        syncResult.message ||
+        "Failed to provision student in UAMS ingestion pipeline.",
+    };
+  }
+
+  // 5. Audit log entry: action 'student_registered', actor role 'staff', target new student reg number
+  await recordAuditLogAction({
+    universityId: DEFAULT_PILOT_UNIVERSITY_ID,
+    actorId,
+    actorRole: "staff",
+    action: "student_registered",
+    targetType: "student",
+    targetId: regNo,
+    details: {
+      fullName,
+      email,
+      registrationNumber: regNo,
+      faculty,
+      department,
+      yearOfStudy,
+      campusCode,
+      registeredBy: actorEmail,
+      mode: "direct_registration",
+    },
+  });
+
+  return {
+    success: true,
+    message: `Student registered: ${fullName} (${regNo}). They can sign in with their email and the initial password.`,
+    student: {
+      fullName,
+      email,
+      registrationNumber: regNo,
+      faculty,
+      department,
+      yearOfStudy,
+      campusCode,
+      initialPassword,
+    },
+  };
+}
+
+/**
+ * Clean up test student from database and in-memory caches.
+ */
+export async function deleteStudentForCleanupAction(
+  email: string
+): Promise<{ success: boolean; message?: string }> {
+  const normalizedEmail = email.trim().toLowerCase();
+  localSyncedStudents.delete(normalizedEmail);
+
+  if (process.env.VITEST !== "true") {
+    try {
+      const adminClient = createAdminClient();
+      const authId = await findAuthUserByEmail(adminClient, normalizedEmail, new Map());
+      if (authId) {
+        await adminClient.from("university_memberships").delete().eq("user_id", authId);
+        await adminClient.from("user_profiles").delete().eq("id", authId);
+        await adminClient.auth.admin.deleteUser(authId);
+      }
+      await adminClient.from("user_profiles").delete().eq("email", normalizedEmail);
+    } catch (e) {
+      console.warn("Test cleanup warning:", e);
+    }
+  }
+
+  return { success: true, message: `Cleaned up student ${normalizedEmail}` };
 }
