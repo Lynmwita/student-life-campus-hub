@@ -27,13 +27,20 @@ export default function LoginPage() {
     setLoading(true);
 
     const formData = new FormData(event.currentTarget);
+    const timeoutId = setTimeout(() => {
+      setLoading(false);
+      setError("Sign-in request timed out. Please check your connection and try again.");
+    }, 12000);
+
     try {
       const res = await loginAction(formData);
+      clearTimeout(timeoutId);
       if (res && !res.success && res.error) {
         setError(res.error);
         setLoading(false);
       }
     } catch (err: unknown) {
+      clearTimeout(timeoutId);
       // Next.js redirect throws a NEXT_REDIRECT error which is normal behavior
       if (err instanceof Error && err.message.includes("NEXT_REDIRECT")) {
         return;

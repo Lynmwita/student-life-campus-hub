@@ -105,12 +105,19 @@ export default function StaffAdminPanelPage() {
     let ignore = false;
 
     // Safety timeout helper: ensures slow network or stalled cold-starts never hang the admin console
-    function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 6000): Promise<T> {
+    function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 3500): Promise<T> {
       return Promise.race([
         promise,
         new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
       ]);
     }
+
+    // Unconditional failsafe timer: guarantee loading is dismissed even if network requests hang
+    const failsafeTimer = setTimeout(() => {
+      if (!ignore) {
+        setLoading(false);
+      }
+    }, 4000);
 
     async function loadInitialData() {
       try {
@@ -143,6 +150,7 @@ export default function StaffAdminPanelPage() {
         ]);
 
         if (!ignore) {
+          clearTimeout(failsafeTimer);
           setUserRoleInfo(authRes);
           if (ticketsRes.success) setTickets(ticketsRes.tickets);
           if (auditRes.success) setAuditLogs(auditRes.logs);
@@ -152,12 +160,14 @@ export default function StaffAdminPanelPage() {
       } catch (err) {
         console.error("Failed to load staff console data", err);
       } finally {
+        clearTimeout(failsafeTimer);
         if (!ignore) setLoading(false);
       }
     }
     loadInitialData();
     return () => {
       ignore = true;
+      clearTimeout(failsafeTimer);
     };
   }, []);
 
