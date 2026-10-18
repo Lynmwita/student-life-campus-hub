@@ -153,5 +153,48 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // 5. Staff & Admin Route Authorization Enforcement (B2 & B3)
+  const isStaffRoute =
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
+    pathname === "/announcements/new" ||
+    pathname.startsWith("/announcements/new/");
+
+  if (isStaffRoute && isAuthenticated) {
+    let role = "student";
+    if (demoSession) {
+      const demoRole = request.cookies.get("smu_demo_role")?.value;
+      role =
+        demoRole ||
+        (demoSession.includes("registrar") || demoSession.includes("admin")
+          ? "admin"
+          : demoSession.includes("staff")
+          ? "staff"
+          : "student");
+    } else if (user) {
+      role = (user.user_metadata?.role as string) || "student";
+      if (role === "student") {
+        const { data: membership } = await supabase
+          .from("university_memberships")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (membership?.role) {
+          role = membership.role;
+        }
+      }
+    }
+
+    const isStaffOrAdmin =
+      role === "staff" || role === "admin" || role === "super_admin";
+
+    if (!isStaffOrAdmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      url.searchParams.set("error", "unauthorized_admin_access");
+      return applySecurityHeaders(NextResponse.redirect(url));
+    }
+  }
+
   return applySecurityHeaders(supabaseResponse);
 }

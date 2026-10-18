@@ -16,16 +16,19 @@ import {
   Megaphone,
   GraduationCap,
   MapPin,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { AppHeader } from "@/components/shared/app-header";
 import {
   getStudentTicketsAction,
   getTicketDetailAction,
   createHelpTicketAction,
   addTicketMessageAction,
+  withdrawTicketAction,
   type TicketItem,
   type TimelineItem,
 } from "@/lib/actions/helpdesk";
@@ -137,6 +140,30 @@ export default function StudentHelpDeskPage() {
     }
   }
 
+  const [withdrawing, setWithdrawing] = React.useState(false);
+
+  async function handleWithdrawTicket(ticketIdOrRef: string) {
+    if (!confirm("Are you sure you want to withdraw this ticket? This action will remove it from your active inquiries.")) return;
+    setWithdrawing(true);
+    try {
+      const res = await withdrawTicketAction(ticketIdOrRef);
+      if (res.success) {
+        setSelectedTicket(null);
+        setTimeline([]);
+        const refreshed = await getStudentTicketsAction();
+        if (refreshed.success) {
+          setTickets(refreshed.tickets);
+        }
+      } else {
+        alert(res.message || "Failed to withdraw ticket.");
+      }
+    } catch (err) {
+      console.error("Failed to withdraw ticket", err);
+    } finally {
+      setWithdrawing(false);
+    }
+  }
+
   const filteredTickets = tickets.filter((t) => {
     if (activeTab === "active") return t.status !== "resolved" && t.status !== "closed";
     if (activeTab === "resolved") return t.status === "resolved" || t.status === "closed";
@@ -145,74 +172,7 @@ export default function StudentHelpDeskPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-16 font-sans">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-30 bg-[#0B1D33] text-white border-b border-[#06101E] px-4 py-3 sm:px-6 shadow-xs">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#06101E] border border-[#C59B27]/40 flex items-center justify-center text-[#FCD34D]">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="font-serif font-bold text-sm text-white leading-tight">
-                Summit Metropolitan University
-              </h1>
-              <p className="text-[11px] text-slate-300 flex items-center gap-1.5">
-                <MapPin className="w-3 h-3 text-[#FCD34D]" /> Main Campus (Westlands) • Student Help Desk
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setIsSubmitModalOpen(true)}
-              variant="outline"
-              size="sm"
-              className="text-xs border-[#C59B27]/40 text-[#FCD34D] hover:bg-[#06101E] hover:border-[#C59B27] gap-1.5"
-            >
-              <PlusCircle className="w-3.5 h-3.5 text-[#FCD34D]" /> Submit Help Request
-            </Button>
-            <Link href="/admin">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs border-slate-700 text-slate-300 hover:text-white hover:bg-[#06101E]"
-              >
-                Staff Console
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation Sub-bar */}
-      <div className="bg-[#06101E] border-b border-[#C59B27]/20 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto flex items-center gap-6 text-xs font-semibold overflow-x-auto py-2.5">
-          <Link
-            href="/dashboard"
-            className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
-          >
-            <Megaphone className="w-3.5 h-3.5" /> Campus Feed
-          </Link>
-          <Link
-            href="/timetable"
-            className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
-          >
-            <Calendar className="w-3.5 h-3.5" /> Weekly Timetable
-          </Link>
-          <Link
-            href="/campus-life"
-            className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
-          >
-            <Compass className="w-3.5 h-3.5" /> Campus Life & Clubs
-          </Link>
-          <Link
-            href="/help-desk"
-            className="text-[#FCD34D] border-b-2 border-[#C59B27] pb-1 flex items-center gap-1.5"
-          >
-            <LifeBuoy className="w-3.5 h-3.5 text-[#FCD34D]" /> Help Desk & Inquiries
-          </Link>
-        </div>
-      </div>
+      <AppHeader />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
         {/* Header Title Section */}
@@ -226,38 +186,48 @@ export default function StudentHelpDeskPage() {
             </p>
           </div>
 
-          {/* Tab Filters */}
-          <div className="flex items-center gap-1 bg-[#0B1D33]/10 p-1 rounded-xl border border-[#C59B27]/20">
-            <button
-              onClick={() => setActiveTab("all")}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                activeTab === "all"
-                  ? "bg-[#0B1D33] text-white border border-[#C59B27]/40 shadow-xs"
-                  : "text-slate-600 hover:text-[#0B1D33]"
-              }`}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Tab Filters */}
+            <div className="flex items-center gap-1 bg-[#0B1D33]/10 p-1 rounded-xl border border-[#C59B27]/20">
+              <button
+                onClick={() => setActiveTab("all")}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  activeTab === "all"
+                    ? "bg-[#0B1D33] text-white border border-[#C59B27]/40 shadow-xs"
+                    : "text-slate-600 hover:text-[#0B1D33]"
+                }`}
+              >
+                All Requests ({tickets.length})
+              </button>
+              <button
+                onClick={() => setActiveTab("active")}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  activeTab === "active"
+                    ? "bg-[#0B1D33] text-white border border-[#C59B27]/40 shadow-xs"
+                    : "text-slate-600 hover:text-[#0B1D33]"
+                }`}
+              >
+                Active Inquiries ({tickets.filter((t) => t.status !== "resolved" && t.status !== "closed").length})
+              </button>
+              <button
+                onClick={() => setActiveTab("resolved")}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  activeTab === "resolved"
+                    ? "bg-[#0B1D33] text-white border border-[#C59B27]/40 shadow-xs"
+                    : "text-slate-600 hover:text-[#0B1D33]"
+                }`}
+              >
+                Resolved ({tickets.filter((t) => t.status === "resolved" || t.status === "closed").length})
+              </button>
+            </div>
+
+            <Button
+              onClick={() => setIsSubmitModalOpen(true)}
+              size="sm"
+              className="text-xs bg-[#0B1D33] hover:bg-[#06101E] text-[#FCD34D] border border-[#C59B27] gap-1.5 shadow-xs"
             >
-              All Requests ({tickets.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("active")}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                activeTab === "active"
-                  ? "bg-[#0B1D33] text-white border border-[#C59B27]/40 shadow-xs"
-                  : "text-slate-600 hover:text-[#0B1D33]"
-              }`}
-            >
-              In Progress ({tickets.filter((t) => t.status !== "resolved" && t.status !== "closed").length})
-            </button>
-            <button
-              onClick={() => setActiveTab("resolved")}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                activeTab === "resolved"
-                  ? "bg-[#0B1D33] text-white border border-[#C59B27]/40 shadow-xs"
-                  : "text-slate-600 hover:text-[#0B1D33]"
-              }`}
-            >
-              Resolved ({tickets.filter((t) => t.status === "resolved" || t.status === "closed").length})
-            </button>
+              <PlusCircle className="w-3.5 h-3.5 text-[#FCD34D]" /> Submit Help Request
+            </Button>
           </div>
         </div>
 
@@ -331,7 +301,7 @@ export default function StudentHelpDeskPage() {
                           }`}
                         >
                           {t.status === "in_review" || t.status === "under_review" || t.status === "in_progress"
-                            ? "IN REVIEW"
+                            ? "UNDER REVIEW"
                             : t.status.replace("_", " ").toUpperCase()}
                         </span>
                       </div>
@@ -371,7 +341,7 @@ export default function StudentHelpDeskPage() {
                           {selectedTicket.referenceNo}
                         </span>
                         {selectedTicket.isSensitive && (
-                          <Badge variant="danger" className="text-[10px] bg-red-950/30 text-red-300 border-red-800 gap-1">
+                          <Badge variant="danger" className="text-[10px] bg-rose-100 text-rose-950 border-rose-300 font-semibold gap-1">
                             <Lock className="w-2.5 h-2.5" /> Confidential Grievance
                           </Badge>
                         )}
@@ -383,8 +353,23 @@ export default function StudentHelpDeskPage() {
 
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] font-semibold uppercase px-2.5 py-1 rounded-md bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40">
-                        {selectedTicket.status.replace("_", " ")}
+                        {selectedTicket.status === "in_review" || selectedTicket.status === "under_review" || selectedTicket.status === "in_progress"
+                          ? "UNDER REVIEW"
+                          : selectedTicket.status.replace("_", " ").toUpperCase()}
                       </span>
+                      {selectedTicket.status !== "closed" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleWithdrawTicket(selectedTicket.id || selectedTicket.referenceNo)}
+                          disabled={withdrawing}
+                          className="text-[11px] text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 h-7 px-2"
+                          title="Withdraw this inquiry"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Withdraw
+                        </Button>
+                      )}
                     </div>
                   </div>
 

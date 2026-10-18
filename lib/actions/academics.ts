@@ -342,14 +342,13 @@ export async function getStudentTodayScheduleAction(): Promise<TodayScheduleResp
 
   if (!user && demoEmail) {
     const dayEntries = DEMO_TIMETABLE.filter((e) => e.dayOfWeek === isoDay);
-    const fallbackEntries = dayEntries.length > 0 ? dayEntries : DEMO_TIMETABLE.slice(0, 2);
     return {
       success: true,
       dayOfWeek: isoDay,
       dayName,
       universityName: "Summit Metropolitan University",
       campusName: "Main Campus (Westlands)",
-      entries: fallbackEntries,
+      entries: dayEntries,
     };
   }
 
@@ -415,14 +414,13 @@ export async function getStudentTodayScheduleAction(): Promise<TodayScheduleResp
 
   if (error || !records || records.length === 0) {
     const dayEntries = DEMO_TIMETABLE.filter((e) => e.dayOfWeek === isoDay);
-    const fallbackEntries = dayEntries.length > 0 ? dayEntries : DEMO_TIMETABLE.slice(0, 2);
     return {
       success: true,
       dayOfWeek: isoDay,
       dayName,
       universityName,
       campusName,
-      entries: fallbackEntries,
+      entries: dayEntries,
     };
   }
 
@@ -458,13 +456,23 @@ export async function getStudentTodayScheduleAction(): Promise<TodayScheduleResp
     };
   });
 
+  const seenTodayKeys = new Set<string>();
+  const deduplicatedToday: TimetableEntry[] = [];
+  for (const entry of entries) {
+    const key = `${entry.code}-${entry.startTime}-${entry.venue}`.toLowerCase();
+    if (!seenTodayKeys.has(key)) {
+      seenTodayKeys.add(key);
+      deduplicatedToday.push(entry);
+    }
+  }
+
   return {
     success: true,
     dayOfWeek: isoDay,
     dayName,
     universityName,
     campusName,
-    entries,
+    entries: deduplicatedToday,
   };
 }
 
@@ -590,11 +598,21 @@ export async function getStudentWeeklyTimetableAction(): Promise<WeeklyTimetable
     };
   });
 
+  const seenWeeklyKeys = new Set<string>();
+  const deduplicatedWeekly: TimetableEntry[] = [];
+  for (const entry of entries) {
+    const key = `${entry.code}-${entry.dayOfWeek}-${entry.startTime}-${entry.venue}`.toLowerCase();
+    if (!seenWeeklyKeys.has(key)) {
+      seenWeeklyKeys.add(key);
+      deduplicatedWeekly.push(entry);
+    }
+  }
+
   return {
     success: true,
     universityName,
     campusName,
-    entries,
+    entries: deduplicatedWeekly,
   };
 }
 

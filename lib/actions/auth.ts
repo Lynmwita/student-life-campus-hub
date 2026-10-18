@@ -219,7 +219,10 @@ export async function getUserRoleAction(): Promise<{
   isAuthenticated: boolean;
   role: "student" | "staff" | "admin" | "super_admin";
   email?: string;
+  fullName?: string;
+  registrationNumber?: string;
   isAdmin: boolean;
+  isStaff: boolean;
 }> {
   try {
     const supabase = await createClient();
@@ -228,16 +231,28 @@ export async function getUserRoleAction(): Promise<{
     if (user) {
       const { data: profile } = await supabase
         .from("user_profiles")
-        .select("role, email")
+        .select("email, full_name")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-      const role = (profile?.role || "student") as "student" | "staff" | "admin" | "super_admin";
+      const { data: membership } = await supabase
+        .from("university_memberships")
+        .select("role, registration_number")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const role = (membership?.role || user.user_metadata?.role || "student") as "student" | "staff" | "admin" | "super_admin";
+      const isAdmin = role === "admin" || role === "super_admin";
+      const isStaff = isAdmin || role === "staff";
+
       return {
         isAuthenticated: true,
         role,
         email: user.email || profile?.email,
-        isAdmin: role === "admin" || role === "super_admin",
+        fullName: profile?.full_name || user.user_metadata?.full_name || (user.email ? user.email.split("@")[0] : "User"),
+        registrationNumber: membership?.registration_number || user.user_metadata?.registration_number,
+        isAdmin,
+        isStaff,
       };
     }
   } catch {
@@ -250,11 +265,16 @@ export async function getUserRoleAction(): Promise<{
 
   if (demoEmail) {
     const role = (demoRole || (demoEmail.includes("registrar") || demoEmail.includes("admin") ? "admin" : demoEmail.includes("staff") ? "staff" : "student")) as "student" | "staff" | "admin" | "super_admin";
+    const isAdmin = role === "admin" || role === "super_admin";
+    const isStaff = isAdmin || role === "staff";
     return {
       isAuthenticated: true,
       role,
       email: demoEmail,
-      isAdmin: role === "admin" || role === "super_admin",
+      fullName: demoEmail.includes("alex") ? "Alex Mutua" : demoEmail.includes("registrar") ? "Registrar Academic Affairs" : demoEmail.includes("admin") ? "System Administrator" : "Student",
+      registrationNumber: "BIT/2023/8849",
+      isAdmin,
+      isStaff,
     };
   }
 
@@ -262,5 +282,6 @@ export async function getUserRoleAction(): Promise<{
     isAuthenticated: false,
     role: "student",
     isAdmin: false,
+    isStaff: false,
   };
 }

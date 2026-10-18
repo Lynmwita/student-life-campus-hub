@@ -165,7 +165,7 @@ export async function getStudentOnboardingDataAction(): Promise<StudentOnboardin
     universityName: "Summit Metropolitan University",
     campusName: "Main Campus (Westlands, Nairobi)",
     faculty: "School of Computing & Informatics",
-    department: "Computer Science",
+    department: "Information Technology",
     programOfStudy: "Bachelor of Science in Information Technology",
     yearOfStudy: 2,
     semester: 1,

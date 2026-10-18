@@ -80,6 +80,17 @@ export default function NewAnnouncementPage() {
     P4: { label: "P4 - General Info", variant: "default" as const, desc: "Routine announcements and advisory notices." },
   };
 
+  if (isAdmin === null) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 font-sans">
+        <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 shadow-xs max-w-sm w-full space-y-3">
+          <div className="w-8 h-8 border-2 border-[#0B1D33] border-t-[#C59B27] rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-500 font-medium">Verifying administrative credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isAdmin === false) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 font-sans">
@@ -94,13 +105,13 @@ export default function NewAnnouncementPage() {
             </p>
           </div>
           <div className="pt-2">
-            <Link href="/admin">
+            <Link href="/dashboard">
               <Button
                 variant="outline"
                 size="sm"
                 className="text-xs border-[#C59B27]/40 text-[#0B1D33] hover:bg-slate-50"
               >
-                Return to Admin Console
+                Return to Campus Feed
               </Button>
             </Link>
           </div>

@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Edit,
   Clock,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,7 +38,7 @@ import {
   updateAnnouncementDraftAction,
   type NoticeItem,
 } from "@/lib/actions/announcements";
-import { getUserRoleAction } from "@/lib/actions/auth";
+import { getUserRoleAction, signOutAction } from "@/lib/actions/auth";
 
 export default function StaffAdminPanelPage() {
   const [activeTab, setActiveTab] = React.useState<"queue" | "bulletins" | "sync" | "audit">("queue");
@@ -54,8 +55,9 @@ export default function StaffAdminPanelPage() {
     isAuthenticated: boolean;
     role: string | null;
     isAdmin: boolean;
+    isStaff: boolean;
     email?: string | null;
-  }>({ isAuthenticated: false, role: null, isAdmin: true, email: null });
+  }>({ isAuthenticated: false, role: null, isAdmin: false, isStaff: false, email: null });
 
   // Status update modal state
   const [selectedTicket, setSelectedTicket] = React.useState<TicketItem | null>(null);
@@ -388,6 +390,46 @@ export default function StaffAdminPanelPage() {
     return true;
   });
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 font-sans">
+        <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 shadow-xs max-w-sm w-full space-y-3">
+          <div className="w-8 h-8 border-2 border-[#0B1D33] border-t-[#C59B27] rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-500 font-medium">Verifying administrative credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userRoleInfo.isAdmin && !userRoleInfo.isStaff) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 font-sans">
+        <div className="p-8 text-center bg-white rounded-2xl border border-red-200 shadow-xs max-w-md w-full space-y-4">
+          <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-200">
+            <Lock className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-serif font-bold text-lg text-[#0B1D33]">Access Restricted</h3>
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+              This administrative console is restricted exclusively to university registrars, support officers, and system administrators.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link href="/dashboard">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs border-[#C59B27]/40 text-[#0B1D33] hover:bg-slate-50"
+              >
+                Return to Student Portal
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-16 font-sans">
       {/* Top Navbar */}
@@ -408,7 +450,10 @@ export default function StaffAdminPanelPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Link href="/help-desk">
+            <span className="hidden sm:inline-flex text-[11px] font-semibold px-2 py-0.5 rounded bg-[#06101E] text-[#FCD34D] border border-[#C59B27]/30 capitalize">
+              {userRoleInfo.role || "Staff"}
+            </span>
+            <Link href="/dashboard">
               <Button
                 variant="outline"
                 size="sm"
@@ -426,6 +471,18 @@ export default function StaffAdminPanelPage() {
                 <PlusCircle className="w-3.5 h-3.5 text-[#FCD34D]" /> Post Notice
               </Button>
             </Link>
+            <form action={signOutAction}>
+              <Button
+                type="submit"
+                variant="outline"
+                size="sm"
+                className="text-xs border-red-900/60 text-red-300 hover:bg-red-950/40 hover:text-red-200 hover:border-red-600 gap-1"
+                title="Sign out"
+              >
+                <LogOut className="w-3.5 h-3.5 text-red-400" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </Button>
+            </form>
           </div>
         </div>
       </header>

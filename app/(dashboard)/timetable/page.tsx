@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AppHeader } from "@/components/shared/app-header";
 import {
   getStudentWeeklyTimetableAction,
   type TimetableEntry,
@@ -92,65 +93,7 @@ export default function TimetablePage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-16">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-30 bg-[#0B1D33] text-white border-b border-[#06101E] px-4 py-3 sm:px-6 shadow-xs">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#06101E] border border-[#C59B27]/40 flex items-center justify-center text-[#FCD34D]">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="font-serif font-bold text-sm text-white leading-tight">
-                {universityName}
-              </h1>
-              <p className="text-[11px] text-slate-300 flex items-center gap-1.5 font-sans">
-                <MapPin className="w-3 h-3 text-[#FCD34D]" /> {campusName}
-              </p>
-            </div>
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={refreshing || loading}
-            className="text-xs border-[#C59B27]/40 text-[#FCD34D] hover:bg-[#06101E] hover:border-[#C59B27]"
-          >
-            <RotateCw className={`w-3.5 h-3.5 mr-1.5 ${refreshing ? "animate-spin text-[#FCD34D]" : ""}`} />
-            Refresh
-          </Button>
-        </div>
-      </header>
-
-      {/* Navigation Sub-bar */}
-      <div className="bg-[#06101E] border-b border-[#C59B27]/20 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto flex items-center gap-6 text-xs font-semibold overflow-x-auto py-2.5">
-          <Link
-            href="/dashboard"
-            className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
-          >
-            <Megaphone className="w-3.5 h-3.5" /> Campus Feed
-          </Link>
-          <Link
-            href="/timetable"
-            className="text-[#FCD34D] border-b-2 border-[#C59B27] pb-1 flex items-center gap-1.5"
-          >
-            <Calendar className="w-3.5 h-3.5 text-[#FCD34D]" /> Weekly Timetable
-          </Link>
-          <Link
-            href="/campus-life"
-            className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
-          >
-            <Compass className="w-3.5 h-3.5" /> Campus Life & Clubs
-          </Link>
-          <Link
-            href="/help-desk"
-            className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
-          >
-            <LifeBuoy className="w-3.5 h-3.5" /> Help Desk & Inquiries
-          </Link>
-        </div>
-      </div>
+      <AppHeader universityName={universityName} campusName={campusName} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
         {/* Header Title Banner */}
@@ -173,6 +116,16 @@ export default function TimetablePage() {
           <div className="flex items-center gap-2 shrink-0">
             <Badge variant="info">Semester 1</Badge>
             <Badge variant="default">2026/2027</Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing || loading}
+              className="text-xs border-[#C59B27]/40 text-[#0B1D33] hover:bg-slate-100"
+            >
+              <RotateCw className={`w-3.5 h-3.5 mr-1.5 ${refreshing ? "animate-spin text-[#C59B27]" : ""}`} />
+              Refresh
+            </Button>
           </div>
         </div>
 

@@ -45,7 +45,7 @@ const DEFAULT_STUDIES: StudentStudiesData = {
   universityName: "Summit Metropolitan University",
   campusName: "Main Campus (Westlands, Nairobi)",
   faculty: "School of Computing & Informatics",
-  department: "Computer Science",
+  department: "Information Technology",
   programOfStudy: "Bachelor of Science in Information Technology",
   yearOfStudy: 2,
   semester: 1,
@@ -206,7 +206,14 @@ export default function SmartOnboardingWizard({
         return;
       }
 
-      router.push("/dashboard");
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("smu_onboarding_communities", JSON.stringify(selectedCommunityIds));
+        } catch {}
+        window.location.href = "/dashboard";
+      } else {
+        router.push("/dashboard");
+      }
     } catch {
       setError("An unexpected error occurred. Please try again.");
       setSaving(false);
@@ -392,7 +399,7 @@ export default function SmartOnboardingWizard({
                     Academic Standing
                   </div>
                   <div className="text-sm font-bold text-[#0B1D33] font-sans">
-                    Year {studies.yearOfStudy} • Semester {studies.semester}
+                    Year {studies.yearOfStudy}{" • "}Semester {studies.semester}
                   </div>
                   <div className="text-xs text-slate-500 font-sans">Full-Time Undergraduate</div>
                 </div>
@@ -405,7 +412,7 @@ export default function SmartOnboardingWizard({
                     {studies.programOfStudy}
                   </div>
                   <div className="text-xs text-slate-500 font-sans">
-                    {studies.faculty} • {studies.department}
+                    {studies.faculty}{" • "}{studies.department}
                   </div>
                 </div>
 

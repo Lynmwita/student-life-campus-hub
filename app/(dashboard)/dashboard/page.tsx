@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AppHeader } from "@/components/shared/app-header";
 import {
   markAnnouncementAsReadAction,
   getStudentAnnouncementsAction,
@@ -53,7 +54,17 @@ export default function StudentDashboardPage() {
 
         if (!ignore) {
           if (announcementsRes.success) {
-            setNotices(announcementsRes.notices);
+            let localReads: string[] = [];
+            if (typeof window !== "undefined") {
+              try {
+                localReads = JSON.parse(localStorage.getItem("smu_read_notices") || "[]");
+              } catch {}
+            }
+            const merged = announcementsRes.notices.map((n) => ({
+              ...n,
+              isRead: n.isRead || localReads.includes(n.id),
+            }));
+            setNotices(merged);
             if (announcementsRes.universityName) setUniversityName(announcementsRes.universityName);
             if (announcementsRes.campusName) setCampusName(announcementsRes.campusName);
           }
@@ -88,7 +99,17 @@ export default function StudentDashboardPage() {
       ]);
 
       if (announcementsRes.success) {
-        setNotices(announcementsRes.notices);
+        let localReads: string[] = [];
+        if (typeof window !== "undefined") {
+          try {
+            localReads = JSON.parse(localStorage.getItem("smu_read_notices") || "[]");
+          } catch {}
+        }
+        const merged = announcementsRes.notices.map((n) => ({
+          ...n,
+          isRead: n.isRead || localReads.includes(n.id),
+        }));
+        setNotices(merged);
         if (announcementsRes.universityName) setUniversityName(announcementsRes.universityName);
         if (announcementsRes.campusName) setCampusName(announcementsRes.campusName);
       }
@@ -104,14 +125,23 @@ export default function StudentDashboardPage() {
   }
 
   async function handleMarkRead(id: string) {
-    try {
-      await markAnnouncementAsReadAction(id);
-    } catch {
-      // Optimistic update
+    if (typeof window !== "undefined") {
+      try {
+        const localReads: string[] = JSON.parse(localStorage.getItem("smu_read_notices") || "[]");
+        if (!localReads.includes(id)) {
+          localReads.push(id);
+          localStorage.setItem("smu_read_notices", JSON.stringify(localReads));
+        }
+      } catch {}
     }
     setNotices((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
     );
+    try {
+      await markAnnouncementAsReadAction(id);
+    } catch {
+      // Optimistic update persisted
+    }
   }
 
   const filteredNotices = notices.filter((n) => {
@@ -124,75 +154,7 @@ export default function StudentDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-16">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-30 bg-[#0B1D33] text-white border-b border-[#06101E] px-4 py-3 sm:px-6 shadow-xs">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#06101E] border border-[#C59B27]/40 flex items-center justify-center text-[#FCD34D]">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="font-serif font-bold text-sm text-white leading-tight">
-                {universityName}
-              </h1>
-              <p className="text-[11px] text-slate-300 flex items-center gap-1.5 font-sans">
-                <MapPin className="w-3 h-3 text-[#FCD34D]" /> {campusName}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Link href="/admin">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs border-slate-700 text-slate-300 hover:text-white hover:bg-[#06101E]"
-              >
-                Staff Console
-              </Button>
-            </Link>
-            <Link href="/announcements/new">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs border-[#C59B27]/40 text-[#FCD34D] hover:bg-[#06101E] hover:border-[#C59B27]"
-              >
-                <PlusCircle className="w-3.5 h-3.5 mr-1 text-[#FCD34D]" /> Post Notice
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation Sub-bar */}
-      <div className="bg-[#06101E] border-b border-[#C59B27]/20 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto flex items-center gap-6 text-xs font-semibold overflow-x-auto py-2.5">
-          <Link
-            href="/dashboard"
-            className="text-[#FCD34D] border-b-2 border-[#C59B27] pb-1 flex items-center gap-1.5"
-          >
-            <Megaphone className="w-3.5 h-3.5 text-[#FCD34D]" /> Campus Feed
-          </Link>
-          <Link
-            href="/timetable"
-            className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
-          >
-            <Calendar className="w-3.5 h-3.5" /> Weekly Timetable
-          </Link>
-          <Link
-            href="/campus-life"
-            className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
-          >
-            <Compass className="w-3.5 h-3.5" /> Campus Life & Clubs
-          </Link>
-          <Link
-            href="/help-desk"
-            className="text-slate-400 hover:text-white transition-colors pb-1 flex items-center gap-1.5"
-          >
-            <LifeBuoy className="w-3.5 h-3.5" /> Help Desk & Inquiries
-          </Link>
-        </div>
-      </div>
+      <AppHeader universityName={universityName} campusName={campusName} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
         {/* Student Welcome Banner */}

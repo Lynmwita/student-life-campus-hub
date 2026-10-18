@@ -435,38 +435,42 @@ export async function getStudentTicketsAction(): Promise<TicketsListResponse> {
     .eq("student_id", user.id)
     .order("created_at", { ascending: false });
 
-  if (error || !tickets || tickets.length === 0) {
-    return {
-      success: true,
-      tickets: DEMO_TICKETS,
-    };
+  const dbTickets: TicketItem[] = (tickets || []).map((t) => ({
+    id: t.id,
+    referenceNo: t.reference_no,
+    universityId: t.university_id,
+    campusId: t.campus_id,
+    campusName: (t.campuses as unknown as { name?: string } | null)?.name || null,
+    studentId: t.student_id,
+    studentName: (t.user_profiles as unknown as { full_name?: string } | null)?.full_name || "Student",
+    studentEmail: (t.user_profiles as unknown as { email?: string } | null)?.email || "",
+    assignedStaffId: t.assigned_staff_id,
+    assignedStaffName: (t.assigned_staff as unknown as { full_name?: string } | null)?.full_name || null,
+    category: t.category,
+    priority: t.priority as (typeof HELPDESK_PRIORITIES)[number],
+    subject: t.subject,
+    description: t.description,
+    status: t.status as (typeof HELPDESK_STATUSES)[number],
+    isSensitive: t.is_sensitive,
+    sensitiveType: t.sensitive_type,
+    resolutionNotes: t.resolution_notes,
+    resolvedAt: t.resolved_at,
+    createdAt: t.created_at,
+    updatedAt: t.updated_at,
+  }));
+
+  // Merge demo baseline tickets so initial tickets do not abruptly vanish
+  const seenRefs = new Set(dbTickets.map((t) => t.referenceNo));
+  const mergedTickets = [...dbTickets];
+  for (const demo of DEMO_TICKETS) {
+    if (!seenRefs.has(demo.referenceNo)) {
+      mergedTickets.push(demo);
+    }
   }
 
   return {
     success: true,
-    tickets: tickets.map((t) => ({
-      id: t.id,
-      referenceNo: t.reference_no,
-      universityId: t.university_id,
-      campusId: t.campus_id,
-      campusName: (t.campuses as unknown as { name?: string } | null)?.name || null,
-      studentId: t.student_id,
-      studentName: (t.user_profiles as unknown as { full_name?: string } | null)?.full_name || "Student",
-      studentEmail: (t.user_profiles as unknown as { email?: string } | null)?.email || "",
-      assignedStaffId: t.assigned_staff_id,
-      assignedStaffName: (t.assigned_staff as unknown as { full_name?: string } | null)?.full_name || null,
-      category: t.category,
-      priority: t.priority as (typeof HELPDESK_PRIORITIES)[number],
-      subject: t.subject,
-      description: t.description,
-      status: t.status as (typeof HELPDESK_STATUSES)[number],
-      isSensitive: t.is_sensitive,
-      sensitiveType: t.sensitive_type,
-      resolutionNotes: t.resolution_notes,
-      resolvedAt: t.resolved_at,
-      createdAt: t.created_at,
-      updatedAt: t.updated_at,
-    })),
+    tickets: mergedTickets,
   };
 }
 
@@ -527,11 +531,13 @@ export async function getTicketDetailAction(
     .eq("user_id", user.id)
     .single();
 
-  const isStaff = membership?.role === "staff" || membership?.role === "super_admin";
-  const isAdmin = membership?.role === "super_admin";
+  const isStaff = membership?.role === "staff" || membership?.role === "admin" || membership?.role === "super_admin";
+  const isAdmin = membership?.role === "admin" || membership?.role === "super_admin";
+
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(referenceNoOrId);
 
   // Fetch ticket
-  const { data: ticket, error } = await supabase
+  let ticketQuery = supabase
     .from("help_requests")
     .select(`
       id,
@@ -554,11 +560,17 @@ export async function getTicketDetailAction(
       campuses (name),
       user_profiles!student_id (full_name, email),
       assigned_staff:user_profiles!assigned_staff_id (full_name)
-    `)
-    .or(`reference_no.eq.${referenceNoOrId},id.eq.${referenceNoOrId}`)
-    .single();
+    `);
 
-  if (error || !ticket) {
+  if (isUuid) {
+    ticketQuery = ticketQuery.or(`id.eq.${referenceNoOrId},reference_no.eq.${referenceNoOrId}`);
+  } else {
+    ticketQuery = ticketQuery.eq("reference_no", referenceNoOrId);
+  }
+
+  const { data: ticket } = await ticketQuery.maybeSingle();
+
+  if (!ticket) {
     // Check demo fallback if DB didn't find it
     const demo = DEMO_TICKETS.find(
       (t) => t.referenceNo === referenceNoOrId || t.id === referenceNoOrId
@@ -714,11 +726,11 @@ export async function getStaffTicketQueueAction(filter?: {
     .eq("user_id", user.id)
     .single();
 
-  if (!membership || (membership.role !== "staff" && membership.role !== "super_admin")) {
+  if (!membership || (membership.role !== "staff" && membership.role !== "admin" && membership.role !== "super_admin")) {
     return { success: false, message: "Forbidden: Staff portal access required.", tickets: [] };
   }
 
-  const isAdmin = membership.role === "super_admin";
+  const isAdmin = membership.role === "admin" || membership.role === "super_admin";
 
   let query = supabase
     .from("help_requests")
@@ -1153,3 +1165,93 @@ export async function addTicketMessageAction(formData: FormData): Promise<{
   revalidatePath("/admin");
   return { success: true, message: "Reply added successfully." };
 }
+
+/**
+ * 6. Withdraw / Delete Student Ticket Action
+ * Allows the submitter student to withdraw or delete their active help ticket.
+ */
+export async function withdrawTicketAction(ticketIdOrRef: string): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  const cookieStore = await cookies();
+  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+
+  let user = null;
+  try {
+    const supabase = await createClient();
+    const res = await supabase.auth.getUser();
+    user = res.data.user;
+  } catch {
+    // offline
+  }
+
+  if (!user && demoEmail) {
+    const idx = DEMO_TICKETS.findIndex(
+      (t) => t.id === ticketIdOrRef || t.referenceNo === ticketIdOrRef
+    );
+    if (idx !== -1) {
+      DEMO_TICKETS.splice(idx, 1);
+    }
+    revalidatePath("/help-desk");
+    return { success: true, message: "Ticket successfully withdrawn." };
+  }
+
+  if (!user) {
+    return { success: false, message: "Unauthorized. Please log in." };
+  }
+
+  const supabase = await createClient();
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticketIdOrRef);
+
+  let query = supabase.from("help_requests").select("id, student_id, reference_no");
+  if (isUuid) {
+    query = query.or(`id.eq.${ticketIdOrRef},reference_no.eq.${ticketIdOrRef}`);
+  } else {
+    query = query.eq("reference_no", ticketIdOrRef);
+  }
+
+  const { data: ticket, error } = await query.maybeSingle();
+
+  if (error || !ticket) {
+    // Also remove from in-memory demo if applicable
+    const idx = DEMO_TICKETS.findIndex(
+      (t) => t.id === ticketIdOrRef || t.referenceNo === ticketIdOrRef
+    );
+    if (idx !== -1) {
+      DEMO_TICKETS.splice(idx, 1);
+      revalidatePath("/help-desk");
+      return { success: true, message: "Ticket successfully withdrawn." };
+    }
+    return { success: false, message: "Ticket not found or already removed." };
+  }
+
+  // Authorization: Submitter student or staff/admin can withdraw
+  if (ticket.student_id !== user.id) {
+    const { data: callerMembership } = await supabase
+      .from("university_memberships")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const canManage =
+      callerMembership?.role === "staff" ||
+      callerMembership?.role === "admin" ||
+      callerMembership?.role === "super_admin";
+    if (!canManage) {
+      return { success: false, message: "Forbidden: You can only withdraw your own tickets." };
+    }
+  }
+
+  // Delete associated timeline updates first, then ticket
+  await supabase.from("help_request_updates").delete().eq("help_request_id", ticket.id);
+  const { error: deleteError } = await supabase.from("help_requests").delete().eq("id", ticket.id);
+
+  if (deleteError) {
+    return { success: false, message: deleteError.message || "Failed to withdraw ticket." };
+  }
+
+  revalidatePath("/help-desk");
+  revalidatePath("/admin");
+  return { success: true, message: `Ticket ${ticket.reference_no} successfully withdrawn.` };
+}
+

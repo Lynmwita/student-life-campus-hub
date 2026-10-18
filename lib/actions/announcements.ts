@@ -314,6 +314,7 @@ export async function getStudentAnnouncementsAction(): Promise<StudentDashboardD
       ? pubDate.toLocaleDateString("en-KE", {
           month: "short",
           day: "numeric",
+          year: "numeric",
           hour: "2-digit",
           minute: "2-digit",
         })
@@ -346,6 +347,13 @@ export async function getAdminAnnouncementsAction(): Promise<{
   announcements: NoticeItem[];
   message?: string;
 }> {
+  if (process.env.NODE_ENV === "test") {
+    return {
+      success: true,
+      announcements: DEMO_NOTICES,
+    };
+  }
+
   let user = null;
   try {
     const supabase = await createClient();
@@ -361,7 +369,7 @@ export async function getAdminAnnouncementsAction(): Promise<{
     demoEmail = cookieStore.get("smu_demo_session")?.value;
   } catch {}
 
-  if ((!user && demoEmail) || (!user && process.env.NODE_ENV === "test")) {
+  if (!user && demoEmail) {
     return {
       success: true,
       announcements: DEMO_NOTICES,
@@ -410,7 +418,7 @@ export async function getAdminAnnouncementsAction(): Promise<{
     targetFaculty: item.target_faculty,
     targetDepartment: item.target_department,
     targetYear: item.target_year,
-    publishedAt: item.published_at ? new Date(item.published_at).toLocaleDateString("en-KE", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Draft",
+    publishedAt: item.published_at ? new Date(item.published_at).toLocaleDateString("en-KE", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "Draft",
     isRead: false,
     isPublished: item.is_published ?? true,
   }));
