@@ -53,3 +53,18 @@ export const uamsSyncPayloadSchema = z.object({
 });
 
 export type UamsSyncPayload = z.infer<typeof uamsSyncPayloadSchema>;
+
+export const registerStudentSchema = z.object({
+  fullName: z.string().trim().min(2, "Full name must be at least 2 characters"),
+  email: z.string().trim().toLowerCase().email("Valid institutional email address required"),
+  registrationNumber: z.string().trim().min(3, "Registration number is required"),
+  faculty: z.string().trim().min(2, "Faculty is required"),
+  department: z.string().trim().min(2, "Department is required"),
+  yearOfStudy: z.coerce.number().int().min(1).max(6).default(1),
+  campusCode: z.string().trim().optional().default("SMU-MAIN"),
+  initialPassword: z.string().min(8, "Initial password must be at least 8 characters"),
+});
+
+export type RegisterStudentInput = z.infer<typeof registerStudentSchema>;
+
+
