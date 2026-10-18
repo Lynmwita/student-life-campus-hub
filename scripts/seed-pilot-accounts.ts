@@ -31,7 +31,7 @@ async function main() {
       role: "student",
       regNo: "BIT/2023/8849",
       faculty: "School of Computing & Informatics",
-      department: "Computer Science",
+      department: "Information Technology",
       yearOfStudy: 2,
     },
     {

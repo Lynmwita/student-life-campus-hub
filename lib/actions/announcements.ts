@@ -587,3 +587,71 @@ export async function updateAnnouncementDraftAction(
   return { success: true, message: "Draft updated successfully." };
 }
 
+export async function deleteAnnouncementAction(
+  id: string
+): Promise<AnnouncementActionResponse> {
+  let user = null;
+  try {
+    const supabase = await createClient();
+    const res = await supabase.auth.getUser();
+    user = res.data.user;
+  } catch {}
+
+  let demoEmail: string | undefined;
+  try {
+    const cookieStore = await cookies();
+    demoEmail = cookieStore.get("smu_demo_session")?.value;
+  } catch {}
+
+  const actorEmail = user?.email || demoEmail || "admin@summit.ac.ke";
+  const actorId = user?.id || "demo-admin-id";
+
+  // Remove from in-memory fallback list if present
+  const idx = DEMO_NOTICES.findIndex((n) => n.id === id);
+  if (idx !== -1) {
+    DEMO_NOTICES.splice(idx, 1);
+  }
+
+  if (!user && demoEmail) {
+    await recordAuditLogAction({
+      universityId: "00000000-0000-0000-0000-000000000001",
+      actorId,
+      actorRole: "admin",
+      action: "announcement.deleted",
+      targetType: "announcement",
+      targetId: id,
+      details: { actorEmail },
+    });
+    try {
+      revalidatePath("/admin");
+      revalidatePath("/dashboard");
+    } catch {}
+    return { success: true, message: "Announcement deleted successfully." };
+  }
+
+  const supabase = await createClient();
+  // Delete read markers first then announcement
+  await supabase.from("announcement_reads").delete().eq("announcement_id", id);
+  const { error } = await supabase.from("announcements").delete().eq("id", id);
+
+  if (error) {
+    return { success: false, message: error.message };
+  }
+
+  await recordAuditLogAction({
+    universityId: "00000000-0000-0000-0000-000000000001",
+    actorId,
+    actorRole: "admin",
+    action: "announcement.deleted",
+    targetType: "announcement",
+    targetId: id,
+    details: { actorEmail },
+  });
+
+  try {
+    revalidatePath("/admin");
+    revalidatePath("/dashboard");
+  } catch {}
+  return { success: true, message: "Announcement deleted successfully." };
+}
+

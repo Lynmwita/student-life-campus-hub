@@ -84,7 +84,23 @@ export async function loginAction(formData: FormData): Promise<ActionResponse> {
 
     if (!error) {
       resetRateLimit(`login:${ip}`);
-      redirect("/dashboard");
+      // Check user membership role to route admin and staff directly to staff console
+      const { data: { user } } = await supabase.auth.getUser();
+      let targetPath = "/dashboard";
+      if (user) {
+        const { data: membership } = await supabase
+          .from("university_memberships")
+          .select("role")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const role = membership?.role || (user.user_metadata?.role as string);
+        if (role === "admin" || role === "super_admin") {
+          targetPath = "/admin";
+        } else if (role === "staff") {
+          targetPath = "/announcements/new";
+        }
+      }
+      redirect(targetPath);
     }
   } catch (err: unknown) {
     // Next.js redirect throws NEXT_REDIRECT, rethrow

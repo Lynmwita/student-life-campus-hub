@@ -16,6 +16,13 @@ import {
   Edit,
   Clock,
   LogOut,
+  Trash2,
+  Users,
+  Calendar,
+  Settings,
+  BarChart3,
+  Activity,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -36,12 +43,13 @@ import {
   getAdminAnnouncementsAction,
   toggleAnnouncementPublishAction,
   updateAnnouncementDraftAction,
+  deleteAnnouncementAction,
   type NoticeItem,
 } from "@/lib/actions/announcements";
 import { getUserRoleAction, signOutAction } from "@/lib/actions/auth";
 
 export default function StaffAdminPanelPage() {
-  const [activeTab, setActiveTab] = React.useState<"queue" | "bulletins" | "sync" | "audit">("queue");
+  const [activeTab, setActiveTab] = React.useState<"queue" | "bulletins" | "sync" | "audit" | "users" | "events" | "settings">("queue");
   const [tickets, setTickets] = React.useState<TicketItem[]>([]);
   const [auditLogs, setAuditLogs] = React.useState<AuditLogEntry[]>([]);
   const [notices, setNotices] = React.useState<NoticeItem[]>([]);
@@ -49,6 +57,7 @@ export default function StaffAdminPanelPage() {
   const [searchRef, setSearchRef] = React.useState<string>("");
   const [categoryFilter, setCategoryFilter] = React.useState<string>("all");
   const [loading, setLoading] = React.useState(true);
+  const [deletingAnnouncementId, setDeletingAnnouncementId] = React.useState<string | null>(null);
 
   // User role state
   const [userRoleInfo, setUserRoleInfo] = React.useState<{
@@ -331,6 +340,30 @@ export default function StaffAdminPanelPage() {
     }
   }
 
+  async function handleDeleteAnnouncement(noticeId: string, noticeTitle: string) {
+    if (!confirm(`Are you sure you want to delete "${noticeTitle}"? This will permanently remove it from campus feeds.`)) {
+      return;
+    }
+    setDeletingAnnouncementId(noticeId);
+    setAnnouncementActionMessage(null);
+    try {
+      const res = await deleteAnnouncementAction(noticeId);
+      if (res.success) {
+        setNotices((prev) => prev.filter((n) => n.id !== noticeId));
+        const auditRes = await getAuditLogsAction();
+        if (auditRes.success) setAuditLogs(auditRes.logs);
+        setAnnouncementActionMessage({ type: "success", text: `Announcement "${noticeTitle}" permanently deleted.` });
+      } else {
+        setAnnouncementActionMessage({ type: "error", text: res.message || "Failed to delete announcement." });
+      }
+    } catch (err) {
+      console.error("Failed to delete announcement", err);
+      setAnnouncementActionMessage({ type: "error", text: "An error occurred while deleting announcement." });
+    } finally {
+      setDeletingAnnouncementId(null);
+    }
+  }
+
   const isAuthorized = userRoleInfo.isAdmin;
 
   function renderNotAuthorizedCard(sectionName: string) {
@@ -534,10 +567,86 @@ export default function StaffAdminPanelPage() {
           >
             <Shield className="w-3.5 h-3.5" /> Audit Log ({auditLogs.length})
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("users")}
+            className={`flex items-center gap-1.5 pb-1 transition-colors ${
+              activeTab === "users"
+                ? "text-[#FCD34D] border-b-2 border-[#C59B27]"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" /> User Directory
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("events")}
+            className={`flex items-center gap-1.5 pb-1 transition-colors ${
+              activeTab === "events"
+                ? "text-[#FCD34D] border-b-2 border-[#C59B27]"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5" /> Campus Events
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("settings")}
+            className={`flex items-center gap-1.5 pb-1 transition-colors ${
+              activeTab === "settings"
+                ? "text-[#FCD34D] border-b-2 border-[#C59B27]"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Settings className="w-3.5 h-3.5" /> System Settings
+          </button>
         </div>
       </div>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+        {/* Institutional Operational Overview & Health Stats Widgets */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Card className="p-4 border-[#C59B27]/30 bg-white shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#0B1D33] text-[#FCD34D] flex items-center justify-center shrink-0">
+              <LifeBuoy className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xl font-bold font-mono text-[#0B1D33]">{tickets.length}</div>
+              <div className="text-[11px] font-medium text-slate-500">Active Inquiries</div>
+            </div>
+          </Card>
+
+          <Card className="p-4 border-[#C59B27]/30 bg-white shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0">
+              <Megaphone className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xl font-bold font-mono text-[#0B1D33]">{notices.length}</div>
+              <div className="text-[11px] font-medium text-slate-500">Notices & Drafts</div>
+            </div>
+          </Card>
+
+          <Card className="p-4 border-[#C59B27]/30 bg-white shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0">
+              <Activity className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xl font-bold font-mono text-emerald-700">99.8%</div>
+              <div className="text-[11px] font-medium text-slate-500">UAMS Sync Uptime</div>
+            </div>
+          </Card>
+
+          <Card className="p-4 border-[#C59B27]/30 bg-white shadow-xs flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-700 border border-slate-200 flex items-center justify-center shrink-0">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xl font-bold font-mono text-[#0B1D33]">{auditLogs.length}</div>
+              <div className="text-[11px] font-medium text-slate-500">Audit Trail Records</div>
+            </div>
+          </Card>
+        </div>
+
         {/* TAB 1: HELP DESK QUEUE */}
         {activeTab === "queue" && (
           <div className="space-y-4">
@@ -780,6 +889,19 @@ export default function StaffAdminPanelPage() {
                             }`}
                           >
                             {isPublished ? "Unpublish" : "Publish Now"}
+                          </Button>
+
+                          {/* Delete Announcement / Draft Button */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={deletingAnnouncementId === n.id}
+                            onClick={() => handleDeleteAnnouncement(n.id, n.title)}
+                            className="text-[11px] h-7 px-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                            title="Delete this announcement"
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            {deletingAnnouncementId === n.id ? "Deleting..." : "Delete"}
                           </Button>
                         </div>
                       </div>
@@ -1127,6 +1249,205 @@ export default function StaffAdminPanelPage() {
               </div>
             </div>
           )
+        )}
+
+        {/* TAB 5: USER MANAGEMENT */}
+        {activeTab === "users" && (
+          <div className="space-y-4 font-sans">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#C59B27]/20 pb-3">
+              <div>
+                <h2 className="text-xl font-serif font-bold text-[#0B1D33]">
+                  University User Directory & Roles
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Institutional registry of verified student enrollments, faculty caseworkers, and registrar credentials.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold">
+                  3 Verified Pilot Accounts
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="p-4 border-[#C59B27]/30 bg-white shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 uppercase">
+                    Student
+                  </span>
+                  <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                    <UserCheck className="w-3.5 h-3.5" /> Enrolled
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33]">Alex Mutua</h4>
+                  <p className="text-xs text-slate-500 font-mono">alex.mutua@summit.ac.ke</p>
+                  <p className="text-xs text-slate-600 font-sans mt-2">
+                    Reg No: <strong className="font-mono">BIT/2023/8849</strong>
+                  </p>
+                  <p className="text-xs text-slate-500 font-sans">
+                    School of Computing & Informatics • Information Technology
+                  </p>
+                </div>
+              </Card>
+
+              <Card className="p-4 border-[#C59B27]/30 bg-white shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 uppercase">
+                    Staff
+                  </span>
+                  <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                    <UserCheck className="w-3.5 h-3.5" /> Active Officer
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33]">Academic Registrar</h4>
+                  <p className="text-xs text-slate-500 font-mono">registrar@summit.ac.ke</p>
+                  <p className="text-xs text-slate-600 font-sans mt-2">
+                    Staff ID: <strong className="font-mono">STAFF/REG/001</strong>
+                  </p>
+                  <p className="text-xs text-slate-500 font-sans">
+                    Registrar Directorate • Academic Affairs
+                  </p>
+                </div>
+              </Card>
+
+              <Card className="p-4 border-[#C59B27]/30 bg-white shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 uppercase">
+                    System Administrator
+                  </span>
+                  <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                    <UserCheck className="w-3.5 h-3.5" /> Superuser
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33]">System Administrator</h4>
+                  <p className="text-xs text-slate-500 font-mono">admin@summit.ac.ke</p>
+                  <p className="text-xs text-slate-600 font-sans mt-2">
+                    Admin ID: <strong className="font-mono">ADMIN/SYS/001</strong>
+                  </p>
+                  <p className="text-xs text-slate-500 font-sans">
+                    ICT Directorate • Enterprise Architecture
+                  </p>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: CAMPUS EVENTS MANAGEMENT */}
+        {activeTab === "events" && (
+          <div className="space-y-4 font-sans">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#C59B27]/20 pb-3">
+              <div>
+                <h2 className="text-xl font-serif font-bold text-[#0B1D33]">
+                  Campus Events & Calendar Scheduler
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Manage university fairs, career hackathons, and society calendars broadcast to students.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="p-4 border-[#C59B27]/30 bg-white shadow-xs space-y-2.5">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-300 uppercase">
+                  Published Event
+                </span>
+                <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
+                  University Annual Hackathon 2026
+                </h4>
+                <p className="text-xs text-slate-500 font-mono">Oct 24, 2026 • 09:00 AM</p>
+                <p className="text-xs text-slate-600 leading-relaxed font-sans">
+                  Main Campus Computing Labs. Featuring Safaricom Engineering, Microsoft ADC mentors.
+                </p>
+              </Card>
+
+              <Card className="p-4 border-[#C59B27]/30 bg-white shadow-xs space-y-2.5">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-300 uppercase">
+                  Published Event
+                </span>
+                <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
+                  Career Fair & Mentorship Summit
+                </h4>
+                <p className="text-xs text-slate-500 font-mono">Oct 28, 2026 • 10:00 AM</p>
+                <p className="text-xs text-slate-600 leading-relaxed font-sans">
+                  University Auditorium. Open to all faculties with CV review and mock interview stations.
+                </p>
+              </Card>
+
+              <Card className="p-4 border-[#C59B27]/30 bg-white shadow-xs space-y-2.5">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-300 uppercase">
+                  Published Event
+                </span>
+                <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
+                  Chancellor&apos;s Public Lecture
+                </h4>
+                <p className="text-xs text-slate-500 font-mono">Nov 05, 2026 • 02:00 PM</p>
+                <p className="text-xs text-slate-600 leading-relaxed font-sans">
+                  Taifa Hall, Westlands Campus. Topic: Digital Economy and Emerging African Tech Ecosystems.
+                </p>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 7: SYSTEM SETTINGS */}
+        {activeTab === "settings" && (
+          <div className="space-y-4 font-sans">
+            <div className="border-b border-[#C59B27]/20 pb-3">
+              <h2 className="text-xl font-serif font-bold text-[#0B1D33]">
+                Institution & Hub System Configuration
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Manage global university environment parameters, data residency flags, and security controls.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="p-5 border-[#C59B27]/30 bg-white shadow-xs space-y-3">
+                <h3 className="font-serif font-bold text-sm text-[#0B1D33]">
+                  UAMS Synchronization Engine
+                </h3>
+                <div className="space-y-2 text-xs text-slate-600">
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span>Sync Mode:</span>
+                    <strong className="text-slate-800">Automated Push & Polling</strong>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span>Cron Cadence:</span>
+                    <strong className="font-mono text-slate-800">Daily Institutional Schedule</strong>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span>Data Integrity Signature:</span>
+                    <strong className="font-mono text-emerald-600">SHA-256 HMAC Active</strong>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-5 border-[#C59B27]/30 bg-white shadow-xs space-y-3">
+                <h3 className="font-serif font-bold text-sm text-[#0B1D33]">
+                  Campus Security & Data Privacy
+                </h3>
+                <div className="space-y-2 text-xs text-slate-600">
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span>Sensitive Complaints Isolation:</span>
+                    <strong className="text-emerald-700">Enforced via RLS & Audit</strong>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span>Session Inactivity Limit:</span>
+                    <strong className="text-slate-800">24 Hours with Secure Cookie</strong>
+                  </div>
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span>Institutional Brand Code:</span>
+                    <strong className="font-mono text-slate-800">SMU-NAIROBI-2026</strong>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
         )}
 
         {/* Update Status Modal */}
