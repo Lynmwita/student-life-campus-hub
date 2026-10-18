@@ -111,7 +111,14 @@ export default function SmartOnboardingWizard({
       try {
         const res = await getStudentOnboardingDataAction();
         if (!ignore && res.success && res.studies) {
-          setStudies(res.studies);
+          const studiesData = { ...res.studies };
+          if (
+            studiesData.programOfStudy?.includes("Information Technology") ||
+            studiesData.registrationNumber?.includes("BIT")
+          ) {
+            studiesData.department = "Information Technology";
+          }
+          setStudies(studiesData);
           if (res.savedInterests?.length > 0) {
             const matched = KENYAN_CAMPUS_DIRECTORY.filter((c) =>
               res.savedInterests.includes(c.canonicalInterestId)

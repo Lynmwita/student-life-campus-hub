@@ -116,8 +116,40 @@ export async function updateSession(request: NextRequest) {
   const authRoutes = ["/login", "/register"];
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
+  // Determine user role for routing and onboarding exemption
+  let userRole = "student";
+  if (demoSession) {
+    const demoRole = request.cookies.get("smu_demo_role")?.value;
+    userRole =
+      demoRole ||
+      (demoSession.includes("registrar") || demoSession.includes("admin")
+        ? "admin"
+        : demoSession.includes("staff")
+        ? "staff"
+        : "student");
+  } else if (user) {
+    userRole = (user.user_metadata?.role as string) || "student";
+    if (userRole === "student") {
+      const { data: membership } = await supabase
+        .from("university_memberships")
+        .select("role")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (membership?.role) {
+        userRole = membership.role;
+      }
+    }
+  }
+
+  const isStaffOrAdmin = userRole === "staff" || userRole === "admin" || userRole === "super_admin";
+
   if (isAuthRoute && isAuthenticated) {
     const url = request.nextUrl.clone();
+    if (isStaffOrAdmin) {
+      url.pathname = userRole === "staff" ? "/announcements/new" : "/admin";
+      return applySecurityHeaders(NextResponse.redirect(url));
+    }
+
     if (demoSession) {
       url.pathname = demoSession === "student@summit.ac.ke" && !demoOnboarded ? "/onboarding" : "/dashboard";
       return applySecurityHeaders(NextResponse.redirect(url));
@@ -138,9 +170,9 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // 4. Mandatory Interests Onboarding Gate for Authenticated Users
-  // Users with zero recorded interests are intercepted and redirected to /onboarding
-  if (user && protectedRoutes.some((route) => pathname.startsWith(route))) {
+  // 4. Mandatory Interests Onboarding Gate for Authenticated Students
+  // Staff and admin accounts are exempted from student interests onboarding.
+  if (!isStaffOrAdmin && user && protectedRoutes.some((route) => pathname.startsWith(route))) {
     const { count } = await supabase
       .from("student_interests")
       .select("*", { count: "exact", head: true })

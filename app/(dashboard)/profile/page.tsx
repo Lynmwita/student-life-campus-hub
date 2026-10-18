@@ -68,13 +68,28 @@ export default function ProfilePage() {
     };
   }, []);
 
-  const fullName = studies?.fullName || userInfo.fullName || "Alex Mutua";
-  const email = studies?.email || userInfo.email || "pilot.student@summit.ac.ke";
-  const regNumber = studies?.registrationNumber || userInfo.registrationNumber || "BIT/2023/8849";
-  const program = studies?.programOfStudy || "Bachelor of Science in Information Technology";
-  const faculty = studies?.faculty || "School of Computing & Informatics";
-  const department = studies?.department || "Department of Computer Science & Information Technology";
-  const yearOfStudy = studies?.yearOfStudy || 2;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] pb-16 font-sans">
+        <AppHeader />
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-16 flex flex-col items-center justify-center">
+          <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 shadow-xs max-w-sm w-full space-y-3">
+            <div className="w-8 h-8 border-2 border-[#0B1D33] border-t-[#C59B27] rounded-full animate-spin mx-auto" />
+            <p className="text-xs text-slate-500 font-medium">Loading profile credentials & status...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const isStaffOrAdmin = userInfo.role === "staff" || userInfo.role === "admin" || userInfo.role === "super_admin";
+  const fullName = userInfo.fullName || studies?.fullName || (isStaffOrAdmin ? "University Administrator" : "Student");
+  const email = userInfo.email || studies?.email || "";
+  const regNumber = userInfo.registrationNumber || studies?.registrationNumber || (isStaffOrAdmin ? "STAFF/OFFICIAL" : "");
+  const program = isStaffOrAdmin ? "Institutional Administration & Governance" : (studies?.programOfStudy || "Bachelor of Science in Information Technology");
+  const faculty = isStaffOrAdmin ? "Administrative Directorate" : (studies?.faculty || "School of Computing & Informatics");
+  const department = isStaffOrAdmin ? "Enterprise Administration" : (studies?.department || "Department of Information Technology");
+  const yearOfStudy = studies?.yearOfStudy || 1;
   const semester = studies?.semester || 1;
   const university = studies?.universityName || "Summit Metropolitan University";
   const campus = studies?.campusName || "Main Campus (Westlands, Nairobi)";
@@ -94,7 +109,7 @@ export default function ProfilePage() {
               <div className="space-y-1">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 text-[11px] font-semibold">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  Verified Active Enrollment
+                  {isStaffOrAdmin ? "Verified University Official" : "Verified Active Enrollment"}
                 </div>
                 <h2 className="text-xl sm:text-2xl font-serif font-bold text-white leading-tight">
                   {fullName}

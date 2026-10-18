@@ -141,24 +141,33 @@ export default function StudentHelpDeskPage() {
   }
 
   const [withdrawing, setWithdrawing] = React.useState(false);
+  const [withdrawModalOpen, setWithdrawModalOpen] = React.useState(false);
+  const [withdrawError, setWithdrawError] = React.useState<string | null>(null);
 
-  async function handleWithdrawTicket(ticketIdOrRef: string) {
-    if (!confirm("Are you sure you want to withdraw this ticket? This action will remove it from your active inquiries.")) return;
+  async function handleConfirmWithdraw() {
+    if (!selectedTicket) return;
+    const ticketIdOrRef = selectedTicket.referenceNo || selectedTicket.id;
     setWithdrawing(true);
+    setWithdrawError(null);
     try {
       const res = await withdrawTicketAction(ticketIdOrRef);
       if (res.success) {
+        setWithdrawModalOpen(false);
+        const removedRef = selectedTicket.referenceNo;
         setSelectedTicket(null);
         setTimeline([]);
+        // Optimistically remove from state immediately
+        setTickets((prev) => prev.filter((t) => t.referenceNo !== removedRef && t.id !== ticketIdOrRef));
         const refreshed = await getStudentTicketsAction();
         if (refreshed.success) {
-          setTickets(refreshed.tickets);
+          setTickets(refreshed.tickets.filter((t) => t.referenceNo !== removedRef && t.id !== ticketIdOrRef));
         }
       } else {
-        alert(res.message || "Failed to withdraw ticket.");
+        setWithdrawError(res.message || "Failed to withdraw ticket.");
       }
     } catch (err) {
       console.error("Failed to withdraw ticket", err);
+      setWithdrawError("An unexpected error occurred while withdrawing ticket.");
     } finally {
       setWithdrawing(false);
     }
@@ -359,9 +368,13 @@ export default function StudentHelpDeskPage() {
                       </span>
                       {selectedTicket.status !== "closed" && (
                         <Button
+                          type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => handleWithdrawTicket(selectedTicket.id || selectedTicket.referenceNo)}
+                          onClick={() => {
+                            setWithdrawError(null);
+                            setWithdrawModalOpen(true);
+                          }}
                           disabled={withdrawing}
                           className="text-[11px] text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 h-7 px-2"
                           title="Withdraw this inquiry"
@@ -677,6 +690,73 @@ export default function StudentHelpDeskPage() {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Withdraw Confirmation Modal */}
+        {withdrawModalOpen && selectedTicket && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
+            <div className="w-full max-w-md bg-white border border-[#C59B27]/50 rounded-2xl shadow-xl overflow-hidden font-sans">
+              <div className="bg-[#0B1D33] px-6 py-4 border-b border-[#C59B27]/30 flex items-center justify-between text-white">
+                <div>
+                  <h3 className="font-serif font-bold text-base text-white">
+                    Withdraw Help Request
+                  </h3>
+                  <p className="text-[11px] text-slate-300">
+                    Reference: {selectedTicket.referenceNo}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWithdrawModalOpen(false)}
+                  className="text-slate-400 hover:text-white text-lg font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {withdrawError && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
+                    {withdrawError}
+                  </div>
+                )}
+
+                <div className="flex items-start gap-3 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 leading-relaxed">
+                  <Trash2 className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                  <div>
+                    Are you sure you want to withdraw <strong>{selectedTicket.subject}</strong>?
+                    <p className="mt-1 text-slate-600">
+                      This inquiry will be permanently removed from your active support queue and departmental registries.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setWithdrawModalOpen(false)}
+                    disabled={withdrawing}
+                    className="text-xs border-slate-300"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="danger"
+                    size="sm"
+                    onClick={handleConfirmWithdraw}
+                    isLoading={withdrawing}
+                    className="text-xs bg-red-700 hover:bg-red-800 text-white border-red-800 gap-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    Confirm Withdrawal
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         )}
