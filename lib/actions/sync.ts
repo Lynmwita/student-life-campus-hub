@@ -70,7 +70,7 @@ async function findAuthUserByEmail(
 /**
  * Executes a database operation with a bounded timeout to prevent hanging on unresponsive networks.
  */
-async function withDbTimeout<T>(promise: PromiseLike<T>, timeoutMs = 400): Promise<T | null> {
+async function withDbTimeout<T>(promise: PromiseLike<T>, timeoutMs = 5000): Promise<T | null> {
   try {
     let timer: NodeJS.Timeout;
     const timeoutPromise = new Promise<null>((resolve) => {
@@ -398,14 +398,14 @@ export async function executeUamsSync(
       // 4. Resolve Pilot University
       const univRes = await withDbTimeout(
         adminClient.from("universities").select("id").limit(1).maybeSingle(),
-        400
+        5000
       );
       universityId = univRes?.data?.id || DEFAULT_PILOT_UNIVERSITY_ID;
 
       // 5. Fetch active campuses for code lookups
       const campusesRes = await withDbTimeout(
         adminClient.from("campuses").select("id, code").eq("university_id", universityId),
-        400
+        5000
       );
       const campusesData = campusesRes?.data;
 
@@ -531,7 +531,7 @@ export async function executeUamsSync(
               .eq("university_id", universityId)
               .eq("code", cu.code)
               .maybeSingle(),
-            300
+            5000
           );
           existingUnit = cuRes?.data;
 
@@ -549,7 +549,7 @@ export async function executeUamsSync(
               },
               { onConflict: "university_id, code" }
             ),
-            300
+            5000
           );
         } catch {
           // Fallback to local synced store
@@ -599,13 +599,22 @@ export async function executeUamsSync(
               .select("id")
               .eq("email", st.email)
               .maybeSingle(),
-            300
+            5000
           );
+
+          const initialPassword = st.initial_password || crypto.randomUUID();
 
           if (profileRes?.data) {
             studentUserId = profileRes.data.id;
+            if (studentUserId && st.initial_password) {
+              await withDbTimeout(
+                adminClient.auth.admin.updateUserById(studentUserId, {
+                  password: initialPassword,
+                }),
+                5000
+              );
+            }
           } else {
-            const initialPassword = st.initial_password || crypto.randomUUID();
             const authRes = await withDbTimeout(
               adminClient.auth.admin.createUser({
                 email: st.email,
@@ -618,7 +627,7 @@ export async function executeUamsSync(
                   must_reset_password: true,
                 },
               }),
-              6000
+              5000
             );
 
             if (authRes?.data?.user) {
@@ -630,7 +639,17 @@ export async function executeUamsSync(
                 st.email,
                 authUserEmailCache
               );
-              if (foundUserId) studentUserId = foundUserId;
+              if (foundUserId) {
+                studentUserId = foundUserId;
+                if (st.initial_password) {
+                  await withDbTimeout(
+                    adminClient.auth.admin.updateUserById(foundUserId, {
+                      password: initialPassword,
+                    }),
+                    5000
+                  );
+                }
+              }
             }
           }
 
@@ -644,7 +663,7 @@ export async function executeUamsSync(
                 },
                 { onConflict: "id" }
               ),
-              1500
+              5000
             );
 
             await withDbTimeout(
@@ -662,7 +681,7 @@ export async function executeUamsSync(
                 },
                 { onConflict: "user_id, university_id" }
               ),
-              1500
+              5000
             );
           }
         } catch {
@@ -718,7 +737,7 @@ export async function executeUamsSync(
               .eq("university_id", universityId)
               .eq("code", tt.course_code)
               .maybeSingle(),
-            300
+            5000
           );
 
           if (unitRes?.data) {
@@ -742,7 +761,7 @@ export async function executeUamsSync(
                     "university_id,course_unit_id,campus_id,day_of_week,start_time,academic_year,semester",
                 }
               ),
-              300
+              5000
             );
           }
         } catch {
