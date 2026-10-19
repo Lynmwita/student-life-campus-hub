@@ -388,33 +388,39 @@ export async function executeUamsSync(
     }
 
     let universityId = DEFAULT_PILOT_UNIVERSITY_ID;
-    const campusMap = new Map<string, string>();
+    const campusMap = new Map<string, { id: string; universityId: string }>();
     let defaultCampusId: string | null = null;
     let adminClient: ReturnType<typeof createAdminClient> | null = null;
 
     if (!isTestEnv) {
       adminClient = createAdminClient();
 
-      // 4. Resolve Pilot University
-      const univRes = await withDbTimeout(
-        adminClient.from("universities").select("id").limit(1).maybeSingle(),
-        5000
-      );
-      universityId = univRes?.data?.id || DEFAULT_PILOT_UNIVERSITY_ID;
-
-      // 5. Fetch active campuses for code lookups
+      // 4. Fetch all active campuses for code lookups across universities
       const campusesRes = await withDbTimeout(
-        adminClient.from("campuses").select("id, code").eq("university_id", universityId),
+        adminClient.from("campuses").select("id, code, university_id"),
         5000
       );
       const campusesData = campusesRes?.data;
 
       campusesData?.forEach((c) => {
-        if (c.code) campusMap.set(c.code.toUpperCase(), c.id);
+        if (c.code) {
+          campusMap.set(c.code.toUpperCase(), { id: c.id, universityId: c.university_id });
+        }
       });
 
-      defaultCampusId =
-        campusesData && campusesData.length > 0 ? campusesData[0].id : null;
+      const zuCampus = campusMap.get("ZU-TECH");
+      if (zuCampus) {
+        universityId = zuCampus.universityId;
+        defaultCampusId = zuCampus.id;
+      } else {
+        const univRes = await withDbTimeout(
+          adminClient.from("universities").select("id").limit(1).maybeSingle(),
+          5000
+        );
+        universityId = univRes?.data?.id || DEFAULT_PILOT_UNIVERSITY_ID;
+        defaultCampusId =
+          campusesData && campusesData.length > 0 ? campusesData[0].id : null;
+      }
     }
 
     const counts: SyncCounts = {
@@ -585,8 +591,13 @@ export async function executeUamsSync(
       const authUserEmailCache = new Map<string, string>();
 
       for (const st of payload.students) {
-        const campusId =
-          campusMap.get(st.campus_code?.toUpperCase() || "") || defaultCampusId;
+        const matchedCampus = campusMap.get(st.campus_code?.toUpperCase() || "");
+        const campusId = matchedCampus ? matchedCampus.id : defaultCampusId;
+        const studentUnivId = matchedCampus ? matchedCampus.universityId : universityId;
+        const programOfStudy =
+          st.program_of_study ||
+          st.program_name ||
+          `Bachelor of Science in ${st.department}`;
 
         let studentUserId: string | null = null;
         const normalizedEmail = st.email.toLowerCase();
@@ -670,12 +681,13 @@ export async function executeUamsSync(
               adminClient.from("university_memberships").upsert(
                 {
                   user_id: studentUserId,
-                  university_id: universityId,
+                  university_id: studentUnivId,
                   campus_id: campusId,
                   role: "student",
                   registration_number: st.registration_number,
                   faculty: st.faculty,
                   department: st.department,
+                  program_of_study: programOfStudy,
                   year_of_study: st.year_of_study,
                   verification_status: "verified",
                 },
@@ -726,15 +738,16 @@ export async function executeUamsSync(
 
       // 8. Live Environment: Upsert Timetables
       for (const tt of payload.timetables) {
-        const campusId =
-          campusMap.get(tt.campus_code?.toUpperCase() || "") || defaultCampusId;
+        const matchedCampus = campusMap.get(tt.campus_code?.toUpperCase() || "");
+        const campusId = matchedCampus ? matchedCampus.id : defaultCampusId;
+        const ttUnivId = matchedCampus ? matchedCampus.universityId : universityId;
 
         try {
           const unitRes = await withDbTimeout(
             adminClient
               .from("course_units")
               .select("id")
-              .eq("university_id", universityId)
+              .eq("university_id", ttUnivId)
               .eq("code", tt.course_code)
               .maybeSingle(),
             5000
@@ -744,7 +757,7 @@ export async function executeUamsSync(
             await withDbTimeout(
               adminClient.from("timetables").upsert(
                 {
-                  university_id: universityId,
+                  university_id: ttUnivId,
                   campus_id: campusId,
                   course_unit_id: unitRes.data.id,
                   day_of_week: tt.day_of_week,

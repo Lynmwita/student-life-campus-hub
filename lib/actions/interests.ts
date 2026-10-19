@@ -244,7 +244,10 @@ export async function getStudentOnboardingDataAction(): Promise<StudentOnboardin
       faculty: membership?.faculty || "School of Computing & Informatics",
       department: membership?.department || "Information Technology",
       programOfStudy:
-        membership?.program_of_study || "Bachelor of Science in Information Technology",
+        membership?.program_of_study ||
+        (membership?.department
+          ? `Bachelor of Science in ${membership.department}`
+          : "Bachelor of Science in Information Technology"),
       yearOfStudy: membership?.year_of_study ?? (user.user_metadata?.year_of_study ? Number(user.user_metadata.year_of_study) : 1),
       semester: 1,
       verificationStatus:

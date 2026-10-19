@@ -6,8 +6,10 @@ export const uamsStudentSchema = z.object({
   registration_number: z.string().min(3, "Registration number is required"),
   faculty: z.string().min(2, "Faculty is required"),
   department: z.string().min(2, "Department is required"),
+  program_name: z.string().optional(),
+  program_of_study: z.string().optional(),
   year_of_study: z.coerce.number().int().min(1).max(7),
-  campus_code: z.string().optional().default("SMU-MAIN"),
+  campus_code: z.string().optional().default("ZU-TECH"),
   initial_password: z.string().min(8).optional(),
 });
 
