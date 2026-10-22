@@ -56,6 +56,24 @@ const DEFAULT_STUDENTS: RegistrarStudent[] = [
 
 const DEFAULT_COURSE_UNITS: RegistrarCourseUnit[] = [
   {
+    code: "BCS 311",
+    name: "Advanced Database Systems",
+    faculty: "School of Computing & Informatics",
+    department: "Computer Science",
+    year_of_study: 3,
+    semester: 1,
+    credit_hours: 3,
+  },
+  {
+    code: "BIT 312",
+    name: "Distributed Systems & Cloud Computing",
+    faculty: "School of Computing & Informatics",
+    department: "Information Technology",
+    year_of_study: 3,
+    semester: 1,
+    credit_hours: 3,
+  },
+  {
     code: "COMP 211",
     name: "Object-Oriented Analysis & Design",
     faculty: "School of Computing & Informatics",
@@ -76,6 +94,28 @@ const DEFAULT_COURSE_UNITS: RegistrarCourseUnit[] = [
 ];
 
 const DEFAULT_TIMETABLES: RegistrarTimetable[] = [
+  {
+    course_code: "BCS 311",
+    campus_code: "SMU-MAIN",
+    day_of_week: 1,
+    start_time: "08:00",
+    end_time: "11:00",
+    venue: "Lecture Hall 04",
+    lecturer_name: "Dr. Jane Mwangi",
+    semester: 1,
+    academic_year: "2026/2027",
+  },
+  {
+    course_code: "BIT 312",
+    campus_code: "SMU-MAIN",
+    day_of_week: 1,
+    start_time: "14:00",
+    end_time: "17:00",
+    venue: "Computing Lab 01",
+    lecturer_name: "Prof. David Kamau",
+    semester: 1,
+    academic_year: "2026/2027",
+  },
   {
     course_code: "COMP 211",
     campus_code: "SMU-MAIN",

@@ -151,7 +151,7 @@ export async function updateSession(request: NextRequest) {
   if (isAuthRoute && isAuthenticated) {
     const url = request.nextUrl.clone();
     if (isStaffOrAdmin) {
-      url.pathname = userRole === "staff" ? "/announcements/new" : "/admin";
+      url.pathname = "/admin";
       return applySecurityHeaders(NextResponse.redirect(url));
     }
 

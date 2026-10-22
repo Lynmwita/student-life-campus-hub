@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Send Secure Sync Trigger
         env:
-          APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'https://hub.summit.ac.ke' }}
+          APP_URL: ${{ secrets.APP_URL || secrets.NEXT_PUBLIC_APP_URL || 'https://student-life-campus-hub.vercel.app' }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
         run: |

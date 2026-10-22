@@ -139,7 +139,10 @@ export default function StaffAdminPanelPage() {
     // Safety timeout helper: ensures slow network or stalled cold-starts never hang the admin console
     function withTimeout<T>(promise: Promise<T>, fallback: T, ms = 3500): Promise<T> {
       return Promise.race([
-        promise,
+        promise.catch((err) => {
+          console.warn("Staff console data fetch failed, using fallback:", err);
+          return fallback;
+        }),
         new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
       ]);
     }
@@ -554,7 +557,7 @@ export default function StaffAdminPanelPage() {
     }
   }
 
-  const isAuthorized = userRoleInfo.isAdmin;
+  const isAuthorized = userRoleInfo.isAdmin || userRoleInfo.isStaff;
 
   function renderNotAuthorizedCard(sectionName: string) {
     return (

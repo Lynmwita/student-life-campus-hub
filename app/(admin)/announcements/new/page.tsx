@@ -38,7 +38,9 @@ export default function NewAnnouncementPage() {
 
   React.useEffect(() => {
     getUserRoleAction().then((res) => {
-      setIsAdmin(res.isAdmin);
+      setIsAdmin(res.isAdmin || res.isStaff);
+    }).catch(() => {
+      setIsAdmin(false);
     });
   }, []);
 
@@ -101,7 +103,7 @@ export default function NewAnnouncementPage() {
           <div>
             <h3 className="font-serif font-bold text-lg text-[#0B1D33]">Access Restricted</h3>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              Publishing official institutional announcements requires <strong>University Administrator</strong> or <strong>Super Admin</strong> clearance. Staff members without administrative privileges are not authorized to create announcements.
+              Publishing official institutional announcements requires <strong>University Staff</strong>, <strong>Registrar</strong>, or <strong>Administrator</strong> clearance. Student accounts are not authorized to create announcements.
             </p>
           </div>
           <div className="pt-2">
