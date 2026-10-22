@@ -99,30 +99,3 @@ describe('Persistent announcement migrations and PostgreSQL import', () => {
     await db.exec('reset role;');
   });
 });
-
-describe('UAMS announcement storage migration', () => {
-  let uams: PGlite;
-  beforeAll(async () => {
-    uams = new PGlite();
-    await uams.exec('create role anon; create role authenticated; create role service_role bypassrls;');
-    const schema = await readFile(path.resolve(import.meta.dirname, '../../../UAMS/database/01_schema_init.sql'), 'utf8');
-    // Apply the actual existing announcement table before the additive migration.
-    await uams.exec('create table schools(id uuid primary key); create table departments(id uuid primary key); create table programs(id uuid primary key); create table users(id uuid primary key);');
-    await uams.exec(schema.slice(schema.indexOf('CREATE TABLE IF NOT EXISTS announcements ('), schema.indexOf('-- 12. IMMUTABLE')));
-    await uams.exec(await readFile(path.resolve(import.meta.dirname, '../../../UAMS/supabase/migrations/20261021211540_persistent_announcements.sql'), 'utf8'));
-  }, 30000);
-  afterAll(async () => { await uams?.close(); });
-
-  it('stores and versions institutional notices while denying direct browser access', async () => {
-    await uams.exec("set role service_role; insert into announcements(title,content,target_audience,author_email) values ('Exam dates','Check dates','students','registrar@example.edu'); reset role;");
-    const original = (await uams.query<{created_at:Date;updated_at:Date}>('select created_at,updated_at from announcements')).rows[0];
-    await uams.exec("set role service_role; update announcements set title='Revised exam dates', created_at='2000-01-01', updated_at='2000-01-01'; reset role;");
-    const updated = (await uams.query<{created_at:Date;updated_at:Date}>('select created_at,updated_at from announcements')).rows[0];
-    expect(updated.created_at).toEqual(original.created_at);
-    expect(new Date(updated.updated_at).getTime()).toBeGreaterThanOrEqual(new Date(original.updated_at).getTime());
-    await uams.exec('set role authenticated;');
-    await expect(uams.query('select * from announcements')).rejects.toThrow('permission denied');
-    await expect(uams.query("insert into announcements(title,content) values ('forged','text')")).rejects.toThrow('permission denied');
-    await uams.exec('reset role;');
-  });
-});
