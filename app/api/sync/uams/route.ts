@@ -79,9 +79,42 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Disallow GET and other HTTP methods on /api/sync/uams.
+ * GET /api/sync/uams
+ * Rejects unauthenticated GET calls with 405 Method Not Allowed (Allow: POST).
+ * Supports automated triggers from Vercel Cron (which invokes via GET with Bearer CRON_SECRET).
  */
-export async function GET() {
+export async function GET(request?: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET;
+  const authHeader = request?.headers?.get?.("authorization");
+
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    try {
+      const result = await executeUamsSync({
+        triggerSource: "cron",
+        actorRole: "system_scheduler",
+        actorEmail: "scheduler@summit.ac.ke",
+      });
+
+      if (!result.success) {
+        return NextResponse.json(result, {
+          status: result.errors?.length ? 422 : 500,
+        });
+      }
+
+      return NextResponse.json(result, { status: 200 });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Internal server error during UAMS sync.";
+      console.error("[UAMS SYNC API FATAL]", err);
+      return NextResponse.json(
+        {
+          success: false,
+          error: message,
+        },
+        { status: 500 }
+      );
+    }
+  }
+
   return NextResponse.json(
     { error: "Method Not Allowed. UAMS synchronization must be triggered via POST." },
     { status: 405, headers: { Allow: "POST" } }

@@ -96,10 +96,8 @@ export async function loginAction(formData: FormData): Promise<ActionResponse> {
           .eq("user_id", user.id)
           .maybeSingle();
         const role = membership?.role || (user.app_metadata?.role as string);
-        if (role === "admin" || role === "super_admin") {
+        if (role === "admin" || role === "super_admin" || role === "staff") {
           targetPath = "/admin";
-        } else if (role === "staff") {
-          targetPath = "/announcements/new";
         }
       }
       redirect(targetPath);
