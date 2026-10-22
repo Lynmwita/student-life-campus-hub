@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { executeUamsSync } from "@/lib/actions/sync";
+import { executeUamsSync } from "@/lib/uams/sync-engine";
 
 /**
  * POST /api/sync/uams

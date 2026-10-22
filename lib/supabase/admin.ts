@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
  * such as user provisioning via auth.admin.
  */
 export function createAdminClient() {
+  if(!process.env.NEXT_PUBLIC_SUPABASE_URL||!process.env.SUPABASE_SERVICE_ROLE_KEY)throw new Error('Server database credentials are not configured.');
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
   const serviceRoleKey =
@@ -18,5 +19,6 @@ export function createAdminClient() {
       autoRefreshToken: false,
       persistSession: false,
     },
+    global:{fetch:(input,init)=>fetch(input,{...init,cache:'no-store',signal:init?.signal||AbortSignal.timeout(15000)})},
   });
 }

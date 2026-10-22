@@ -1,7 +1,9 @@
 import {
+  uamsSyncPayloadSchema,
   uamsStudentSchema,
   uamsCourseUnitSchema,
   uamsTimetableSchema,
+  uamsAnnouncementSchema,
   type UamsSyncPayload,
   type UamsStudentInput,
   type UamsCourseUnitInput,
@@ -166,6 +168,8 @@ export function normalizeStudent(raw: Record<string, unknown>): UamsStudentInput
     department,
     year_of_study: yearOfStudy,
     campus_code: campusCode,
+    enrollment_status:raw.enrollment_status,
+    enrollment_updated_at:raw.enrollment_updated_at,
     ...(initialPassword ? { initial_password: initialPassword } : {}),
   };
 
@@ -234,6 +238,7 @@ export function normalizeTimetable(raw: Record<string, unknown>): UamsTimetableI
 
   const candidate = {
     course_code: courseCode,
+    source_id:raw.source_id,updated_at:raw.updated_at,is_active:raw.is_active,
     campus_code: campusCode,
     day_of_week: dayOfWeek,
     start_time: startTime,
@@ -254,7 +259,7 @@ export function normalizeTimetable(raw: Record<string, unknown>): UamsTimetableI
  */
 export function normalizeRegistrarPayload(payload: unknown): UamsSyncPayload {
   if (!payload || typeof payload !== "object") {
-    return { version: 1, dry_run: false, students: [], course_units: [], timetables: [] };
+    return uamsSyncPayloadSchema.parse({version:1});
   }
 
   const obj = payload as Record<string, unknown>;
@@ -295,6 +300,11 @@ export function normalizeRegistrarPayload(payload: unknown): UamsSyncPayload {
 
   const dryRun = Boolean(target.dry_run ?? target.dryRun ?? obj.dry_run ?? false);
 
+  // Announcement identity, scope and timestamps must be explicit. Never silently
+  // discard or widen an invalid notice while normalizing unrelated SIS records.
+  const announcements = target.announcements === undefined ? [] :
+    uamsAnnouncementSchema.array().max(1000).parse(target.announcements);
+
   const students: UamsStudentInput[] = [];
   for (const item of rawStudents) {
     const normalized = normalizeStudent(item as Record<string, unknown>);
@@ -319,11 +329,13 @@ export function normalizeRegistrarPayload(payload: unknown): UamsSyncPayload {
     }
   }
 
-  return {
+  return uamsSyncPayloadSchema.parse({
     version: 1,
     dry_run: dryRun,
     students,
     course_units: courseUnits,
     timetables,
-  };
+    announcements,
+    grades:target.grades,events:target.events,academic_dates:target.academic_dates,
+  });
 }

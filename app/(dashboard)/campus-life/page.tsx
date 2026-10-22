@@ -1,5 +1,8 @@
 "use client";
 
+import {withOffline} from "@/lib/offline";
+import {CampusCalendar,type CalendarItem} from "@/components/campus-calendar";
+import {getParticipationAction,setParticipationAction} from "@/lib/actions/participation";
 import * as React from "react";
 import Link from "next/link";
 import {
@@ -31,9 +34,13 @@ export default function CampusLifePage() {
   const [activeTab, setActiveTab] = React.useState<"events" | "clubs">("events");
   const [events, setEvents] = React.useState<EventItem[]>([]);
   const [clubs, setClubs] = React.useState<ClubItem[]>([]);
+  const [calendarItems,setCalendarItems]=React.useState<CalendarItem[]>([]);
+  const [saveMessage,setSaveMessage]=React.useState("");
+  const [loadError,setLoadError]=React.useState("");
+  const [hasLoadedData,setHasLoadedData]=React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
-  const [universityName, setUniversityName] = React.useState("Summit Metropolitan University");
+  const [universityName, setUniversityName] = React.useState("Your university");
   const [selectedEventCategory, setSelectedEventCategory] = React.useState<string>("all");
   const [selectedClubCategory, setSelectedClubCategory] = React.useState<string>("all");
 
@@ -43,46 +50,21 @@ export default function CampusLifePage() {
   React.useEffect(() => {
     let ignore = false;
 
-    // Load saved RSVPs and Clubs
-    if (typeof window !== "undefined") {
-      try {
-        const storedRsvps = localStorage.getItem("smu_event_rsvps");
-        if (storedRsvps) setRsvpedEventIds(JSON.parse(storedRsvps));
-
-        const storedClubs = localStorage.getItem("smu_joined_clubs");
-        let initialClubs: string[] = storedClubs ? JSON.parse(storedClubs) : [];
-
-        // Pre-fill from onboarding communities if present
-        const onboardingComms = localStorage.getItem("smu_onboarding_communities");
-        if (onboardingComms) {
-          const parsed: string[] = JSON.parse(onboardingComms);
-          for (const c of parsed) {
-            const lc = c.toLowerCase();
-            if (lc.includes("tech") || lc.includes("gdsc") || lc.includes("innovat")) {
-              initialClubs.push("40000000-0000-0000-0000-000000000201");
-            }
-            if (lc.includes("computing") || lc.includes("cssa")) {
-              initialClubs.push("40000000-0000-0000-0000-000000000002");
-            }
-            if (lc.includes("red") || lc.includes("cross")) {
-              initialClubs.push("40000000-0000-0000-0000-000000000203");
-            }
-          }
-        }
-        setJoinedClubIds(Array.from(new Set(initialClubs)));
-      } catch {}
-    }
+    getParticipationAction().then(r=>{if(!ignore&&r.success){setRsvpedEventIds(r.eventIds);setJoinedClubIds(r.clubIds);}}).catch(()=>setSaveMessage('Connect to load your saved memberships and RSVPs.'));
 
     async function loadData() {
       try {
-        const res = await getCampusLifeAction();
+        const res = await withOffline("getCampusLifeAction", getCampusLifeAction);
+        if(!ignore&&!res.success)throw new Error(res.message||'Campus life could not be loaded.');
         if (!ignore && res.success) {
+          setHasLoadedData(true);setLoadError('');
           setEvents(res.events);
+          setCalendarItems(res.calendarItems??[]);
           setClubs(res.clubs);
           if (res.universityName) setUniversityName(res.universityName);
         }
       } catch (err) {
-        console.error("Failed to load campus life data", err);
+        if(!ignore)setLoadError(err instanceof Error?err.message:'Campus life is unavailable. Please reconnect and try again.');
       } finally {
         if (!ignore) {
           setLoading(false);
@@ -98,41 +80,27 @@ export default function CampusLifePage() {
     };
   }, []);
 
-  function handleToggleRsvp(eventId: string) {
-    setRsvpedEventIds((prev) => {
-      const next = prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId];
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem("smu_event_rsvps", JSON.stringify(next));
-        } catch {}
-      }
-      return next;
-    });
-  }
-
-  function handleToggleJoinClub(clubId: string) {
-    setJoinedClubIds((prev) => {
-      const next = prev.includes(clubId) ? prev.filter((id) => id !== clubId) : [...prev, clubId];
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem("smu_joined_clubs", JSON.stringify(next));
-        } catch {}
-      }
-      return next;
-    });
-  }
+  async function handleToggleRsvp(eventId: string) {
+ try{const joined=!rsvpedEventIds.includes(eventId);const r=await setParticipationAction('event',eventId,joined);setSaveMessage(r.message);if(r.success)setRsvpedEventIds(prev=>joined?[...prev,eventId]:prev.filter(id=>id!==eventId));}catch{setSaveMessage('Please connect to save your RSVP.');}
+ }
+ async function handleToggleJoinClub(clubId:string){
+ try{const joined=!joinedClubIds.includes(clubId);const r=await setParticipationAction('club',clubId,joined);setSaveMessage(r.message);if(r.success)setJoinedClubIds(prev=>joined?[...prev,clubId]:prev.filter(id=>id!==clubId));}catch{setSaveMessage('Please connect to join this club.');}
+ }
 
   async function handleRefresh() {
     setRefreshing(true);
     try {
-      const res = await getCampusLifeAction();
+      const res = await withOffline("getCampusLifeAction", getCampusLifeAction);
+      if(!res.success)throw new Error(res.message||'Campus life could not be refreshed.');
       if (res.success) {
+        setHasLoadedData(true);setLoadError('');
         setEvents(res.events);
+        setCalendarItems(res.calendarItems??[]);
         setClubs(res.clubs);
         if (res.universityName) setUniversityName(res.universityName);
       }
     } catch (err) {
-      console.error("Failed to refresh campus life", err);
+      setLoadError(err instanceof Error?err.message:'Could not refresh campus life.');
     } finally {
       setRefreshing(false);
     }
@@ -159,11 +127,14 @@ export default function CampusLifePage() {
     };
   }
 
+  if(!loading&&loadError&&!hasLoadedData)return <div className="min-h-screen bg-[#F8FAFC]"><AppHeader universityName={universityName}/><main className="max-w-5xl mx-auto p-6 space-y-4"><h1 className="text-2xl font-bold">Campus life unavailable</h1><p role="alert" className="rounded border border-amber-300 bg-amber-50 p-4">{loadError} No current data could be loaded.</p><Button onClick={handleRefresh} disabled={refreshing}>{refreshing?'Retrying…':'Try again'}</Button></main></div>;
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-16">
       <AppHeader universityName={universityName} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+        {loadError&&<p role="alert" className="rounded border border-amber-300 bg-amber-50 p-4">Could not refresh: {loadError} Displaying previously loaded information; it may be out of date.</p>}
         {/* Header Title Banner */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#C59B27]/20 pb-4">
           <div>
@@ -219,7 +190,9 @@ export default function CampusLifePage() {
           </div>
         </div>
 
-        {/* Tab 1: Campus Events */}
+        <p role="status">{saveMessage}</p>
+ <CampusCalendar items={calendarItems}/>
+ {/* Tab 1: Campus Events */}
         {activeTab === "events" && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-lg text-xs max-w-fit border border-slate-200">

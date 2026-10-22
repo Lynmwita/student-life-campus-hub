@@ -1,0 +1,2 @@
+/** Validate again at delivery because authenticated clients can insert via the Data API. */
+export function isTrustedPushEndpoint(endpoint:string){try{const url=new URL(endpoint);return url.protocol==='https:'&&!url.username&&!url.password&&(!url.port||url.port==='443')&&/(^|\.)(push\.services\.mozilla\.com|fcm\.googleapis\.com|web\.push\.apple\.com|notify\.windows\.com)$/.test(url.hostname);}catch{return false;}}

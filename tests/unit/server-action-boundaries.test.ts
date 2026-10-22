@@ -1,0 +1,11 @@
+import {beforeEach,it,expect,vi} from 'vitest';
+const {getUser,from,getCookie}=vi.hoisted(()=>({getUser:vi.fn(),from:vi.fn(),getCookie:vi.fn()}));
+vi.mock('@/lib/supabase/server',()=>({createClient:async()=>({auth:{getUser},from})}));
+vi.mock('next/headers',()=>({cookies:async()=>({get:getCookie})}));
+vi.mock('next/cache',()=>({revalidatePath:vi.fn()}));
+import {toggleAnnouncementPublishAction,updateAnnouncementDraftAction,deleteAnnouncementAction} from '@/lib/actions/announcements';
+import {getStudentTicketsAction} from '@/lib/actions/helpdesk';
+beforeEach(()=>{getUser.mockResolvedValue({data:{user:null}});getCookie.mockReturnValue(undefined);from.mockReset();});
+it('denies anonymous demo announcement edits and never mutates the database',async()=>{const form=new FormData();form.set('title','Forgery');form.set('content','Forged notice');expect((await toggleAnnouncementPublishAction('00000000-0000-0000-0000-000000000201',true)).success).toBe(false);expect((await updateAnnouncementDraftAction('00000000-0000-0000-0000-000000000201',form)).success).toBe(false);expect((await deleteAnnouncementAction('00000000-0000-0000-0000-000000000201')).success).toBe(false);expect(from).not.toHaveBeenCalled();});
+it('does not expose internal audit writers or demo withdrawal mutators as Server Actions',async()=>{expect('recordAuditLogAction' in await import('@/lib/actions/audit')).toBe(false);expect('markTicketWithdrawnInMemory' in await import('@/lib/actions/helpdesk')).toBe(false);});
+it('never merges another demo student tickets into a real empty student inbox',async()=>{getUser.mockResolvedValue({data:{user:{id:'real-student'}}});const b:Record<string,unknown>={};for(const k of ['select','eq','order'])b[k]=()=>b;b.then=(resolve:(v:unknown)=>unknown)=>Promise.resolve({data:[],error:null}).then(resolve);from.mockReturnValue(b);expect(await getStudentTicketsAction()).toMatchObject({success:true,tickets:[]});});

@@ -133,6 +133,8 @@ export async function getUamsRegistrarData(): Promise<UamsSyncPayload> {
     students: JSON.parse(JSON.stringify(liveStudents)),
     course_units: JSON.parse(JSON.stringify(liveCourseUnits)),
     timetables: JSON.parse(JSON.stringify(liveTimetables)),
+    announcements: [],
+    grades: [], events: [], academic_dates: [],
   };
 }
 

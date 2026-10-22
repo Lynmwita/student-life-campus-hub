@@ -1,5 +1,7 @@
 "use server";
 
+import { demoSessionEmail } from "@/lib/security/demo-session";
+
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { CANONICAL_INTEREST_IDS } from "@/lib/constants/interests";
@@ -356,7 +358,7 @@ export async function completeSmartOnboardingAction(
   }
 
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
 
   if (!user && demoEmail) {
     cookieStore.set("smu_demo_onboarded", "true", { path: "/" });

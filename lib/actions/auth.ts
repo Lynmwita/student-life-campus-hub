@@ -1,5 +1,7 @@
 "use server";
 
+import { demoSessionEmail, demoSessionRole } from "@/lib/security/demo-session";
+
 import { createClient } from "@/lib/supabase/server";
 import {
   loginSchema,
@@ -93,7 +95,7 @@ export async function loginAction(formData: FormData): Promise<ActionResponse> {
           .select("role")
           .eq("user_id", user.id)
           .maybeSingle();
-        const role = membership?.role || (user.user_metadata?.role as string);
+        const role = membership?.role || (user.app_metadata?.role as string);
         if (role === "admin" || role === "super_admin") {
           targetPath = "/admin";
         } else if (role === "staff") {
@@ -235,6 +237,7 @@ export async function getUserRoleAction(): Promise<{
   isAuthenticated: boolean;
   role: "student" | "staff" | "admin" | "super_admin";
   email?: string;
+  accountId?: string;
   fullName?: string;
   registrationNumber?: string;
   isAdmin: boolean;
@@ -257,12 +260,13 @@ export async function getUserRoleAction(): Promise<{
         .eq("user_id", user.id)
         .maybeSingle();
 
-      const role = (membership?.role || user.user_metadata?.role || "student") as "student" | "staff" | "admin" | "super_admin";
+      const role = (membership?.role || user.app_metadata?.role || "student") as "student" | "staff" | "admin" | "super_admin";
       const isAdmin = role === "admin" || role === "super_admin";
       const isStaff = isAdmin || role === "staff";
 
       return {
         isAuthenticated: true,
+        accountId: user.id,
         role,
         email: user.email || profile?.email,
         fullName: profile?.full_name || user.user_metadata?.full_name || (user.email ? user.email.split("@")[0] : "User"),
@@ -276,8 +280,8 @@ export async function getUserRoleAction(): Promise<{
   }
 
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
-  const demoRole = cookieStore.get("smu_demo_role")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
+  const demoRole = demoSessionRole(demoEmail);
 
   if (demoEmail) {
     const role = (demoRole || (demoEmail.includes("registrar") || demoEmail.includes("admin") ? "admin" : demoEmail.includes("staff") ? "staff" : "student")) as "student" | "staff" | "admin" | "super_admin";
@@ -285,6 +289,7 @@ export async function getUserRoleAction(): Promise<{
     const isStaff = isAdmin || role === "staff";
     return {
       isAuthenticated: true,
+      accountId: `demo:${demoEmail}`,
       role,
       email: demoEmail,
       fullName: demoEmail.includes("alex") ? "Alex Mutua" : demoEmail.includes("registrar") ? "Registrar Academic Affairs" : demoEmail.includes("admin") ? "System Administrator" : "Student",

@@ -1,5 +1,8 @@
 "use client";
 
+import {PushSettings} from "@/components/push-settings";
+import {OfflineSettings} from "@/components/offline-settings";
+import {clearPrivateOffline} from "@/lib/offline";
 import * as React from "react";
 import Link from "next/link";
 import {
@@ -79,7 +82,8 @@ export default function ProfilePage() {
             <div className="w-8 h-8 border-2 border-[#0B1D33] border-t-[#C59B27] rounded-full animate-spin mx-auto" />
             <p className="text-xs text-slate-500 font-medium">Loading profile credentials & status...</p>
           </div>
-        </main>
+  <PushSettings/><OfflineSettings/>
+      </main>
       </div>
     );
   }
@@ -124,7 +128,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <form action={signOutAction} className="shrink-0">
+            <form action={signOutAction} onSubmit={clearPrivateOffline} className="shrink-0">
               <Button
                 type="submit"
                 variant="outline"
@@ -241,6 +245,7 @@ export default function ProfilePage() {
             </Card>
           </Link>
         </div>
+<PushSettings/><OfflineSettings/>
       </main>
     </div>
   );

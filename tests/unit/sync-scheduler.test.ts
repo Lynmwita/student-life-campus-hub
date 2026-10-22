@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { executeUamsSync, getLatestSyncStatusAction } from "@/lib/actions/sync";
+import { executeUamsSync, getLatestSyncStatusAction } from "@/lib/uams/sync-engine";
 
 describe("Tiny B — Scheduler Wiring & Anti-Storming Protections", () => {
   const rootDir = process.cwd();

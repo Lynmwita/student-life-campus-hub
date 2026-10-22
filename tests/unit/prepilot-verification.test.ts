@@ -1,4 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+import {importCore} from '@/lib/uams/core-import';
+import {uamsSyncPayloadSchema} from '@/lib/validations/sync';
+import type {SupabaseClient} from '@supabase/supabase-js';
 import fs from "fs";
 import path from "path";
 import {
@@ -58,24 +61,32 @@ describe("Pre-Pilot Staging & Security Verification", () => {
     );
   });
 
-  it("V-04: Student Password Provisioning Security — verifies sync does not hardcode passwords", () => {
-    const syncActionSource = fs.readFileSync(
-      path.join(rootDir, "lib/actions/sync.ts"),
-      "utf-8"
-    );
-    expect(syncActionSource).toContain("crypto.randomUUID()");
-    expect(syncActionSource).not.toContain('"StudentPassword123!"');
-    expect(syncActionSource).toContain("must_reset_password: true");
+  function provisioningClient(directory:(page:number,size:number)=>{id:string;email:string}[]){
+    type ProvisionInput={password:string;user_metadata:{must_reset_password:boolean}};
+    type Result={error:null;data:Record<string,string>[]};
+    type Query=PromiseLike<Result>&{select:()=>Query;eq:()=>Query;maybeSingle:()=>Promise<{data:null;error:null}>;upsert:(data:Record<string,unknown>)=>Promise<{error:null}>};
+    const createUser=vi.fn(async(input:ProvisionInput)=>{void input;return {data:{user:{id:'provisioned-auth-id'}},error:null};});
+    const listUsers=vi.fn(async({page,perPage}:{page:number;perPage:number})=>({data:{users:directory(page,perPage)},error:null}));
+    const writes:{table:string;data:Record<string,unknown>}[]=[];
+    const client={auth:{admin:{createUser,listUsers}},from:(table:string)=>{const result=Promise.resolve<Result>({error:null,data:table==='campuses'?[{id:'campus-id',code:'MAIN'}]:[]});const q:Query={select:()=>q,eq:()=>q,maybeSingle:async()=>({data:null,error:null}),upsert:(data)=>{writes.push({table,data});return Promise.resolve({error:null});},then:result.then.bind(result)};return q;}};
+    return {client:client as unknown as SupabaseClient,createUser,listUsers,writes};
+  }
+  const student=(email:string)=>({email,full_name:'Test Student',registration_number:'REG001',faculty:'Computing',department:'Computer Science',year_of_study:1,campus_code:'MAIN'});
+  it("V-04: Student provisioning uses fresh random passwords and requires reset",async()=>{
+    const first=provisioningClient(()=>[]),second=provisioningClient(()=>[]);
+    const payload=uamsSyncPayloadSchema.parse({version:1,students:[student('new@example.edu')]});
+    await importCore(first.client,'tenant',payload);await importCore(second.client,'tenant',payload);
+    const password=first.createUser.mock.calls[0][0].password;
+    expect(password).toMatch(/^[0-9a-f]{8}-[0-9a-f-]{27}$/i);
+    expect(second.createUser.mock.calls[0][0].password).not.toBe(password);
+    expect(first.createUser.mock.calls[0][0].user_metadata.must_reset_password).toBe(true);
   });
-
-  it("V-05: User Lookup Scalability — sync paginates through auth accounts", () => {
-    const syncActionSource = fs.readFileSync(
-      path.join(rootDir, "lib/actions/sync.ts"),
-      "utf-8"
-    );
-    expect(syncActionSource).toContain("adminClient.auth.admin.listUsers");
-    expect(syncActionSource).toContain("perPage = 50");
-    expect(syncActionSource).toContain("page += 1");
+  it("V-05: Registrar searches subsequent auth pages before provisioning",async()=>{
+    const fake=provisioningClient((page,size)=>page===1?Array.from({length:size},(_,i)=>({id:'existing-'+i,email:'existing'+i+'@example.edu'})):[{id:'target-auth-id',email:'target@example.edu'}]);
+    await importCore(fake.client,'tenant',uamsSyncPayloadSchema.parse({version:1,students:[student('target@example.edu')]}));
+    expect(fake.listUsers.mock.calls.map(([call])=>call.page)).toEqual([1,2]);
+    expect(fake.createUser).not.toHaveBeenCalled();
+    expect(fake.writes.find(w=>w.table==='user_profiles')?.data.id).toBe('target-auth-id');
   });
 
   it("V-06: Pre-Filled Studies Integrity — Step 1 loads academic credentials correctly", async () => {

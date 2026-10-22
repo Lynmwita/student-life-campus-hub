@@ -1,5 +1,6 @@
 "use client";
 
+import {withOffline} from "@/lib/offline";
 import * as React from "react";
 import Link from "next/link";
 import {
@@ -36,10 +37,12 @@ export default function StudentDashboardPage() {
   const [notices, setNotices] = React.useState<NoticeItem[]>([]);
   const [todaySchedule, setTodaySchedule] = React.useState<TimetableEntry[]>([]);
   const [todayDayName, setTodayDayName] = React.useState<string>("Today");
+  const [loadError,setLoadError]=React.useState("");
+  const [hasLoadedData,setHasLoadedData]=React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
-  const [universityName, setUniversityName] = React.useState("Summit Metropolitan University");
-  const [campusName, setCampusName] = React.useState("Main Campus (Westlands)");
+  const [universityName, setUniversityName] = React.useState("Your university");
+  const [campusName, setCampusName] = React.useState("Your campus");
   const [selectedFilter, setSelectedFilter] = React.useState<"all" | "P1" | "unread">("all");
 
   React.useEffect(() => {
@@ -48,11 +51,13 @@ export default function StudentDashboardPage() {
     async function loadData() {
       try {
         const [announcementsRes, scheduleRes] = await Promise.all([
-          getStudentAnnouncementsAction(),
-          getStudentTodayScheduleAction(),
+          withOffline("getStudentAnnouncementsAction", getStudentAnnouncementsAction),
+          withOffline("getStudentTodayScheduleAction", getStudentTodayScheduleAction),
         ]);
 
         if (!ignore) {
+          if(!announcementsRes.success||!scheduleRes.success)throw new Error(announcementsRes.message||scheduleRes.message||'Campus information could not be loaded.');
+          setHasLoadedData(true);setLoadError('');
           if (announcementsRes.success) {
             let localReads: string[] = [];
             if (typeof window !== "undefined") {
@@ -74,7 +79,7 @@ export default function StudentDashboardPage() {
           }
         }
       } catch (err) {
-        console.error("Failed to load dashboard data", err);
+        if(!ignore)setLoadError(err instanceof Error?err.message:'Campus feed is unavailable. Please reconnect and try again.');
       } finally {
         if (!ignore) {
           setLoading(false);
@@ -94,10 +99,12 @@ export default function StudentDashboardPage() {
     setRefreshing(true);
     try {
       const [announcementsRes, scheduleRes] = await Promise.all([
-        getStudentAnnouncementsAction(),
-        getStudentTodayScheduleAction(),
+        withOffline("getStudentAnnouncementsAction", getStudentAnnouncementsAction),
+        withOffline("getStudentTodayScheduleAction", getStudentTodayScheduleAction),
       ]);
 
+      if(!announcementsRes.success||!scheduleRes.success)throw new Error(announcementsRes.message||scheduleRes.message||'Campus information could not be refreshed.');
+      setHasLoadedData(true);setLoadError('');
       if (announcementsRes.success) {
         let localReads: string[] = [];
         if (typeof window !== "undefined") {
@@ -118,7 +125,7 @@ export default function StudentDashboardPage() {
         setTodayDayName(scheduleRes.dayName);
       }
     } catch (err) {
-      console.error("Failed to refresh dashboard data", err);
+      setLoadError(err instanceof Error?err.message:'Could not refresh campus feed.');
     } finally {
       setRefreshing(false);
     }
@@ -152,11 +159,14 @@ export default function StudentDashboardPage() {
 
   const unreadCount = notices.filter((n) => !n.isRead).length;
 
+  if(!loading&&loadError&&!hasLoadedData)return <div className="min-h-screen bg-[#F8FAFC]"><AppHeader universityName={universityName} campusName={campusName}/><main className="max-w-5xl mx-auto p-6 space-y-4"><h1 className="text-2xl font-bold">Campus feed unavailable</h1><p role="alert" className="rounded border border-amber-300 bg-amber-50 p-4">{loadError} No current data could be loaded.</p><Button onClick={handleRefresh} disabled={refreshing}>{refreshing?'Retrying…':'Try again'}</Button></main></div>;
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-16">
       <AppHeader universityName={universityName} campusName={campusName} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+        {loadError&&<p role="alert" className="rounded border border-amber-300 bg-amber-50 p-4">Could not refresh: {loadError} Displaying previously loaded information; it may be out of date.</p>}
         {/* Student Welcome Banner */}
         <div className="rounded-xl bg-gradient-to-r from-[#0B1D33] to-[#06101E] border border-[#C59B27]/30 p-6 sm:p-8 text-white shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

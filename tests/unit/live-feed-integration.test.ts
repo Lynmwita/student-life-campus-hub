@@ -5,7 +5,7 @@ import {
   getLatestSyncStatusAction,
   resetSyncLockForTesting,
   resetSyncStoreForTesting,
-} from "@/lib/actions/sync";
+} from "@/lib/uams/sync-engine";
 import { NextRequest } from "next/server";
 
 describe("Phase 11 — Live Registrar Feed Connection & Dynamic Simulation (Step 11.4)", () => {
@@ -168,7 +168,7 @@ describe("Phase 11 — Live Registrar Feed Connection & Dynamic Simulation (Step
     expect(status.feedSource).toBe("live_api");
   });
 
-  it("3. Gracefully falls back to local verified registrar store when upstream SIS experiences HTTP 500 error", async () => {
+  it("3. Reports upstream HTTP errors without importing fallback fixtures", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
       status: 500,
@@ -177,19 +177,18 @@ describe("Phase 11 — Live Registrar Feed Connection & Dynamic Simulation (Step
     } as unknown as Response);
 
     const result = await executeUamsSync({ triggerSource: "cron" });
-    expect(result.success).toBe(true);
-    expect(result.feed_source).toBe("local_store");
-    // Local store contains baseline verified students, courses, timetables
-    expect(result.counts.students_inserted).toBeGreaterThan(0);
-    expect(result.counts.course_units_inserted).toBeGreaterThan(0);
-    expect(result.counts.timetables_inserted).toBeGreaterThan(0);
+    expect(result.success).toBe(false);
+    expect(result.feed_source).toBe("live_api");
+    expect(result.counts.students_inserted).toBe(0);
+    expect(result.counts.course_units_inserted).toBe(0);
+    expect(result.counts.timetables_inserted).toBe(0);
 
     const status = await getLatestSyncStatusAction();
-    expect(status.feedSource).toBe("local_store");
-    expect(status.status).toBe("success");
+    expect(status.feedSource).toBe("live_api");
+    expect(status.status).toBe("failed");
   });
 
-  it("4. Gracefully falls back to local verified registrar store when upstream SIS times out", async () => {
+  it("4. Reports upstream timeouts without importing fallback fixtures", async () => {
     global.fetch = vi.fn().mockImplementation(() => {
       const err = new Error("The operation was aborted due to timeout");
       err.name = "AbortError";
@@ -197,12 +196,12 @@ describe("Phase 11 — Live Registrar Feed Connection & Dynamic Simulation (Step
     });
 
     const result = await executeUamsSync({ triggerSource: "cron" });
-    expect(result.success).toBe(true);
-    expect(result.feed_source).toBe("local_store");
-    expect(result.counts.students_inserted).toBeGreaterThan(0);
+    expect(result.success).toBe(false);
+    expect(result.feed_source).toBe("live_api");
+    expect(result.counts.students_inserted).toBe(0);
 
     const status = await getLatestSyncStatusAction();
-    expect(status.feedSource).toBe("local_store");
+    expect(status.feedSource).toBe("live_api");
   });
 
   it("5. Guarantees zero duplicate insertions across consecutive live API sync runs (Idempotency Proof)", async () => {

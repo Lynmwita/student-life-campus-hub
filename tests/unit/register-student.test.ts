@@ -1,13 +1,22 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+const {auditRows,staff}=vi.hoisted(()=>({auditRows:[] as {actor_id:string;action:string;entity_id:string;details:{actor_role:string}}[],staff:{id:'00000000-0000-0000-0000-000000000100',email:'staff@example.edu'}}));
+vi.mock('@/lib/supabase/server',()=>({createClient:async()=>{
+ type MembershipQuery={select:()=>MembershipQuery;eq:()=>MembershipQuery;maybeSingle:()=>Promise<{data:{role:string}}>};
+ const query:MembershipQuery={select:()=>query,eq:()=>query,maybeSingle:async()=>({data:{role:'staff'}})};
+ return {auth:{getUser:async()=>({data:{user:staff}})},from:()=>query};
+}}));
+vi.mock('@/lib/supabase/admin',()=>({createAdminClient:()=>({from:()=>({insert:(row:typeof auditRows[number])=>{auditRows.push(row);return {select:()=>({single:async()=>({data:{id:'audit-id'},error:null})})};}})})}));
 import { registerStudentAction, deleteStudentForCleanupAction } from "@/lib/actions/sync";
-import { getAuditLogsAction } from "@/lib/actions/audit";
 
 describe("Staff Console: Register Student Feature", () => {
   beforeEach(async () => {
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY','test-server-only-key');
+    auditRows.length=0;
     // Clean up test student before each run
     await deleteStudentForCleanupAction("test.register.qa@summit.ac.ke");
     await deleteStudentForCleanupAction("brian.otieno@summit.ac.ke");
   });
+  afterEach(()=>vi.unstubAllEnvs());
 
   it("successfully registers and provisions a new student via existing ingestion pipeline", async () => {
     const res = await registerStudentAction({
@@ -30,13 +39,12 @@ describe("Staff Console: Register Student Feature", () => {
     expect(res.student?.initialPassword).toBe("StudentPassword123!");
 
     // Verify audit log has student_registered
-    const auditRes = await getAuditLogsAction();
-    expect(auditRes.success).toBe(true);
-    const registeredLog = auditRes.logs.find(
-      (l) => l.action === "student_registered" && l.targetId === "SMU/BIT/2026/0998"
+    const registeredLog = auditRows.find(
+      (l) => l.action === "student_registered" && l.entity_id === "SMU/BIT/2026/0998"
     );
     expect(registeredLog).toBeDefined();
-    expect(registeredLog?.actorRole).toBe("staff");
+    expect(registeredLog?.actor_id).toBe(staff.id);
+    expect(registeredLog?.details.actor_role).toBe("staff");
   });
 
   it("rejects duplicate email with friendly inline error", async () => {

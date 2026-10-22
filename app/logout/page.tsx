@@ -1,11 +1,12 @@
 "use client";
 
+import {clearPrivateOffline} from "@/lib/offline";
 import * as React from "react";
 import { signOutAction } from "@/lib/actions/auth";
 
 export default function LogoutPage() {
   React.useEffect(() => {
-    signOutAction().then(() => {
+    (clearPrivateOffline(), signOutAction()).then(() => {
       window.location.href = "/login";
     });
   }, []);

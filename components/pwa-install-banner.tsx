@@ -10,10 +10,19 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 }
 
+const subscribeDisplayMode=(notify:()=>void)=>{
+ const query=window.matchMedia('(display-mode: standalone)');
+ query.addEventListener('change',notify);window.addEventListener('appinstalled',notify);
+ return()=>{query.removeEventListener('change',notify);window.removeEventListener('appinstalled',notify);};
+};
+const standaloneSnapshot=()=>window.matchMedia('(display-mode: standalone)').matches||(navigator as Navigator&{standalone?:boolean}).standalone===true;
+const subscribeDevice=()=>()=>{};
+const iosSafariSnapshot=()=>{const ua=navigator.userAgent.toLowerCase();return /iphone|ipad|ipod/.test(ua)&&/safari/.test(ua)&&!/chrome|crios|fxios/.test(ua);};
+
 export function PwaInstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = React.useState<BeforeInstallPromptEvent | null>(null);
-  const [isIos, setIsIos] = React.useState(false);
-  const [isStandalone, setIsStandalone] = React.useState(false);
+  const isIos=React.useSyncExternalStore(subscribeDevice,iosSafariSnapshot,()=>false);
+  const isStandalone=React.useSyncExternalStore(subscribeDisplayMode,standaloneSnapshot,()=>false);
   const [isVisible, setIsVisible] = React.useState(false);
   const [installedSuccess, setInstalledSuccess] = React.useState(false);
 
@@ -21,14 +30,7 @@ export function PwaInstallBanner() {
     if (typeof window === "undefined") return;
 
     // 1. Check if already running standalone (already installed)
-    const isStandaloneMode =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-
-    if (isStandaloneMode) {
-      setIsStandalone(true);
-      return;
-    }
+    if (isStandalone) return;
 
     // 2. Check dismissal cooldown (7 days)
     const dismissedTime = localStorage.getItem("campus_hub_install_dismissed");
@@ -40,12 +42,7 @@ export function PwaInstallBanner() {
     }
 
     // 3. Detect iOS Safari
-    const ua = window.navigator.userAgent.toLowerCase();
-    const isIosDevice = /iphone|ipad|ipod/.test(ua);
-    const isSafari = /safari/.test(ua) && !/chrome|crios|fxios/.test(ua);
-
-    if (isIosDevice && isSafari) {
-      setIsIos(true);
+    if (isIos) {
       // Gentle delayed appearance for iOS
       const timer = setTimeout(() => setIsVisible(true), 2500);
       return () => clearTimeout(timer);
@@ -72,7 +69,7 @@ export function PwaInstallBanner() {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
-  }, []);
+  }, [isStandalone,isIos]);
 
   async function handleInstallClick() {
     if (!deferredPrompt) return;

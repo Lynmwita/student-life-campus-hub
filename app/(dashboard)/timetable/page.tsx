@@ -1,5 +1,6 @@
 "use client";
 
+import {withOffline} from "@/lib/offline";
 import * as React from "react";
 import Link from "next/link";
 import {
@@ -35,10 +36,12 @@ const DAYS: Array<{ id: number; name: string; short: string }> = [
 
 export default function TimetablePage() {
   const [entries, setEntries] = React.useState<TimetableEntry[]>([]);
+  const [loadError,setLoadError]=React.useState("");
+  const [hasLoadedData,setHasLoadedData]=React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
-  const [universityName, setUniversityName] = React.useState("Summit Metropolitan University");
-  const [campusName, setCampusName] = React.useState("Main Campus (Westlands)");
+  const [universityName, setUniversityName] = React.useState("Your university");
+  const [campusName, setCampusName] = React.useState("Your campus");
 
   // Default to today's day of week (0 = Sunday, 1..6 = Mon..Sat)
   const currentJsDay = typeof window !== "undefined" ? new Date().getDay() : 1;
@@ -50,14 +53,16 @@ export default function TimetablePage() {
 
     async function loadData() {
       try {
-        const res = await getStudentWeeklyTimetableAction();
+        const res = await withOffline("getStudentWeeklyTimetableAction", getStudentWeeklyTimetableAction);
+        if(!ignore&&!res.success)throw new Error(res.message||'Weekly timetable could not be loaded.');
         if (!ignore && res.success) {
+          setHasLoadedData(true);setLoadError('');
           setEntries(res.entries);
           if (res.universityName) setUniversityName(res.universityName);
           if (res.campusName) setCampusName(res.campusName);
         }
       } catch (err) {
-        console.error("Failed to load timetable", err);
+        if(!ignore)setLoadError(err instanceof Error?err.message:'Weekly timetable is unavailable. Please reconnect and try again.');
       } finally {
         if (!ignore) {
           setLoading(false);
@@ -76,14 +81,16 @@ export default function TimetablePage() {
   async function handleRefresh() {
     setRefreshing(true);
     try {
-      const res = await getStudentWeeklyTimetableAction();
+      const res = await withOffline("getStudentWeeklyTimetableAction", getStudentWeeklyTimetableAction);
+      if(!res.success)throw new Error(res.message||'Weekly timetable could not be refreshed.');
       if (res.success) {
+        setHasLoadedData(true);setLoadError('');
         setEntries(res.entries);
         if (res.universityName) setUniversityName(res.universityName);
         if (res.campusName) setCampusName(res.campusName);
       }
     } catch (err) {
-      console.error("Failed to refresh timetable", err);
+      setLoadError(err instanceof Error?err.message:'Could not refresh weekly timetable.');
     } finally {
       setRefreshing(false);
     }
@@ -92,11 +99,14 @@ export default function TimetablePage() {
   const dayEntries = entries.filter((e) => e.dayOfWeek === selectedDay);
   const selectedDayMeta = DAYS.find((d) => d.id === selectedDay) || DAYS[0];
 
+  if(!loading&&loadError&&!hasLoadedData)return <div className="min-h-screen bg-[#F8FAFC]"><AppHeader universityName={universityName} campusName={campusName}/><main className="max-w-5xl mx-auto p-6 space-y-4"><h1 className="text-2xl font-bold">Weekly timetable unavailable</h1><p role="alert" className="rounded border border-amber-300 bg-amber-50 p-4">{loadError} No current data could be loaded.</p><Button onClick={handleRefresh} disabled={refreshing}>{refreshing?'Retrying…':'Try again'}</Button></main></div>;
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-16">
       <AppHeader universityName={universityName} campusName={campusName} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+        {loadError&&<p role="alert" className="rounded border border-amber-300 bg-amber-50 p-4">Could not refresh: {loadError} Displaying previously loaded information; it may be out of date.</p>}
         {/* Header Title Banner */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#C59B27]/20 pb-4">
           <div>
