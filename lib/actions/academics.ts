@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
+import {demoSessionEmail} from '@/lib/security/demo-session';
 
 const DEMO_TIMETABLE: TimetableEntry[] = [
   {
@@ -262,6 +263,7 @@ export interface ClubItem {
 
 export interface EventItem {
   id: string;
+  universityId?: string;
   title: string;
   description: string;
   venue: string;
@@ -298,6 +300,7 @@ export interface CampusLifeResponse {
   universityName?: string;
   clubs: ClubItem[];
   events: EventItem[];
+  calendarItems?: {id:string;universityId:string;title:string;date:string;venue:string;kind:string}[];
 }
 
 const DAYS_OF_WEEK: Record<number, string> = {
@@ -338,7 +341,7 @@ export async function getStudentTodayScheduleAction(): Promise<TodayScheduleResp
   const dayName = DAYS_OF_WEEK[isoDay] || "Today";
 
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
 
   if (!user && demoEmail) {
     const dayEntries = DEMO_TIMETABLE.filter((e) => e.dayOfWeek === isoDay);
@@ -378,12 +381,13 @@ export async function getStudentTodayScheduleAction(): Promise<TodayScheduleResp
     .limit(1);
 
   const activeMembership = memberships && memberships.length > 0 ? memberships[0] : null;
+  if(!activeMembership)return {success:false,message:'A verified university membership is required to load your timetable.',dayOfWeek:isoDay,dayName,entries:[]};
   const universityName =
     (activeMembership?.universities as unknown as { name?: string } | null)?.name ||
-    "Summit Metropolitan University";
+    "Campus Hub";
   const campusName =
     (activeMembership?.campuses as unknown as { name?: string } | null)?.name ||
-    "Main Campus";
+    "Campus unavailable";
 
   // Query timetables for current day
   const { data: records, error } = await supabase
@@ -413,9 +417,10 @@ export async function getStudentTodayScheduleAction(): Promise<TodayScheduleResp
     .order("start_time", { ascending: true });
 
   if (error || !records || records.length === 0) {
-    const dayEntries = DEMO_TIMETABLE.filter((e) => e.dayOfWeek === isoDay);
+    const dayEntries: TimetableEntry[] = [];
     return {
-      success: true,
+      success: !error,
+      message: error?'Timetable could not be loaded.':undefined,
       dayOfWeek: isoDay,
       dayName,
       universityName,
@@ -490,7 +495,7 @@ export async function getStudentWeeklyTimetableAction(): Promise<WeeklyTimetable
   }
 
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
 
   if (!user && demoEmail) {
     return {
@@ -526,10 +531,12 @@ export async function getStudentWeeklyTimetableAction(): Promise<WeeklyTimetable
   const activeMembership = memberships && memberships.length > 0 ? memberships[0] : null;
   const universityName =
     (activeMembership?.universities as unknown as { name?: string } | null)?.name ||
-    "Summit Metropolitan University";
+    "Campus Hub";
   const campusName =
     (activeMembership?.campuses as unknown as { name?: string } | null)?.name ||
-    "Main Campus";
+    "Campus unavailable";
+
+  if(!activeMembership)return {success:false,message:'A verified university membership is required to load your timetable.',entries:[]};
 
   const { data: records, error } = await supabase
     .from("timetables")
@@ -559,10 +566,11 @@ export async function getStudentWeeklyTimetableAction(): Promise<WeeklyTimetable
 
   if (error || !records || records.length === 0) {
     return {
-      success: true,
+      success: !error,
+      message: error?'Timetable could not be loaded.':undefined,
       universityName,
       campusName,
-      entries: DEMO_TIMETABLE,
+      entries: [],
     };
   }
 
@@ -630,7 +638,7 @@ export async function getCampusLifeAction(): Promise<CampusLifeResponse> {
   }
 
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
 
   if (!user && demoEmail) {
     return {
@@ -662,10 +670,12 @@ export async function getCampusLifeAction(): Promise<CampusLifeResponse> {
   const activeMembership = memberships && memberships.length > 0 ? memberships[0] : null;
   const universityName =
     (activeMembership?.universities as unknown as { name?: string } | null)?.name ||
-    "Summit Metropolitan University";
+    "Campus Hub";
+
+  if(!activeMembership)return {success:false,message:'A verified university membership is required to load campus information.',clubs:[],events:[]};
 
   // Query clubs
-  const { data: clubsData } = await supabase
+  const { data: clubsData, error:clubsError } = await supabase
     .from("clubs_communities")
     .select(`
       id,
@@ -680,10 +690,11 @@ export async function getCampusLifeAction(): Promise<CampusLifeResponse> {
     .order("name", { ascending: true });
 
   // Query published events
-  const { data: eventsData } = await supabase
+  const { data: eventsData, error:eventsError } = await supabase
     .from("events")
     .select(`
       id,
+      university_id,
       title,
       description,
       venue,
@@ -722,6 +733,7 @@ export async function getCampusLifeAction(): Promise<CampusLifeResponse> {
 
     return {
       id: e.id,
+      universityId: e.university_id,
       title: e.title,
       description: e.description,
       venue: e.venue,
@@ -735,10 +747,8 @@ export async function getCampusLifeAction(): Promise<CampusLifeResponse> {
     };
   });
 
-  return {
-    success: true,
-    universityName,
-    clubs: clubs.length > 0 ? clubs : DEMO_CLUBS,
-    events: events.length > 0 ? events : DEMO_EVENTS,
-  };
+  const {data:imported,error:importError}=await supabase.from('uams_academic_records').select('id,university_id,kind,data').in('kind',['event','date']);
+  if(clubsError||eventsError||importError)return {success:false,message:'Campus information could not be loaded.',clubs:[],events:[]};
+  const calendarItems=[...events.map(e=>({id:e.id,universityId:e.universityId!,title:e.title,date:e.rawDate,venue:e.venue,kind:'event'})),...(imported??[]).map(r=>({id:r.id,universityId:r.university_id,title:String(r.data.title??'Academic date'),date:String(r.data.starts_at??''),venue:String(r.data.venue??''),kind:r.kind==='date'?String(r.data.date_kind??'academic'):r.kind}))];
+  return {success:true,universityName,clubs,events,calendarItems};
 }

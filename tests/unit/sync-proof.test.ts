@@ -4,7 +4,7 @@ import {
   getLatestSyncStatusAction,
   resetSyncLockForTesting,
   resetSyncStoreForTesting,
-} from "@/lib/actions/sync";
+} from "@/lib/uams/sync-engine";
 import { POST } from "@/app/api/sync/uams/route";
 import {
   getUamsRegistrarData,

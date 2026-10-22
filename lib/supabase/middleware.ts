@@ -1,3 +1,4 @@
+import { demoSessionEmail, demoSessionRole } from "@/lib/security/demo-session";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -86,7 +87,7 @@ export async function updateSession(request: NextRequest) {
     // Network / offline fallback
   }
 
-  const demoSession = request.cookies.get("smu_demo_session")?.value;
+  const demoSession = !user ? demoSessionEmail(request.cookies.get("smu_demo_session")?.value) : undefined;
   const demoOnboarded = request.cookies.get("smu_demo_onboarded")?.value;
   const isAuthenticated = Boolean(user || demoSession);
 
@@ -98,6 +99,9 @@ export async function updateSession(request: NextRequest) {
     "/announcements",
     "/help-desk",
     "/profile",
+    "/results",
+    "/calendar",
+    "/feedback",
     "/admin",
   ];
   const isOnboardingRoute =
@@ -120,7 +124,7 @@ export async function updateSession(request: NextRequest) {
   // Determine user role for routing and onboarding exemption
   let userRole = "student";
   if (demoSession) {
-    const demoRole = request.cookies.get("smu_demo_role")?.value;
+    const demoRole = demoSessionRole(demoSession);
     userRole =
       demoRole ||
       (demoSession.includes("registrar") || demoSession.includes("admin")
@@ -129,7 +133,7 @@ export async function updateSession(request: NextRequest) {
         ? "staff"
         : "student");
   } else if (user) {
-    userRole = (user.user_metadata?.role as string) || "student";
+    userRole = (user.app_metadata?.role as string) || "student";
     if (userRole === "student") {
       const { data: membership } = await supabase
         .from("university_memberships")
@@ -196,7 +200,7 @@ export async function updateSession(request: NextRequest) {
   if (isStaffRoute && isAuthenticated) {
     let role = "student";
     if (demoSession) {
-      const demoRole = request.cookies.get("smu_demo_role")?.value;
+      const demoRole = demoSessionRole(demoSession);
       role =
         demoRole ||
         (demoSession.includes("registrar") || demoSession.includes("admin")
@@ -205,7 +209,7 @@ export async function updateSession(request: NextRequest) {
           ? "staff"
           : "student");
     } else if (user) {
-      role = (user.user_metadata?.role as string) || "student";
+      role = (user.app_metadata?.role as string) || "student";
       if (role === "student") {
         const { data: membership } = await supabase
           .from("university_memberships")

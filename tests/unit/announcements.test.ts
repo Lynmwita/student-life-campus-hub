@@ -1,4 +1,8 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+// Mutation examples explicitly use an authorized demo staff session.
+vi.mock('next/headers',()=>({cookies:async()=>({get:(name:string)=>name==='smu_demo_session'?{value:'registrar@summit.ac.ke'}:undefined})}));
+vi.mock('next/cache',()=>({revalidatePath:vi.fn()}));
+vi.mock('@/lib/supabase/server',()=>({createClient:async()=>({auth:{getUser:async()=>({data:{user:null}})}})}));
 import { announcementSchema } from "@/lib/validations/announcements";
 
 describe("Announcement Schemas & Audience Scoping", () => {

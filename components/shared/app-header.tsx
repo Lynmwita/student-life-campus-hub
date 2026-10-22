@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import {clearPrivateOffline,setOfflineAccount} from "@/lib/offline";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -26,8 +27,8 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({
-  universityName = "Summit Metropolitan University",
-  campusName = "Main Campus (Westlands)",
+  universityName = "Your university",
+  campusName = "Your campus",
 }: AppHeaderProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
@@ -53,6 +54,8 @@ export function AppHeader({
       try {
         const res = await getUserRoleAction();
         if (!ignore && res.isAuthenticated) {
+ if (res.accountId || res.email) setOfflineAccount(res.accountId || res.email!);
+ else clearPrivateOffline();
           const isStaffOrAdmin =
             res.role === "staff" ||
             res.role === "admin" ||
@@ -78,7 +81,9 @@ export function AppHeader({
 
   const navLinks = [
     { href: "/dashboard", label: "Campus Feed", icon: Megaphone },
-    { href: "/timetable", label: "Weekly Timetable", icon: Calendar },
+    { href: "/results", label: "Results", icon: GraduationCap },
+ { href: "/feedback", label: "Pilot feedback", icon: LifeBuoy },
+ { href: "/timetable", label: "Weekly Timetable", icon: Calendar },
     { href: "/campus-life", label: "Campus Life & Clubs", icon: Compass },
     { href: "/help-desk", label: "Help Desk & Inquiries", icon: LifeBuoy },
   ];
@@ -153,7 +158,7 @@ export function AppHeader({
             </Link>
 
             {/* Sign Out Button */}
-            <form action={signOutAction}>
+            <form action={signOutAction} onSubmit={clearPrivateOffline}>
               <Button
                 type="submit"
                 variant="outline"

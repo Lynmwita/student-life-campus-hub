@@ -53,9 +53,10 @@ import {
   type NoticeItem,
 } from "@/lib/actions/announcements";
 import { getUserRoleAction, signOutAction } from "@/lib/actions/auth";
+import { FeedbackReviewPanel } from '@/components/shared/feedback-review-panel';
 
 export default function StaffAdminPanelPage() {
-  const [activeTab, setActiveTab] = React.useState<"queue" | "bulletins" | "sync" | "audit" | "users" | "events" | "settings">("queue");
+  const [activeTab, setActiveTab] = React.useState<"queue" | "bulletins" | "sync" | "audit" | "users" | "events" | "settings" | "feedback">("queue");
   const [tickets, setTickets] = React.useState<TicketItem[]>([]);
   const [auditLogs, setAuditLogs] = React.useState<AuditLogEntry[]>([]);
   const [notices, setNotices] = React.useState<NoticeItem[]>([]);
@@ -789,10 +790,12 @@ export default function StaffAdminPanelPage() {
           >
             <Settings className="w-3.5 h-3.5" /> System Settings
           </button>
+          <button type="button" onClick={()=>setActiveTab('feedback')} className={`pb-1 ${activeTab==='feedback'?'text-[#FCD34D] border-b-2 border-[#C59B27]':'text-slate-400 hover:text-white'}`}>Pilot Feedback</button>
         </div>
       </div>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
+        {activeTab==='feedback'&&<FeedbackReviewPanel/>}
         {/* Institutional Operational Overview & Health Stats Widgets */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card className="p-4 border-[#C59B27]/30 bg-white shadow-xs flex items-center gap-3">
@@ -1251,7 +1254,7 @@ export default function StaffAdminPanelPage() {
                     </div>
 
                     {/* Results Metrics Display */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[11px]">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
                       <div className="p-2.5 rounded-lg bg-white border border-emerald-200 shadow-2xs">
                         <span className="text-slate-500 block text-[10px] uppercase">Students Synced</span>
                         <span className="font-bold text-[#0B1D33] text-sm">
@@ -1283,6 +1286,26 @@ export default function StaffAdminPanelPage() {
                       </div>
 
                       <div className="p-2.5 rounded-lg bg-white border border-emerald-200 shadow-2xs">
+                        <span className="text-slate-500 block text-[10px] uppercase">Announcements</span>
+                        <span className="font-bold text-[#0B1D33] text-sm">
+                          {(syncResult.counts.announcements_inserted || 0) + (syncResult.counts.announcements_updated || 0)}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          Processed: {syncResult.counts.announcements_processed || 0}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-white border border-emerald-200 shadow-2xs">
+                        <span className="text-slate-500 block text-[10px] uppercase">Academic Records</span>
+                        <span className="font-bold text-[#0B1D33] text-sm">
+                          {(syncResult.counts.academic_records_inserted || 0) + (syncResult.counts.academic_records_updated || 0)}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                          Processed: {syncResult.counts.academic_records_processed || 0}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-white border border-emerald-200 shadow-2xs">
                         <span className="text-slate-500 block text-[10px] uppercase">Records Changed</span>
                         <span className="font-bold text-emerald-700 text-sm">
                           {syncResult.counts.students_inserted +
@@ -1290,7 +1313,11 @@ export default function StaffAdminPanelPage() {
                             syncResult.counts.course_units_inserted +
                             syncResult.counts.course_units_updated +
                             syncResult.counts.timetables_inserted +
-                            syncResult.counts.timetables_updated}{" "}
+                            syncResult.counts.timetables_updated +
+                            (syncResult.counts.announcements_inserted || 0) +
+                            (syncResult.counts.announcements_updated || 0) +
+                            (syncResult.counts.academic_records_inserted || 0) +
+                            (syncResult.counts.academic_records_updated || 0)}{" "}
                           Total
                         </span>
                         <span className="text-[10px] text-slate-500 block mt-0.5">

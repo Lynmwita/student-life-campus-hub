@@ -159,5 +159,12 @@
       Summit Metropolitan University • Secure Student Life PWA
     </div>
   </div>
-</body>
+<section id="saved" style="padding:24px;max-width:800px;margin:auto;text-align:left"></section><script>
+const account=sessionStorage.getItem('campus-account');const target=document.getElementById('saved');
+function append(tag,text){const e=document.createElement(tag);e.textContent=text;target.appendChild(e);}
+if(account&&localStorage.getItem('campus-offline-opt-in')==='yes'){
+append('h2','Saved campus views');append('p','Read-only saved information. Reconnect to make changes.');
+for(const key of Object.keys(localStorage)){if(!key.startsWith('campus-private:'+account+':'))continue;try{const value=JSON.parse(localStorage.getItem(key));if(value.expires<=Date.now()){localStorage.removeItem(key);continue;}append('h3',key.split(':').pop().replace('getStudent','').replace('Action',''));append('p','Saved '+new Date(value.savedAt).toLocaleString());const data=value.data;for(const item of [...(data.announcements||[]),...(data.entries||[]),...(data.calendarItems||[]),...(data.events||[])]){append('h4',item.title||item.name||item.code||'Campus item');append('p',[item.content,item.date,item.rawDate,item.dayOfWeek?['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'][item.dayOfWeek]:'',item.startTime,item.venue].filter(Boolean).join(' · '));}}catch{}}
+}else append('p','No saved views are available in this session.');
+</script></body>
 </html>

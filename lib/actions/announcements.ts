@@ -1,10 +1,12 @@
 "use server";
 
+import { demoSessionEmail, demoSessionRole } from "@/lib/security/demo-session";
+
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { announcementSchema } from "@/lib/validations/announcements";
 import { revalidatePath } from "next/cache";
-import { recordAuditLogAction } from "./audit";
+import { recordAuditLogAction } from "@/lib/audit/internal";
 
 const DEMO_NOTICES: NoticeItem[] = [
   {
@@ -142,6 +144,7 @@ export async function createAnnouncementAction(
     },
   });
 
+  if (validated.data.isPublished) { const {deliverAnnouncementPush}=await import("@/lib/push/delivery"); await deliverAnnouncementPush(insertedId).catch(()=>console.error("Push delivery failed; notice remains published.")); }
   revalidatePath("/dashboard");
   revalidatePath("/admin");
   return {
@@ -210,7 +213,7 @@ export async function getStudentAnnouncementsAction(): Promise<StudentDashboardD
   }
 
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
 
   if (!user && demoEmail) {
     return {
@@ -252,6 +255,10 @@ export async function getStudentAnnouncementsAction(): Promise<StudentDashboardD
 
   const activeMembership = memberships && memberships.length > 0 ? memberships[0] : null;
 
+  if (!activeMembership) {
+    return { success: false, message: 'A verified university membership is required.', universityName: 'Student Life & Campus Hub', campusName: 'Verified Student Portal', notices: [] };
+  }
+
   const universityName =
     (activeMembership?.universities as unknown as { name?: string } | null)?.name ||
     "Summit Metropolitan University";
@@ -275,14 +282,17 @@ export async function getStudentAnnouncementsAction(): Promise<StudentDashboardD
       campuses (name),
       announcement_reads (user_id)
     `)
+    .eq('university_id', activeMembership.university_id)
+    .eq('is_published', true)
     .order("published_at", { ascending: false });
 
   if (error || !announcements || announcements.length === 0) {
     return {
-      success: true,
+      success: !error,
+      ...(error ? { message: 'Announcements are temporarily unavailable.' } : {}),
       universityName,
       campusName,
-      notices: DEMO_NOTICES,
+      notices: [],
     };
   }
 
@@ -356,10 +366,10 @@ export async function getAdminAnnouncementsAction(): Promise<{
   let demoEmail: string | undefined;
   try {
     const cookieStore = await cookies();
-    demoEmail = cookieStore.get("smu_demo_session")?.value;
+    demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
   } catch {}
 
-  if (!user && demoEmail) {
+  if (!user && demoEmail && ["staff","admin","super_admin"].includes(demoSessionRole(demoEmail)??"")) {
     return {
       success: true,
       announcements: DEMO_NOTICES,
@@ -394,8 +404,8 @@ export async function getAdminAnnouncementsAction(): Promise<{
 
   if (error || !data || data.length === 0) {
     return {
-      success: true,
-      announcements: DEMO_NOTICES,
+      success: !error,
+      announcements: [],
     };
   }
 
@@ -433,11 +443,13 @@ export async function toggleAnnouncementPublishAction(
   let demoEmail: string | undefined;
   try {
     const cookieStore = await cookies();
-    demoEmail = cookieStore.get("smu_demo_session")?.value;
+    demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
   } catch {}
 
   const actorEmail = user?.email || demoEmail || "admin@summit.ac.ke";
   const actorId = user?.id || "demo-admin-id";
+  const trustedDemo=!!demoEmail && ["staff","admin","super_admin"].includes(demoSessionRole(demoEmail)??"");
+  if(!user&&!trustedDemo)return {success:false,message:"Staff sign-in is required."};
 
   if (!user) {
     const notice = DEMO_NOTICES.find((n) => n.id === id);
@@ -468,17 +480,17 @@ export async function toggleAnnouncementPublishAction(
     updatePayload.published_at = new Date().toISOString();
   }
 
-  const { error } = await supabase
+  const { data:changed,error } = await supabase
     .from("announcements")
     .update(updatePayload)
-    .eq("id", id);
+    .eq("id", id).select('id,university_id').maybeSingle();
 
-  if (error) {
-    return { success: false, message: error.message };
+  if (error || !changed) {
+    return { success: false, message: error?.message??'Announcement was not changed. Staff access is required.' };
   }
 
   await recordAuditLogAction({
-    universityId: "00000000-0000-0000-0000-000000000001",
+    universityId: changed.university_id,
     actorId,
     actorRole: "admin",
     action: isPublished ? "announcement.published" : "announcement.unpublished",
@@ -486,6 +498,7 @@ export async function toggleAnnouncementPublishAction(
     targetId: id,
     details: { actorEmail, isPublished },
   });
+  if(isPublished){const {deliverAnnouncementPush}=await import('@/lib/push/delivery');await deliverAnnouncementPush(changed.id).catch(()=>console.error('Push delivery failed; announcement remains published.'));}
 
   try {
     revalidatePath("/admin");
@@ -516,11 +529,13 @@ export async function updateAnnouncementDraftAction(
   let demoEmail: string | undefined;
   try {
     const cookieStore = await cookies();
-    demoEmail = cookieStore.get("smu_demo_session")?.value;
+    demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
   } catch {}
 
   const actorEmail = user?.email || demoEmail || "admin@summit.ac.ke";
   const actorId = user?.id || "demo-admin-id";
+  const trustedDemo=!!demoEmail && ["staff","admin","super_admin"].includes(demoSessionRole(demoEmail)??"");
+  if(!user&&!trustedDemo)return {success:false,message:"Staff sign-in is required."};
 
   if (!user) {
     const notice = DEMO_NOTICES.find((n) => n.id === id);
@@ -546,7 +561,7 @@ export async function updateAnnouncementDraftAction(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data:changed,error } = await supabase
     .from("announcements")
     .update({
       title,
@@ -555,14 +570,14 @@ export async function updateAnnouncementDraftAction(
       target_scope: targetScope,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", id);
+    .eq("id", id).select('id,university_id').maybeSingle();
 
-  if (error) {
-    return { success: false, message: error.message };
+  if (error || !changed) {
+    return { success: false, message: error?.message??'Announcement was not changed. Staff access is required.' };
   }
 
   await recordAuditLogAction({
-    universityId: "00000000-0000-0000-0000-000000000001",
+    universityId: changed.university_id,
     actorId,
     actorRole: "admin",
     action: "announcement.draft_updated",
@@ -590,17 +605,15 @@ export async function deleteAnnouncementAction(
   let demoEmail: string | undefined;
   try {
     const cookieStore = await cookies();
-    demoEmail = cookieStore.get("smu_demo_session")?.value;
+    demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
   } catch {}
 
   const actorEmail = user?.email || demoEmail || "admin@summit.ac.ke";
   const actorId = user?.id || "demo-admin-id";
+  const trustedDemo=!!demoEmail && ["staff","admin","super_admin"].includes(demoSessionRole(demoEmail)??"");
+  if(!user&&!trustedDemo)return {success:false,message:"Staff sign-in is required."};
 
-  // Remove from in-memory fallback list if present
-  const idx = DEMO_NOTICES.findIndex((n) => n.id === id);
-  if (idx !== -1) {
-    DEMO_NOTICES.splice(idx, 1);
-  }
+  if(!user&&trustedDemo){const idx=DEMO_NOTICES.findIndex(n=>n.id===id);if(idx!==-1)DEMO_NOTICES.splice(idx,1);}
 
   if (!user && demoEmail) {
     await recordAuditLogAction({
@@ -621,15 +634,14 @@ export async function deleteAnnouncementAction(
 
   const supabase = await createClient();
   // Delete read markers first then announcement
-  await supabase.from("announcement_reads").delete().eq("announcement_id", id);
-  const { error } = await supabase.from("announcements").delete().eq("id", id);
+  const {data:deleted,error}=await supabase.from("announcements").delete().eq("id",id).select('id,university_id').maybeSingle();
 
-  if (error) {
-    return { success: false, message: error.message };
+  if (error || !deleted) {
+    return { success: false, message: error?.message??'Announcement was not deleted. Staff access is required.' };
   }
 
   await recordAuditLogAction({
-    universityId: "00000000-0000-0000-0000-000000000001",
+    universityId: deleted.university_id,
     actorId,
     actorRole: "admin",
     action: "announcement.deleted",
@@ -644,4 +656,3 @@ export async function deleteAnnouncementAction(
   } catch {}
   return { success: true, message: "Announcement deleted successfully." };
 }
-

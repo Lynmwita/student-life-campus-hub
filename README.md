@@ -1,5 +1,7 @@
 # Student Life & Campus Hub 🎓
 
+Student features and activation requirements: [feature guide](docs/STUDENT_FEATURES.md). The shared workspace checkpoint and rollout checklist are maintained in the sibling `UAMS/docs` directory. Local verification does not mean production migrations or the pilot have run.
+
 > **"The university follows the student."**  
 > A lightweight, mobile-first, multi-tenant campus platform designed for university students to unify official communications, academic timetables, campus discovery, and student support into a fast, low-bandwidth web application (PWA).
 

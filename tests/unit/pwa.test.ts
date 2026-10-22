@@ -69,7 +69,7 @@ describe("PWA Manifest & Asset Integrity (Tiny 6a)", () => {
 
       expect(swContent).toContain("PRECACHE_ASSETS");
       expect(swContent).toContain("/offline.html");
-      expect(swContent).toContain("/manifest.json");
+      expect(swContent).toContain("/_next/static/");
       expect(swContent).toContain("caches.open");
     });
 
@@ -77,10 +77,9 @@ describe("PWA Manifest & Asset Integrity (Tiny 6a)", () => {
       const swPath = path.join(process.cwd(), "public/sw.js");
       const swContent = fs.readFileSync(swPath, "utf-8");
 
-      expect(swContent).toContain("isPrivateOrAuthenticatedRequest");
-      expect(swContent).toContain("/api/");
       expect(swContent).toContain("authorization");
-      expect(swContent).toContain("supabase");
+      expect(swContent).toContain("if(!publicStatic");
+      expect(swContent).not.toContain("cache.put(request, responseToCache)");
     });
 
     it("provides an offline fallback HTML page in Academic Navy & Gold", () => {

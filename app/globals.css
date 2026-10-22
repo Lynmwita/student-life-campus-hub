@@ -32,3 +32,5 @@ body {
   background-color: #F8FAFC;
   color: #0B1D33;
 }
+
+html[data-low-data="true"] img, html[data-low-data="true"] video { display:none; }

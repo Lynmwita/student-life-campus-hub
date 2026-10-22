@@ -1,5 +1,7 @@
 "use server";
 
+import { demoSessionEmail, demoSessionRole } from "@/lib/security/demo-session";
+
 import { createClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -12,7 +14,7 @@ import {
   type HELPDESK_STATUSES,
   type HELPDESK_PRIORITIES,
 } from "@/lib/validations/helpdesk";
-import { recordAuditLogAction } from "./audit";
+import { recordAuditLogAction } from "@/lib/audit/internal";
 
 export interface TicketItem {
   id: string;
@@ -118,7 +120,7 @@ const DEMO_TICKETS: TicketItem[] = [
 // Global set of withdrawn ticket references to guarantee synchronization across both student and staff queues
 const WITHDRAWN_TICKET_REFS = new Set<string>();
 
-export async function markTicketWithdrawnInMemory(ref: string) {
+function markTicketWithdrawnInMemory(ref: string) {
   WITHDRAWN_TICKET_REFS.add(ref);
 }
 
@@ -225,7 +227,7 @@ export async function createHelpTicketAction(formData: FormData): Promise<{
   }
 
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
 
   let user = null;
   try {
@@ -238,7 +240,7 @@ export async function createHelpTicketAction(formData: FormData): Promise<{
 
   const referenceNo = generateReferenceNo();
 
-  if (!user && demoEmail) {
+  if (!user && demoEmail && process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true") {
     // In demo inspection mode, add to in-memory list
     const newDemoTicket: TicketItem = {
       id: `demo-${Date.now()}`,
@@ -369,7 +371,7 @@ export async function createHelpTicketAction(formData: FormData): Promise<{
  */
 export async function getStudentTicketsAction(): Promise<TicketsListResponse> {
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
 
   let user = null;
   try {
@@ -380,7 +382,7 @@ export async function getStudentTicketsAction(): Promise<TicketsListResponse> {
     // offline
   }
 
-  if (!user && demoEmail) {
+  if (!user && demoEmail && process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true") {
     return {
       success: true,
       tickets: DEMO_TICKETS,
@@ -444,23 +446,7 @@ export async function getStudentTicketsAction(): Promise<TicketsListResponse> {
     updatedAt: t.updated_at,
   }));
 
-  // Merge demo baseline tickets so initial tickets do not abruptly vanish
-  const seenRefs = new Set(dbTickets.map((t) => t.referenceNo));
-  const mergedTickets = [...dbTickets];
-  for (const demo of DEMO_TICKETS) {
-    if (!seenRefs.has(demo.referenceNo) && !WITHDRAWN_TICKET_REFS.has(demo.referenceNo) && !WITHDRAWN_TICKET_REFS.has(demo.id)) {
-      mergedTickets.push(demo);
-    }
-  }
-
-  const activeNonWithdrawn = mergedTickets.filter(
-    (t) => !WITHDRAWN_TICKET_REFS.has(t.referenceNo) && !WITHDRAWN_TICKET_REFS.has(t.id)
-  );
-
-  return {
-    success: true,
-    tickets: activeNonWithdrawn,
-  };
+  return {success:!error,message:error?'Tickets could not be loaded.':undefined,tickets:dbTickets};
 }
 
 /**
@@ -470,8 +456,8 @@ export async function getTicketDetailAction(
   referenceNoOrId: string
 ): Promise<TicketDetailResponse> {
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
-  const demoRole = cookieStore.get("smu_demo_role")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
+  const demoRole = demoSessionRole(demoEmail);
 
   let user = null;
   try {
@@ -483,7 +469,7 @@ export async function getTicketDetailAction(
   }
 
   // Demo fallback
-  if (!user && demoEmail) {
+  if (!user && demoEmail && process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true") {
     const demo = DEMO_TICKETS.find(
       (t) => t.referenceNo === referenceNoOrId || t.id === referenceNoOrId
     );
@@ -560,17 +546,6 @@ export async function getTicketDetailAction(
   const { data: ticket } = await ticketQuery.maybeSingle();
 
   if (!ticket) {
-    // Check demo fallback if DB didn't find it
-    const demo = DEMO_TICKETS.find(
-      (t) => t.referenceNo === referenceNoOrId || t.id === referenceNoOrId
-    );
-    if (demo) {
-      return {
-        success: true,
-        ticket: demo,
-        timeline: DEMO_TIMELINE[demo.referenceNo] || [],
-      };
-    }
     return { success: false, message: "Ticket not found." };
   }
 
@@ -677,7 +652,7 @@ export async function getStaffTicketQueueAction(filter?: {
   sensitiveOnly?: boolean;
 }): Promise<TicketsListResponse> {
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
 
   let user = null;
   try {
@@ -689,7 +664,7 @@ export async function getStaffTicketQueueAction(filter?: {
   }
 
   // Demo fallback
-  if (!user && demoEmail) {
+  if (!user && demoEmail && process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true") {
     let list = [...DEMO_TICKETS];
     if (filter?.status && filter.status !== "all") {
       list = list.filter((t) => t.status === filter.status);
@@ -760,18 +735,10 @@ export async function getStaffTicketQueueAction(filter?: {
 
   const { data: tickets, error } = await query;
 
-  if (error || !tickets || tickets.length === 0) {
-    let list = DEMO_TICKETS.filter((t) => !WITHDRAWN_TICKET_REFS.has(t.referenceNo) && !WITHDRAWN_TICKET_REFS.has(t.id));
-    if (filter?.status && filter.status !== "all") {
-      list = list.filter((t) => t.status === filter.status);
-    }
-    return { success: true, tickets: list };
-  }
-
+  if(error)return {success:false,message:'Tickets could not be loaded.',tickets:[]};
   // Filter sensitive tickets: unassigned general staff cannot view them
   // Also filter out any tickets that were withdrawn by the student
-  const accessibleTickets = tickets.filter((t) => {
-    if (WITHDRAWN_TICKET_REFS.has(t.reference_no) || WITHDRAWN_TICKET_REFS.has(t.id)) return false;
+  const accessibleTickets = (tickets??[]).filter((t) => {
     if (!t.is_sensitive) return true;
     if (isAdmin) return true;
     return t.assigned_staff_id === user.id;
@@ -829,7 +796,7 @@ export async function updateTicketStatusAction(formData: FormData): Promise<{
   }
 
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
 
   let user = null;
   try {
@@ -840,7 +807,7 @@ export async function updateTicketStatusAction(formData: FormData): Promise<{
     // offline
   }
 
-  if (!user && demoEmail) {
+  if (!user && demoEmail && process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true") {
     const demo = DEMO_TICKETS.find((t) => t.id === validated.data.ticketId);
     if (demo) {
       const prev = demo.status;
@@ -976,7 +943,7 @@ export async function assignTicketStaffAction(formData: FormData): Promise<{
   }
 
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
 
   let user = null;
   try {
@@ -987,7 +954,7 @@ export async function assignTicketStaffAction(formData: FormData): Promise<{
     // offline
   }
 
-  if (!user && demoEmail) {
+  if (!user && demoEmail && process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true") {
     const demo = DEMO_TICKETS.find((t) => t.id === validated.data.ticketId);
     if (demo) {
       demo.assignedStaffId = validated.data.staffId;
@@ -1098,8 +1065,8 @@ export async function addTicketMessageAction(formData: FormData): Promise<{
   }
 
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
-  const demoRole = cookieStore.get("smu_demo_role")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
+  const demoRole = demoSessionRole(demoEmail);
 
   let user = null;
   try {
@@ -1110,7 +1077,7 @@ export async function addTicketMessageAction(formData: FormData): Promise<{
     // offline
   }
 
-  if (!user && demoEmail) {
+  if (!user && demoEmail && process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true") {
     const demo = DEMO_TICKETS.find((t) => t.id === validated.data.ticketId);
     if (demo) {
       if (!DEMO_TIMELINE[demo.referenceNo]) {
@@ -1166,7 +1133,7 @@ export async function withdrawTicketAction(ticketIdOrRef: string): Promise<{
   message: string;
 }> {
   const cookieStore = await cookies();
-  const demoEmail = cookieStore.get("smu_demo_session")?.value;
+  const demoEmail = demoSessionEmail(cookieStore.get("smu_demo_session")?.value);
 
   let user = null;
   try {
@@ -1177,7 +1144,7 @@ export async function withdrawTicketAction(ticketIdOrRef: string): Promise<{
     // offline
   }
 
-  if (!user && demoEmail) {
+  if (!user && demoEmail && process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true") {
     const idx = DEMO_TICKETS.findIndex(
       (t) => t.id === ticketIdOrRef || t.referenceNo === ticketIdOrRef
     );
@@ -1197,7 +1164,7 @@ export async function withdrawTicketAction(ticketIdOrRef: string): Promise<{
   const supabase = await createClient();
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(ticketIdOrRef);
 
-  let query = supabase.from("help_requests").select("id, student_id, reference_no");
+  let query = supabase.from("help_requests").select("id, student_id, reference_no, university_id");
   if (isUuid) {
     query = query.or(`id.eq.${ticketIdOrRef},reference_no.eq.${ticketIdOrRef}`);
   } else {
@@ -1206,19 +1173,7 @@ export async function withdrawTicketAction(ticketIdOrRef: string): Promise<{
 
   const { data: ticket, error } = await query.maybeSingle();
 
-  if (error || !ticket) {
-    // Also remove from in-memory demo if applicable
-    const idx = DEMO_TICKETS.findIndex(
-      (t) => t.id === ticketIdOrRef || t.referenceNo === ticketIdOrRef
-    );
-    if (idx !== -1) {
-      DEMO_TICKETS.splice(idx, 1);
-    }
-    markTicketWithdrawnInMemory(ticketIdOrRef);
-    revalidatePath("/help-desk");
-    revalidatePath("/admin");
-    return { success: true, message: "Ticket successfully withdrawn." };
-  }
+  if(error||!ticket)return {success:false,message:'Ticket not found or unavailable.'};
 
   // Authorization: Submitter student or staff/admin can withdraw
   if (ticket.student_id !== user.id) {
@@ -1226,6 +1181,8 @@ export async function withdrawTicketAction(ticketIdOrRef: string): Promise<{
       .from("university_memberships")
       .select("role")
       .eq("user_id", user.id)
+      .eq("university_id",ticket.university_id)
+      .eq("verification_status","verified")
       .maybeSingle();
     const canManage =
       callerMembership?.role === "staff" ||
@@ -1237,15 +1194,12 @@ export async function withdrawTicketAction(ticketIdOrRef: string): Promise<{
   }
 
   // Delete associated timeline updates first, then ticket
-  await supabase.from("help_request_updates").delete().eq("help_request_id", ticket.id);
-  const { error: deleteError } = await supabase.from("help_requests").delete().eq("id", ticket.id);
+  const {data:deleted,error:deleteError}=await supabase.from("help_requests").delete().eq("id",ticket.id).select("id").maybeSingle();
 
-  if (deleteError) {
-    return { success: false, message: deleteError.message || "Failed to withdraw ticket." };
+  if (deleteError || !deleted) {
+    return { success: false, message: deleteError?.message || "Failed to withdraw ticket." };
   }
 
-  markTicketWithdrawnInMemory(ticket.reference_no);
-  markTicketWithdrawnInMemory(ticket.id);
 
   revalidatePath("/help-desk");
   revalidatePath("/admin");
