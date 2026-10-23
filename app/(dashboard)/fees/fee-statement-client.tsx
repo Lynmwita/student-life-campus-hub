@@ -258,6 +258,15 @@ export function FeeStatementClient({
                 </div>
               )}
 
+              {/* Hero Payment Progress Bar */}
+              <PaymentProgressBar
+                totalBilled={currentStatement.total_billed}
+                totalPaid={currentStatement.total_paid}
+                fundingApplied={currentStatement.funding_applied}
+                paidByStudent={currentStatement.paid_by_student}
+                currency={currentStatement.currency}
+              />
+
               {/* 4 Summary Cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 {/* Total Billed */}
@@ -334,14 +343,7 @@ export function FeeStatementClient({
                 </div>
               )}
 
-              {/* Payment Progress Bar */}
-              <PaymentProgressBar
-                totalBilled={currentStatement.total_billed}
-                totalPaid={currentStatement.total_paid}
-                fundingApplied={currentStatement.funding_applied}
-                paidByStudent={currentStatement.paid_by_student}
-                currency={currentStatement.currency}
-              />
+
 
               {/* Itemized Line Items Table */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">

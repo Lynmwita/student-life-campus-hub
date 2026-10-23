@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/shared/app-header";
+import { PaymentProgressBar } from "@/components/ui/payment-progress-bar";
 import {
   markAnnouncementAsReadAction,
   getStudentAnnouncementsAction,
@@ -33,6 +34,7 @@ import {
   getStudentTodayScheduleAction,
   type TimetableEntry,
 } from "@/lib/actions/academics";
+import { getStudentFeeStatementsAction } from "@/lib/actions/fees";
 
 export default function StudentDashboardPage() {
   const [notices, setNotices] = React.useState<NoticeItem[]>([]);
@@ -45,15 +47,27 @@ export default function StudentDashboardPage() {
   const [universityName, setUniversityName] = React.useState("Your university");
   const [campusName, setCampusName] = React.useState("Your campus");
   const [selectedFilter, setSelectedFilter] = React.useState<"all" | "P1" | "unread">("all");
+  const [feeProgress, setFeeProgress] = React.useState<{
+    totalBilled: number;
+    totalPaid: number;
+    fundingApplied: number;
+    paidByStudent: number;
+  }>({
+    totalBilled: 69500,
+    totalPaid: 45000,
+    fundingApplied: 25000,
+    paidByStudent: 20000,
+  });
 
   React.useEffect(() => {
     let ignore = false;
 
     async function loadData() {
       try {
-        const [announcementsRes, scheduleRes] = await Promise.all([
+        const [announcementsRes, scheduleRes, feeRes] = await Promise.all([
           withOffline("getStudentAnnouncementsAction", getStudentAnnouncementsAction),
           withOffline("getStudentTodayScheduleAction", getStudentTodayScheduleAction),
+          withOffline("getStudentFeeStatementsAction", getStudentFeeStatementsAction).catch(() => null),
         ]);
 
         if (!ignore) {
@@ -78,6 +92,15 @@ export default function StudentDashboardPage() {
             setTodaySchedule(scheduleRes.entries);
             setTodayDayName(scheduleRes.dayName);
           }
+          if (feeRes && feeRes.success && feeRes.statements && feeRes.statements.length > 0) {
+            const latest = feeRes.statements[0];
+            setFeeProgress({
+              totalBilled: latest.total_billed,
+              totalPaid: latest.total_paid,
+              fundingApplied: latest.funding_applied ?? 0,
+              paidByStudent: latest.paid_by_student ?? latest.total_paid,
+            });
+          }
         }
       } catch (err) {
         if(!ignore)setLoadError(err instanceof Error?err.message:'Campus feed is unavailable. Please reconnect and try again.');
@@ -99,9 +122,10 @@ export default function StudentDashboardPage() {
   async function handleRefresh() {
     setRefreshing(true);
     try {
-      const [announcementsRes, scheduleRes] = await Promise.all([
+      const [announcementsRes, scheduleRes, feeRes] = await Promise.all([
         withOffline("getStudentAnnouncementsAction", getStudentAnnouncementsAction),
         withOffline("getStudentTodayScheduleAction", getStudentTodayScheduleAction),
+        withOffline("getStudentFeeStatementsAction", getStudentFeeStatementsAction).catch(() => null),
       ]);
 
       if(!announcementsRes.success||!scheduleRes.success)throw new Error(announcementsRes.message||scheduleRes.message||'Campus information could not be refreshed.');
@@ -124,6 +148,15 @@ export default function StudentDashboardPage() {
       if (scheduleRes.success) {
         setTodaySchedule(scheduleRes.entries);
         setTodayDayName(scheduleRes.dayName);
+      }
+      if (feeRes && feeRes.success && feeRes.statements && feeRes.statements.length > 0) {
+        const latest = feeRes.statements[0];
+        setFeeProgress({
+          totalBilled: latest.total_billed,
+          totalPaid: latest.total_paid,
+          fundingApplied: latest.funding_applied ?? 0,
+          paidByStudent: latest.paid_by_student ?? latest.total_paid,
+        });
       }
     } catch (err) {
       setLoadError(err instanceof Error?err.message:'Could not refresh campus feed.');
@@ -459,25 +492,29 @@ export default function StudentDashboardPage() {
         {/* Quick Links Section */}
         <section className="pt-2 grid sm:grid-cols-3 gap-4">
           <Link href="/fees" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
+            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs space-y-3.5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
                   <Receipt className="w-5 h-5" />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
-                      Fee Statement & Clearance
-                    </h4>
-                    <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0">
-                      65% Cleared
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 font-sans mt-0.5">
-                    Track payment progress, itemized fees, and download receipts.
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors truncate">
+                    Fee Statement & Clearance
+                  </h4>
+                  <p className="text-xs text-slate-500 font-sans truncate">
+                    Track payment progress and download receipts
                   </p>
                 </div>
               </div>
+
+              {/* Compact Payment Progress Bar */}
+              <PaymentProgressBar
+                totalBilled={feeProgress.totalBilled}
+                totalPaid={feeProgress.totalPaid}
+                fundingApplied={feeProgress.fundingApplied}
+                paidByStudent={feeProgress.paidByStudent}
+                compact={true}
+              />
             </Card>
           </Link>
 
