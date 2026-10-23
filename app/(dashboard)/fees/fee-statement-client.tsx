@@ -4,6 +4,8 @@ import * as React from 'react';
 import { FeeStatementData, FeeItem, FeeCategory, PaymentRecord } from '@/lib/finance/types';
 import { generatePaymentReceiptPdf } from '@/lib/finance/receipt-generator';
 import { PaymentProgressBar } from '@/components/ui/payment-progress-bar';
+import { FeeDeadlineBanner } from '@/components/ui/fee-deadline-banner';
+import { getPrimaryFeeDeadlineAlert, type FeeDeadlineAlert } from '@/lib/finance/deadline-alerts';
 import {
   Receipt,
   BookOpen,
@@ -63,6 +65,15 @@ export function FeeStatementClient({
     ? (statements[selectedSemesterIndex] || statements[0])
     : null;
   const items = currentStatement?.items || [];
+  const [deadlineAlert, setDeadlineAlert] = React.useState<FeeDeadlineAlert | null>(null);
+
+  React.useEffect(() => {
+    if (currentStatement) {
+      setDeadlineAlert(getPrimaryFeeDeadlineAlert({ statement: currentStatement }));
+    } else {
+      setDeadlineAlert(null);
+    }
+  }, [currentStatement]);
 
   function formatKES(amount: number): string {
     return `KES ${amount.toLocaleString('en-KE')}`;
@@ -256,6 +267,11 @@ export function FeeStatementClient({
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Slim Fee Deadline Alert Banner */}
+              {deadlineAlert && (
+                <FeeDeadlineBanner alert={deadlineAlert} variant="banner" />
               )}
 
               {/* Hero Payment Progress Bar */}

@@ -51,7 +51,7 @@ export const DEMO_FEE_STATEMENTS: FeeStatementData[] = [
         description: 'Semester examination assessment, venue security, and invigilation',
         amount: 4000,
         status: 'billed',
-        due_date: '2026-11-15',
+        due_date: '2026-10-28',
       },
       {
         id: 'fee-item-04',

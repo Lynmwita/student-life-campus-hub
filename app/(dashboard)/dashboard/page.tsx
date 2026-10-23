@@ -25,6 +25,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/shared/app-header";
 import { PaymentProgressBar } from "@/components/ui/payment-progress-bar";
+import { FeeDeadlineBanner } from "@/components/ui/fee-deadline-banner";
+import { getPrimaryFeeDeadlineAlert, FeeDeadlineAlert } from "@/lib/finance/deadline-alerts";
+import { DEMO_FEE_STATEMENTS } from "@/lib/finance/demo-data";
 import {
   markAnnouncementAsReadAction,
   getStudentAnnouncementsAction,
@@ -58,6 +61,7 @@ export default function StudentDashboardPage() {
     fundingApplied: 25000,
     paidByStudent: 20000,
   });
+  const [deadlineAlert, setDeadlineAlert] = React.useState<FeeDeadlineAlert | null>(null);
 
   React.useEffect(() => {
     let ignore = false;
@@ -100,6 +104,7 @@ export default function StudentDashboardPage() {
               fundingApplied: latest.funding_applied ?? 0,
               paidByStudent: latest.paid_by_student ?? latest.total_paid,
             });
+            setDeadlineAlert(getPrimaryFeeDeadlineAlert({ statement: latest }));
           }
         }
       } catch (err) {
@@ -157,6 +162,7 @@ export default function StudentDashboardPage() {
           fundingApplied: latest.funding_applied ?? 0,
           paidByStudent: latest.paid_by_student ?? latest.total_paid,
         });
+        setDeadlineAlert(getPrimaryFeeDeadlineAlert({ statement: latest }));
       }
     } catch (err) {
       setLoadError(err instanceof Error?err.message:'Could not refresh campus feed.');
@@ -488,6 +494,13 @@ export default function StudentDashboardPage() {
             )}
           </div>
         </section>
+
+        {/* Fee Deadline Alert Card */}
+        {deadlineAlert && (
+          <section className="pt-2">
+            <FeeDeadlineBanner alert={deadlineAlert} variant="card" />
+          </section>
+        )}
 
         {/* Quick Links Section */}
         <section className="pt-2 grid sm:grid-cols-3 gap-4">
