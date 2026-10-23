@@ -464,12 +464,17 @@ export default function StudentDashboardPage() {
                 <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
                   <Receipt className="w-5 h-5" />
                 </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
-                    Fee Statement Breakdown
-                  </h4>
-                  <p className="text-xs text-slate-500 font-sans">
-                    View line-by-line tuition, hostel, exam fees, and balance ledger.
+                <div className="flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
+                      Fee Statement & Clearance
+                    </h4>
+                    <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0">
+                      65% Cleared
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-sans mt-0.5">
+                    Track payment progress, itemized fees, and download receipts.
                   </p>
                 </div>
               </div>

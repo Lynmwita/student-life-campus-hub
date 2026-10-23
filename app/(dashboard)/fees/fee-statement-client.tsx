@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { FeeStatementData, FeeItem, FeeCategory, PaymentRecord } from '@/lib/finance/types';
 import { generatePaymentReceiptPdf } from '@/lib/finance/receipt-generator';
+import { PaymentProgressBar } from '@/components/ui/payment-progress-bar';
 import {
   Receipt,
   BookOpen,
@@ -332,6 +333,15 @@ export function FeeStatementClient({
                   )}
                 </div>
               )}
+
+              {/* Payment Progress Bar */}
+              <PaymentProgressBar
+                totalBilled={currentStatement.total_billed}
+                totalPaid={currentStatement.total_paid}
+                fundingApplied={currentStatement.funding_applied}
+                paidByStudent={currentStatement.paid_by_student}
+                currency={currentStatement.currency}
+              />
 
               {/* Itemized Line Items Table */}
               <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
