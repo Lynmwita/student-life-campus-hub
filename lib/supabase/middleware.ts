@@ -100,6 +100,7 @@ export async function updateSession(request: NextRequest) {
     "/help-desk",
     "/profile",
     "/results",
+    "/fees",
     "/calendar",
     "/feedback",
     "/admin",
