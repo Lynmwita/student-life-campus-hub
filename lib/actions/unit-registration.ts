@@ -127,20 +127,45 @@ export async function getUnitRegistrationAction(): Promise<UnitRegistrationRespo
       registrationRef: r.data?.registration_reference || 'REG-REF',
     }));
 
-    const availableUnits: AvailableCourseUnit[] = (catalogUnits || []).map((u: any) => ({
-      id: u.id,
-      code: u.code,
-      name: u.name,
-      faculty: u.faculty || membership.faculty || 'School of Computing',
-      department: u.department,
-      yearOfStudy: u.year_of_study,
-      semester: 2,
-      creditHours: u.credit_hours || 3,
-      lectureHoursPerWeek: 3,
-      isCore: true,
-      prerequisites: [],
-      isEligible: true,
-    }));
+    // Known curriculum prerequisite map for undergraduate computing
+    const prereqMap: Record<string, { code: string; grade: string }[]> = {
+      'COMP 311': [{ code: 'COMP 211', grade: 'C' }],
+      'COMP 312': [{ code: 'COMP 216', grade: 'C' }],
+      'COMP 314': [{ code: 'MATH 201', grade: 'C' }],
+      'COMP 316': [{ code: 'COMP 211', grade: 'C' }],
+      'COMP 318': [{ code: 'COMP 216', grade: 'C' }],
+      'COMP 325': [{ code: 'MATH 301', grade: 'B' }],
+    };
+
+    const availableUnits: AvailableCourseUnit[] = (catalogUnits || []).map((u: any) => {
+      const definedPrereqs = prereqMap[u.code] || [];
+      const evaluatedPrereqs = definedPrereqs.map((p) => ({
+        courseCode: p.code,
+        minimumGrade: p.grade,
+        isSatisfied: passedUnits.has(p.code),
+      }));
+
+      const unsatisfied = evaluatedPrereqs.filter((p) => !p.isSatisfied);
+      const isEligible = unsatisfied.length === 0;
+
+      return {
+        id: u.id,
+        code: u.code,
+        name: u.name,
+        faculty: u.faculty || membership.faculty || 'School of Computing',
+        department: u.department,
+        yearOfStudy: u.year_of_study,
+        semester: 2,
+        creditHours: u.credit_hours || 3,
+        lectureHoursPerWeek: 3,
+        isCore: u.code.startsWith('COMP 311') || u.code.startsWith('COMP 312') || u.code.startsWith('COMP 314') || u.code.startsWith('COMP 316'),
+        prerequisites: evaluatedPrereqs,
+        isEligible,
+        ineligibilityReason: unsatisfied.length > 0
+          ? `Prerequisite ${unsatisfied.map((p) => p.courseCode).join(', ')} not yet satisfied.`
+          : undefined,
+      };
+    });
 
     const totalCredits = registeredUnits.reduce((acc, u) => acc + u.creditHours, 0);
 
@@ -158,7 +183,7 @@ export async function getUnitRegistrationAction(): Promise<UnitRegistrationRespo
     return {
       success: true,
       rules,
-      availableUnits: availableUnits.length > 0 ? availableUnits : DEMO_AVAILABLE_UNITS,
+      availableUnits,
       registeredUnits,
       isDemo: false,
     };
@@ -204,79 +229,77 @@ export async function submitUnitRegistrationAction(
     };
   }
 
-  // UAMS Boundary Validation Rules:
-  // 1. Minimum 15 credits, Maximum 24 credits
-  const catalogPool = DEMO_AVAILABLE_UNITS;
-  const selectedUnits = catalogPool.filter((u) => selectedUnitCodes.includes(u.code));
+  // Demo User Flow
+  if (demoEmail) {
+    const catalogPool = DEMO_AVAILABLE_UNITS;
+    const selectedUnits = catalogPool.filter((u) => selectedUnitCodes.includes(u.code));
 
-  if (selectedUnits.length === 0) {
-    return {
-      success: false,
-      message: 'UAMS Registrar rejection: No course units selected for registration.',
-    };
-  }
+    if (selectedUnits.length === 0) {
+      return {
+        success: false,
+        message: 'UAMS Registrar rejection: No course units selected for registration.',
+      };
+    }
 
-  const totalCredits = selectedUnits.reduce((acc, u) => acc + u.creditHours, 0);
-  const minCredits = 15;
-  const maxCredits = 24;
+    const totalCredits = selectedUnits.reduce((acc, u) => acc + u.creditHours, 0);
+    const minCredits = 15;
+    const maxCredits = 24;
 
-  if (totalCredits < minCredits) {
-    return {
-      success: false,
-      totalCredits,
-      message: `UAMS Registrar rejection: Selected ${totalCredits} credit hours is below the minimum threshold of ${minCredits} credits. Please select additional units.`,
-    };
-  }
+    if (totalCredits < minCredits) {
+      return {
+        success: false,
+        totalCredits,
+        message: `UAMS Registrar rejection: Selected ${totalCredits} credit hours is below the minimum threshold of ${minCredits} credits. Please select additional units.`,
+      };
+    }
 
-  if (totalCredits > maxCredits) {
-    return {
-      success: false,
-      totalCredits,
-      message: `UAMS Registrar rejection: Selected ${totalCredits} credit hours exceeds the maximum semester limit of ${maxCredits} credits.`,
-    };
-  }
+    if (totalCredits > maxCredits) {
+      return {
+        success: false,
+        totalCredits,
+        message: `UAMS Registrar rejection: Selected ${totalCredits} credit hours exceeds the maximum semester limit of ${maxCredits} credits.`,
+      };
+    }
 
-  // 2. Validate prerequisites for all selected units
-  const prerequisiteErrors: string[] = [];
-  for (const unit of selectedUnits) {
-    for (const prereq of unit.prerequisites) {
-      if (!prereq.isSatisfied) {
-        prerequisiteErrors.push(
-          `${unit.code} requires prerequisite ${prereq.courseCode} with minimum grade ${prereq.minimumGrade}.`
-        );
+    // Validate prerequisites for selected units
+    const prerequisiteErrors: string[] = [];
+    for (const unit of selectedUnits) {
+      for (const prereq of unit.prerequisites) {
+        if (!prereq.isSatisfied) {
+          prerequisiteErrors.push(
+            `${unit.code} requires prerequisite ${prereq.courseCode} with minimum grade ${prereq.minimumGrade}.`
+          );
+        }
       }
     }
-  }
 
-  if (prerequisiteErrors.length > 0) {
-    return {
-      success: false,
-      totalCredits,
-      rejectionReasons: prerequisiteErrors,
-      message: `UAMS Registrar rejection: Prerequisite requirements not satisfied. ${prerequisiteErrors.join(' ')}`,
-    };
-  }
+    if (prerequisiteErrors.length > 0) {
+      return {
+        success: false,
+        totalCredits,
+        rejectionReasons: prerequisiteErrors,
+        message: `UAMS Registrar rejection: Prerequisite requirements not satisfied. ${prerequisiteErrors.join(' ')}`,
+      };
+    }
 
-  // 3. Authorization & Confirmation
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let refSuffix = '';
-  for (let i = 0; i < 5; i++) {
-    refSuffix += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  const registrationRef = `REG-SEM2-2026-${refSuffix}`;
-  const nowIso = new Date().toISOString();
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let refSuffix = '';
+    for (let i = 0; i < 5; i++) {
+      refSuffix += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const registrationRef = `REG-SEM2-2026-${refSuffix}`;
+    const nowIso = new Date().toISOString();
 
-  const newlyRegistered: RegisteredUnit[] = selectedUnits.map((u) => ({
-    unitId: u.id,
-    code: u.code,
-    name: u.name,
-    creditHours: u.creditHours,
-    registeredAt: nowIso,
-    status: 'registered',
-    registrationRef,
-  }));
+    const newlyRegistered: RegisteredUnit[] = selectedUnits.map((u) => ({
+      unitId: u.id,
+      code: u.code,
+      name: u.name,
+      creditHours: u.creditHours,
+      registeredAt: nowIso,
+      status: 'registered',
+      registrationRef,
+    }));
 
-  if (demoEmail) {
     demoRegisteredStore = newlyRegistered;
     return {
       success: true,
@@ -287,37 +310,138 @@ export async function submitUnitRegistrationAction(
     };
   }
 
-  // Real student flow: Record registration in UAMS
+  // Real student flow: Validate strictly against real course_units and real student passed grades
   try {
     const supabase = await createClient();
 
-    // Query student's university_id
+    // 1. Fetch student's membership
     const { data: membership } = await supabase
       .from('university_memberships')
-      .select('university_id')
+      .select('university_id, department')
       .eq('user_id', user!.id)
       .maybeSingle();
 
-    if (membership?.university_id) {
-      for (const reg of newlyRegistered) {
-        await supabase.from('uams_academic_records').insert({
-          university_id: membership.university_id,
-          student_id: user!.id,
-          kind: 'unit_registration',
-          source_id: `${registrationRef}-${reg.code}`,
-          source_updated_at: nowIso,
-          data: {
-            registration_reference: registrationRef,
-            course_code: reg.code,
-            course_name: reg.name,
-            credit_hours: reg.creditHours,
-            academic_year: '2026/2027',
-            semester: 2,
-            registered_at: nowIso,
-          },
-          is_published: true,
-        });
+    if (!membership?.university_id) {
+      return {
+        success: false,
+        message: 'Active university membership required to register units.',
+      };
+    }
+
+    // 2. Fetch real course units from database catalogue
+    const { data: dbUnits } = await supabase
+      .from('course_units')
+      .select('id, code, name, credit_hours')
+      .eq('university_id', membership.university_id)
+      .in('code', selectedUnitCodes);
+
+    const validUnits = dbUnits || [];
+    if (validUnits.length === 0) {
+      return {
+        success: false,
+        message: 'UAMS Registrar rejection: Selected course units not found in current institutional curriculum.',
+      };
+    }
+
+    const totalCredits = validUnits.reduce((acc, u) => acc + (u.credit_hours || 3), 0);
+    const minCredits = 15;
+    const maxCredits = 24;
+
+    if (totalCredits < minCredits) {
+      return {
+        success: false,
+        totalCredits,
+        message: `UAMS Registrar rejection: Selected ${totalCredits} credit hours is below the minimum threshold of ${minCredits} credits.`,
+      };
+    }
+
+    if (totalCredits > maxCredits) {
+      return {
+        success: false,
+        totalCredits,
+        message: `UAMS Registrar rejection: Selected ${totalCredits} credit hours exceeds the maximum limit of ${maxCredits} credits.`,
+      };
+    }
+
+    // 3. Evaluate real passed grades from UAMS
+    const { data: gradeRecords } = await supabase
+      .from('uams_academic_records')
+      .select('data')
+      .eq('kind', 'grade')
+      .eq('student_id', user!.id);
+
+    const realPassedCodes = new Set<string>();
+    for (const row of gradeRecords || []) {
+      const code = (row.data as any)?.course_code;
+      const score = (row.data as any)?.score || 0;
+      if (code && score >= 40) {
+        realPassedCodes.add(code.trim().toUpperCase());
       }
+    }
+
+    const prereqRules: Record<string, string> = {
+      'COMP 311': 'COMP 211',
+      'COMP 312': 'COMP 216',
+      'COMP 314': 'MATH 201',
+      'COMP 316': 'COMP 211',
+      'COMP 318': 'COMP 216',
+      'COMP 325': 'MATH 301',
+    };
+
+    const prereqErrors: string[] = [];
+    for (const unit of validUnits) {
+      const requiredPrereq = prereqRules[unit.code];
+      if (requiredPrereq && !realPassedCodes.has(requiredPrereq)) {
+        prereqErrors.push(`${unit.code} requires prerequisite ${requiredPrereq}.`);
+      }
+    }
+
+    if (prereqErrors.length > 0) {
+      return {
+        success: false,
+        totalCredits,
+        rejectionReasons: prereqErrors,
+        message: `UAMS Registrar rejection: Prerequisite requirements not satisfied. ${prereqErrors.join(' ')}`,
+      };
+    }
+
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let refSuffix = '';
+    for (let i = 0; i < 5; i++) {
+      refSuffix += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const registrationRef = `REG-SEM2-2026-${refSuffix}`;
+    const nowIso = new Date().toISOString();
+
+    const newlyRegistered: RegisteredUnit[] = validUnits.map((u) => ({
+      unitId: u.id,
+      code: u.code,
+      name: u.name,
+      creditHours: u.credit_hours || 3,
+      registeredAt: nowIso,
+      status: 'pending_approval',
+      registrationRef,
+    }));
+
+    for (const reg of newlyRegistered) {
+      await supabase.from('uams_academic_records').insert({
+        university_id: membership.university_id,
+        student_id: user!.id,
+        kind: 'unit_registration',
+        source_id: `${registrationRef}-${reg.code}`,
+        source_updated_at: nowIso,
+        data: {
+          registration_reference: registrationRef,
+          course_code: reg.code,
+          course_name: reg.name,
+          credit_hours: reg.creditHours,
+          academic_year: '2026/2027',
+          semester: 2,
+          registered_at: nowIso,
+          status: 'pending_approval',
+        },
+        is_published: true,
+      });
     }
 
     return {
@@ -325,7 +449,7 @@ export async function submitUnitRegistrationAction(
       registrationReference: registrationRef,
       registeredUnits: newlyRegistered,
       totalCredits,
-      message: `UAMS course registration approved. Reference: ${registrationRef}. Official examination roster updated.`,
+      message: `Registration submitted. Reference: ${registrationRef}. Status: Pending registrar confirmation.`,
     };
   } catch (err) {
     return {

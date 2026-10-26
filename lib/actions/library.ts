@@ -102,7 +102,8 @@ export async function getLibraryAccountAction(): Promise<LibraryAccountResponse>
         : 0;
 
       const isOverdue = diffDays < 0;
-      const fine = isOverdue ? Math.abs(diffDays) * 20 : 0;
+      const fineRatePerDay = typeof d.fine_rate_per_day === 'number' ? d.fine_rate_per_day : (typeof d.fine_per_day === 'number' ? d.fine_per_day : 20);
+      const fine = isOverdue ? Math.abs(diffDays) * fineRatePerDay : 0;
       const status = isOverdue ? 'overdue' : diffDays <= 3 ? 'due_soon' : 'active';
       const renewals = d.renewal_count || 0;
       const maxRenewals = d.max_renewals || 2;
@@ -321,7 +322,7 @@ export async function renewBorrowedBookAction(bookId: string): Promise<BookRenew
       bookId,
       newDueDate: newDueDateStr,
       newRenewalCount: updatedRenewals,
-      message: `UAMS loan extension confirmed. New due date is ${newDueDateStr}.`,
+      message: `Loan extension requested for new due date ${newDueDateStr}. Recorded, pending UAMS confirmation.`,
     };
   } catch (err) {
     return {
