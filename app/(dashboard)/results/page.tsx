@@ -4,9 +4,13 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { AppHeader } from '@/components/shared/app-header';
 import { demoSessionEmail } from '@/lib/security/demo-session';
-import { GraduationCap, Award, BookOpen, Download, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Download, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { calculateGpaTrend } from '@/lib/exams/gpa';
+import { GpaTrendCard } from '@/components/ui/gpa-trend-card';
+import { ResultsDigestAlertBanner } from '@/components/ui/results-digest-alert';
+import { getResultsDigestAlertAction } from '@/lib/actions/exams';
 
 export default function Results() {
   return (
@@ -33,16 +37,17 @@ interface GradeRecordData {
   semester: number;
   score?: number;
   grade: string;
+  units?: number;
   is_published?: boolean;
 }
 
 const DEMO_FALLBACK_GRADES: Array<{ id: string; data: GradeRecordData }> = [
-  { id: 'res-01', data: { course_code: 'BCS 311', course_name: 'Advanced Database Systems', academic_year: '2026/2027', semester: 1, score: 85, grade: 'A' } },
-  { id: 'res-02', data: { course_code: 'BIT 312', course_name: 'Distributed Systems & Cloud Computing', academic_year: '2026/2027', semester: 1, score: 78, grade: 'A-' } },
-  { id: 'res-03', data: { course_code: 'COMP 211', course_name: 'Object-Oriented Analysis & Design', academic_year: '2026/2027', semester: 1, score: 88, grade: 'A' } },
-  { id: 'res-04', data: { course_code: 'COMP 216', course_name: 'Computer Networks & Communications', academic_year: '2026/2027', semester: 1, score: 74, grade: 'B+' } },
-  { id: 'res-05', data: { course_code: 'MATH 201', course_name: 'Discrete Mathematics for Computing', academic_year: '2026/2027', semester: 1, score: 82, grade: 'A' } },
-  { id: 'res-06', data: { course_code: 'COMP 214', course_name: 'Database Systems & Architecture', academic_year: '2026/2027', semester: 1, score: 79, grade: 'A-' } },
+  { id: 'res-01', data: { course_code: 'BCS 311', course_name: 'Advanced Database Systems', academic_year: '2026/2027', semester: 1, score: 85, grade: 'A', units: 3 } },
+  { id: 'res-02', data: { course_code: 'BIT 312', course_name: 'Distributed Systems & Cloud Computing', academic_year: '2026/2027', semester: 1, score: 78, grade: 'A-', units: 3 } },
+  { id: 'res-03', data: { course_code: 'COMP 211', course_name: 'Object-Oriented Analysis & Design', academic_year: '2026/2027', semester: 1, score: 88, grade: 'A', units: 3 } },
+  { id: 'res-04', data: { course_code: 'COMP 216', course_name: 'Computer Networks & Communications', academic_year: '2026/2027', semester: 1, score: 74, grade: 'B+', units: 3 } },
+  { id: 'res-05', data: { course_code: 'MATH 201', course_name: 'Discrete Mathematics for Computing', academic_year: '2026/2027', semester: 1, score: 82, grade: 'A', units: 3 } },
+  { id: 'res-06', data: { course_code: 'COMP 214', course_name: 'Database Systems & Architecture', academic_year: '2026/2027', semester: 1, score: 79, grade: 'A-', units: 3 } },
 ];
 
 async function PublishedResults() {
@@ -96,17 +101,18 @@ async function PublishedResults() {
     records = DEMO_FALLBACK_GRADES;
   }
 
-  // Calculate Weighted GPA
-  const gradePoints: Record<string, number> = {
-    'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7, 'C+': 2.3, 'C': 2.0, 'D': 1.0, 'F': 0.0,
-  };
+  // Retrieve results digest alert
+  const alertRes = await getResultsDigestAlertAction();
 
-  const totalCourses = records.length;
-  let totalPoints = 0;
-  for (const r of records) {
-    totalPoints += gradePoints[r.data.grade.toUpperCase()] ?? 3.0;
-  }
-  const semesterGpa = totalCourses > 0 ? (totalPoints / totalCourses).toFixed(2) : '3.82';
+  // Calculate Unit-Weighted GPA and CGPA Trend
+  const gpaInput = records.map((r) => ({
+    courseCode: r.data.course_code,
+    grade: r.data.grade,
+    units: r.data.units || 3,
+    academicYear: r.data.academic_year,
+    semester: r.data.semester,
+  }));
+  const gpaTrend = calculateGpaTrend(gpaInput);
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8 font-sans">
@@ -125,7 +131,6 @@ async function PublishedResults() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={undefined}
             className="text-xs border-[#C59B27]/40 text-[#0B1D33] hover:bg-slate-50 gap-1.5 shadow-xs"
           >
             <Download className="w-3.5 h-3.5 text-[#C59B27]" />
@@ -134,46 +139,18 @@ async function PublishedResults() {
         </div>
       </div>
 
-      {/* Academic Standing Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <Card className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 font-medium mb-1">
-            <span>Semester GPA</span>
-            <GraduationCap className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-2xl font-bold font-serif text-[#0B1D33]">{semesterGpa}</div>
-          <p className="text-[11px] text-emerald-700 font-medium mt-0.5">Scale: 4.00 (Out of 4.0)</p>
-        </Card>
+      {/* Results Digest Alert Banner (Fires once per release window) */}
+      {alertRes.alert && (
+        <ResultsDigestAlertBanner alert={alertRes.alert} variant="banner" />
+      )}
 
-        <Card className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 font-medium mb-1">
-            <span>Cumulative GPA</span>
-            <Award className="w-4 h-4 text-[#C59B27]" />
-          </div>
-          <div className="text-2xl font-bold font-serif text-[#0B1D33]">3.75</div>
-          <p className="text-[11px] text-slate-500 font-medium mt-0.5">Cumulative Across Terms</p>
-        </Card>
-
-        <Card className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 font-medium mb-1">
-            <span>Completed Units</span>
-            <BookOpen className="w-4 h-4 text-blue-600" />
-          </div>
-          <div className="text-2xl font-bold font-serif text-[#0B1D33]">
-            {String(totalCourses).padStart(2, '0')}
-          </div>
-          <p className="text-[11px] text-slate-500 font-medium mt-0.5">{totalCourses * 3} Credit Hours</p>
-        </Card>
-
-        <Card className="p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
-          <div className="flex items-center justify-between text-xs text-slate-500 font-medium mb-1">
-            <span>Academic Standing</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-sm font-bold text-emerald-700 mt-2">Dean&apos;s Honor List</div>
-          <p className="text-[11px] text-slate-500 font-medium mt-0.5">Good Standing</p>
-        </Card>
-      </div>
+      {/* GPA & CGPA Unit-Weighted Trend Display */}
+      <GpaTrendCard
+        semesterGpa={gpaTrend.semesterGpa}
+        cumulativeGpa={gpaTrend.cumulativeGpa}
+        totalUnits={gpaTrend.totalUnits}
+        history={gpaTrend.history}
+      />
 
       {loadError && (
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3 text-amber-800 text-xs">
@@ -189,7 +166,7 @@ async function PublishedResults() {
       ) : (
         <Card className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
           <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-semibold text-slate-700">
-            <span>Semester 1 • Academic Year 2026/2027</span>
+            <span>Semester 1 · Academic Year 2026/2027</span>
             <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
               Registrar Verified
             </span>
@@ -216,7 +193,7 @@ async function PublishedResults() {
                     </td>
                     <td className="p-3.5 text-slate-600">{r.data.academic_year}</td>
                     <td className="p-3.5 text-center text-slate-600">Sem {r.data.semester}</td>
-                    <td className="p-3.5 text-center font-mono text-slate-700">{r.data.score ?? '—'}</td>
+                    <td className="p-3.5 text-center font-mono text-slate-700">{r.data.score ?? '-'}</td>
                     <td className="p-3.5 text-center">
                       <span className={`inline-block px-2 py-0.5 rounded font-mono font-bold text-xs ${
                         ['A', 'A-'].includes(r.data.grade)

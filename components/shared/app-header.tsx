@@ -19,6 +19,7 @@ import {
   X,
   Receipt,
   Building,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOutAction, getUserRoleAction } from "@/lib/actions/auth";
@@ -84,6 +85,7 @@ export function AppHeader({
   const navLinks = [
     { href: "/dashboard", label: "Campus Feed", icon: Megaphone },
     { href: "/fees", label: "Fee Statement", icon: Receipt },
+    { href: "/exams", label: "Exam Pass & Timetable", icon: FileText },
     { href: "/hostels", label: "Hostels & Residence", icon: Building },
     { href: "/results", label: "Results", icon: GraduationCap },
  { href: "/feedback", label: "Pilot feedback", icon: LifeBuoy },

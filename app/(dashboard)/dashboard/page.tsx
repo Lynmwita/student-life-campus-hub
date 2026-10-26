@@ -20,6 +20,7 @@ import {
   LifeBuoy,
   Receipt,
   Building,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,8 +28,11 @@ import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/shared/app-header";
 import { PaymentProgressBar } from "@/components/ui/payment-progress-bar";
 import { FeeDeadlineBanner } from "@/components/ui/fee-deadline-banner";
+import { ResultsDigestAlertBanner } from "@/components/ui/results-digest-alert";
 import { getPrimaryFeeDeadlineAlert, FeeDeadlineAlert } from "@/lib/finance/deadline-alerts";
 import { DEMO_FEE_STATEMENTS } from "@/lib/finance/demo-data";
+import { getResultsDigestAlertAction } from "@/lib/actions/exams";
+import { ResultsDigestAlert } from "@/lib/exams/types";
 import {
   markAnnouncementAsReadAction,
   getStudentAnnouncementsAction,
@@ -63,19 +67,24 @@ export default function StudentDashboardPage() {
     paidByStudent: 20000,
   });
   const [deadlineAlert, setDeadlineAlert] = React.useState<FeeDeadlineAlert | null>(null);
+  const [resultsAlert, setResultsAlert] = React.useState<ResultsDigestAlert | null>(null);
 
   React.useEffect(() => {
     let ignore = false;
 
     async function loadData() {
       try {
-        const [announcementsRes, scheduleRes, feeRes] = await Promise.all([
+        const [announcementsRes, scheduleRes, feeRes, resultsAlertRes] = await Promise.all([
           withOffline("getStudentAnnouncementsAction", getStudentAnnouncementsAction),
           withOffline("getStudentTodayScheduleAction", getStudentTodayScheduleAction),
           withOffline("getStudentFeeStatementsAction", getStudentFeeStatementsAction).catch(() => null),
+          getResultsDigestAlertAction().catch(() => null),
         ]);
 
         if (!ignore) {
+          if (resultsAlertRes && resultsAlertRes.success) {
+            setResultsAlert(resultsAlertRes.alert);
+          }
           if(!announcementsRes.success||!scheduleRes.success)throw new Error(announcementsRes.message||scheduleRes.message||'Campus information could not be loaded.');
           setHasLoadedData(true);setLoadError('');
           if (announcementsRes.success) {
@@ -128,11 +137,16 @@ export default function StudentDashboardPage() {
   async function handleRefresh() {
     setRefreshing(true);
     try {
-      const [announcementsRes, scheduleRes, feeRes] = await Promise.all([
+      const [announcementsRes, scheduleRes, feeRes, resultsAlertRes] = await Promise.all([
         withOffline("getStudentAnnouncementsAction", getStudentAnnouncementsAction),
         withOffline("getStudentTodayScheduleAction", getStudentTodayScheduleAction),
         withOffline("getStudentFeeStatementsAction", getStudentFeeStatementsAction).catch(() => null),
+        getResultsDigestAlertAction().catch(() => null),
       ]);
+
+      if (resultsAlertRes && resultsAlertRes.success) {
+        setResultsAlert(resultsAlertRes.alert);
+      }
 
       if(!announcementsRes.success||!scheduleRes.success)throw new Error(announcementsRes.message||scheduleRes.message||'Campus information could not be refreshed.');
       setHasLoadedData(true);setLoadError('');
@@ -496,6 +510,13 @@ export default function StudentDashboardPage() {
           </div>
         </section>
 
+        {/* Results Digest Alert Card (Fires once per release window) */}
+        {resultsAlert && (
+          <section className="pt-2">
+            <ResultsDigestAlertBanner alert={resultsAlert} variant="card" />
+          </section>
+        )}
+
         {/* Fee Deadline Alert Card */}
         {deadlineAlert && (
           <section className="pt-2">
@@ -505,6 +526,24 @@ export default function StudentDashboardPage() {
 
         {/* Quick Links Section */}
         <section className="pt-2 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/exams" className="block group">
+            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
+                    Exam Pass & Timetable
+                  </h4>
+                  <p className="text-xs text-slate-500 font-sans">
+                    Digital Exam Pass · Venue &amp; seat allocations · Paper countdown.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </Link>
+
           <Link href="/fees" className="block group">
             <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs space-y-3.5">
               <div className="flex items-center gap-3">
