@@ -708,6 +708,24 @@ export default function StudentDashboardPage() {
               </div>
             </Card>
           </Link>
+
+          <Link href="/safety" className="block group">
+            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
+                    Community, Safety & Privacy
+                  </h4>
+                  <p className="text-xs text-slate-500 font-sans">
+                    Emergency SOS • Verified lost & found custody • KDPA data export.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </Link>
         </section>
       </main>
     </div>

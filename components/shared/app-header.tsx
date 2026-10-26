@@ -14,6 +14,7 @@ import {
   User,
   LogOut,
   ShieldAlert,
+  ShieldCheck,
   PlusCircle,
   Menu,
   X,
@@ -96,6 +97,7 @@ export function AppHeader({
  { href: "/feedback", label: "Pilot feedback", icon: LifeBuoy },
  { href: "/timetable", label: "Weekly Timetable", icon: Calendar },
     { href: "/campus-life", label: "Campus Life & Clubs", icon: Compass },
+    { href: "/safety", label: "Community & Safety", icon: ShieldCheck },
     { href: "/help-desk", label: "Help Desk & Inquiries", icon: LifeBuoy },
   ];
 
