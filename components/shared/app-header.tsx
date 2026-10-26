@@ -26,6 +26,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOutAction, getUserRoleAction } from "@/lib/actions/auth";
+import { LanguageToggle } from "@/components/shared/language-toggle";
+import { OfflineStatusBanner } from "@/components/shared/offline-status-banner";
+import { useLanguage } from "@/lib/i18n/context";
 
 interface AppHeaderProps {
   universityName?: string;
@@ -37,6 +40,7 @@ export function AppHeader({
   campusName = "Your campus",
 }: AppHeaderProps) {
   const pathname = usePathname();
+  const { language } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [userInfo, setUserInfo] = React.useState<{
     isAuthenticated: boolean;
@@ -86,24 +90,25 @@ export function AppHeader({
   }, []);
 
   const navLinks = [
-    { href: "/dashboard", label: "Campus Feed", icon: Megaphone },
-    { href: "/fees", label: "Fee Statement", icon: Receipt },
-    { href: "/student-id", label: "Digital Student ID", icon: IdCard },
-    { href: "/library", label: "Library", icon: BookOpen },
-    { href: "/units", label: "Unit Registration", icon: GraduationCap },
-    { href: "/exams", label: "Exam Pass & Timetable", icon: FileText },
-    { href: "/hostels", label: "Hostels & Residence", icon: Building },
-    { href: "/results", label: "Results", icon: GraduationCap },
- { href: "/feedback", label: "Pilot feedback", icon: LifeBuoy },
- { href: "/timetable", label: "Weekly Timetable", icon: Calendar },
-    { href: "/campus-life", label: "Campus Life & Clubs", icon: Compass },
-    { href: "/safety", label: "Community & Safety", icon: ShieldCheck },
-    { href: "/graduation", label: "Graduation & Vault", icon: GraduationCap },
-    { href: "/help-desk", label: "Help Desk & Inquiries", icon: LifeBuoy },
+    { href: "/dashboard", label: language === "sw" ? "Mlisho wa Chuo" : "Campus Feed", icon: Megaphone },
+    { href: "/fees", label: language === "sw" ? "Ada za Masomo" : "Fee Statement", icon: Receipt },
+    { href: "/student-id", label: language === "sw" ? "Kitambulisho cha Mwanafunzi" : "Digital Student ID", icon: IdCard },
+    { href: "/library", label: language === "sw" ? "Maktaba" : "Library", icon: BookOpen },
+    { href: "/units", label: language === "sw" ? "Usajili wa Kozi" : "Unit Registration", icon: GraduationCap },
+    { href: "/exams", label: language === "sw" ? "Ratiba ya Mitihani & Pasi" : "Exam Pass & Timetable", icon: FileText },
+    { href: "/hostels", label: language === "sw" ? "Bweni na Makazi" : "Hostels & Residence", icon: Building },
+    { href: "/results", label: language === "sw" ? "Matokeo ya Mitihani" : "Results", icon: GraduationCap },
+    { href: "/feedback", label: language === "sw" ? "Maoni ya Majaribio" : "Pilot feedback", icon: LifeBuoy },
+    { href: "/timetable", label: language === "sw" ? "Ratiba ya Wiki" : "Weekly Timetable", icon: Calendar },
+    { href: "/campus-life", label: language === "sw" ? "Maisha ya Chuo na Vilabu" : "Campus Life & Clubs", icon: Compass },
+    { href: "/safety", label: language === "sw" ? "Usalama na Faragha" : "Community & Safety", icon: ShieldCheck },
+    { href: "/graduation", label: language === "sw" ? "Utoaji wa Shahada & Kibali" : "Graduation & Vault", icon: GraduationCap },
+    { href: "/help-desk", label: language === "sw" ? "Dawati la Msaada" : "Help Desk & Inquiries", icon: LifeBuoy },
   ];
 
   return (
     <>
+      <OfflineStatusBanner />
       {/* Top Navbar */}
       <header className="sticky top-0 z-30 bg-[#0B1D33] text-white border-b border-[#06101E] px-4 py-2.5 sm:px-6 shadow-xs">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -122,8 +127,10 @@ export function AppHeader({
             </div>
           </Link>
 
-          {/* Right actions: Staff/Admin Links (only if staff) + Profile + Sign Out */}
+          {/* Right actions: Language Toggle + Staff/Admin Links + Profile + Sign Out */}
           <div className="flex items-center gap-2 sm:gap-3">
+            <LanguageToggle />
+
             {userInfo.isStaff && (
               <>
                 <Link href="/admin">
@@ -133,7 +140,7 @@ export function AppHeader({
                     className="text-xs border-[#C59B27]/40 text-[#FCD34D] hover:text-white hover:bg-[#06101E]"
                   >
                     <ShieldAlert className="w-3.5 h-3.5 mr-1 text-[#FCD34D]" />
-                    Staff Console
+                    {language === "sw" ? "Wafanyakazi" : "Staff Console"}
                   </Button>
                 </Link>
                 <Link href="/announcements/new" className="hidden sm:inline-flex">
@@ -143,7 +150,7 @@ export function AppHeader({
                     className="text-xs border-slate-700 text-slate-300 hover:bg-[#06101E]"
                   >
                     <PlusCircle className="w-3.5 h-3.5 mr-1 text-[#FCD34D]" />
-                    Post Notice
+                    {language === "sw" ? "Tangazo" : "Post Notice"}
                   </Button>
                 </Link>
               </>
@@ -181,7 +188,7 @@ export function AppHeader({
                 title="Sign out of your session"
               >
                 <LogOut className="w-3.5 h-3.5 text-red-400" />
-                <span className="hidden sm:inline">Sign Out</span>
+                <span className="hidden sm:inline">{language === "sw" ? "Toka" : "Sign Out"}</span>
               </Button>
             </form>
 
