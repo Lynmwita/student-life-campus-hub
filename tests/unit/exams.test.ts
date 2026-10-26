@@ -53,6 +53,19 @@ describe('Exams & Results Family: Digital Exam Pass, Timetable, Alerts, GPA Tren
       expect(pass.registeredUnits[0].code).toBe('COMP 211');
       expect(pass.registeredUnits[0].status).toBe('confirmed');
     });
+
+    it('preserves the authoritative clearance date from the UAMS record instead of falling back to today', () => {
+      const uamsRecordDate = '2026-10-22T14:30:00Z';
+      const pass = DEMO_EXAM_PASS_CLEARED;
+      expect(pass.clearance.clearedAt).toBe(uamsRecordDate);
+      expect(pass.clearance.clearedAt).not.toBe(new Date().toISOString().split('T')[0]);
+    });
+
+    it('generates compliant QR payloads encoding student admission, semester and clearance reference', () => {
+      const pass = DEMO_EXAM_PASS_CLEARED;
+      expect(pass.qrPayload).toBe('SUMMIT-PASS:BIT/2023/8849:2026/2027:SEM1:REG-CLR-2026-08491');
+      expect(pass.qrPayload).not.toContain('REAL');
+    });
   });
 
   describe('Feature 2: Exam Timetable & Date Grouping', () => {

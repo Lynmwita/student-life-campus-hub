@@ -91,7 +91,7 @@ export async function getDigitalExamPassAction(demoVariant?: ClearanceStatus): P
     // 1. Fetch student's profile & membership
     const { data: membership } = await supabase
       .from('university_memberships')
-      .select('university_id, role, verification_status')
+      .select('university_id, role, verification_status, registration_number, faculty, department, program_of_study, campus:campuses(name)')
       .eq('user_id', user!.id)
       .maybeSingle();
 
@@ -104,7 +104,7 @@ export async function getDigitalExamPassAction(demoVariant?: ClearanceStatus): P
     // 2. Query authoritative clearance record from UAMS
     const { data: clearanceRow } = await supabase
       .from('uams_academic_records')
-      .select('data')
+      .select('data, created_at, updated_at')
       .eq('kind', 'exam_clearance')
       .eq('student_id', user!.id)
       .maybeSingle();
@@ -126,14 +126,14 @@ export async function getDigitalExamPassAction(demoVariant?: ClearanceStatus): P
 
     const feeData = feeRow?.data as any;
     const feeBalance = typeof feeData?.balance === 'number' ? feeData.balance : 0;
+    const cData = clearanceRow?.data as any;
 
     // Strict Clearance Rule Logic
     let clearanceStatus: ClearanceStatus = 'pending';
     let blockingReasons: string[] = [];
     let clearanceRef: string | undefined = undefined;
 
-    if (clearanceRow?.data) {
-      const cData = clearanceRow.data as any;
+    if (cData) {
       if (cData.status === 'cleared') {
         clearanceStatus = 'cleared';
         clearanceRef = cData.clearance_reference || `REG-CLR-2026-${user!.id.substring(0, 5).toUpperCase()}`;
@@ -158,13 +158,48 @@ export async function getDigitalExamPassAction(demoVariant?: ClearanceStatus): P
       status: 'confirmed' as const,
     }));
 
+    const studentName = profile?.full_name || 'Enrolled Student';
+    const admissionNumber =
+      membership?.registration_number ||
+      cData?.admission_number ||
+      cData?.registration_number ||
+      feeData?.admission_number ||
+      feeData?.registration_number ||
+      `REG/${user!.id.substring(0, 5).toUpperCase()}/2026`;
+
+    const programme =
+      membership?.program_of_study ||
+      cData?.programme ||
+      cData?.program_of_study ||
+      feeData?.programme ||
+      'Bachelor of Science in Information Technology';
+
+    const faculty =
+      membership?.faculty ||
+      cData?.faculty ||
+      'School of Computing & Informatics';
+
+    const campusName =
+      (membership as any)?.campus?.name ||
+      cData?.campus_name ||
+      'Main Campus';
+
+    // Cleared date: use actual clearance date from UAMS record when present
+    const clearedAt = clearanceStatus === 'cleared'
+      ? (cData?.cleared_at || cData?.clearance_date || cData?.date || clearanceRow?.updated_at || clearanceRow?.created_at || new Date().toISOString())
+      : undefined;
+
+    const clearedBy = clearanceStatus === 'cleared'
+      ? (cData?.cleared_by || 'Office of the Academic Registrar')
+      : undefined;
+
     const passData: DigitalExamPassData = {
       passNumber: `EP-2026-SEM1-${user!.id.substring(0, 6).toUpperCase()}`,
-      studentName: profile?.full_name || 'Enrolled Student',
-      admissionNumber: 'BIT/2023/REAL',
-      programme: 'Bachelor of Science in Information Technology',
-      faculty: 'School of Computing & Informatics',
-      campusName: 'Main Campus',
+      studentName,
+      admissionNumber,
+      programme,
+      faculty,
+      campusName,
       academicYear: '2026/2027',
       semester: 1,
       semesterLabel: 'Year 2 Semester 1',
@@ -172,14 +207,14 @@ export async function getDigitalExamPassAction(demoVariant?: ClearanceStatus): P
       clearance: {
         status: clearanceStatus,
         clearanceReference: clearanceRef,
-        clearedAt: clearanceStatus === 'cleared' ? new Date().toISOString() : undefined,
-        clearedBy: clearanceStatus === 'cleared' ? 'Office of the Academic Registrar' : undefined,
+        clearedAt,
+        clearedBy,
         blockingReasons,
         financialBalance: feeBalance,
         financialCleared: feeBalance <= 0,
         academicApproved: clearanceStatus === 'cleared',
       },
-      qrPayload: `SUMMIT-PASS:BIT/2023/REAL:2026/2027:SEM1:${clearanceRef || clearanceStatus.toUpperCase()}`,
+      qrPayload: `SUMMIT-PASS:${admissionNumber}:2026/2027:SEM1:${clearanceRef || clearanceStatus.toUpperCase()}`,
       issuedAt: new Date().toISOString(),
       isDemo: false,
     };
