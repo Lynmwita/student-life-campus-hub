@@ -215,5 +215,11 @@ describe('Design Rules & Integrity', () => {
 
     // Cleared timestamps must never default to now
     expect(content).not.toContain('clearedAt: new Date().toISOString()');
+
+    const clientPath = path.resolve(process.cwd(), 'app/(dashboard)/graduation/graduation-client.tsx');
+    const clientContent = fs.readFileSync(clientPath, 'utf8');
+    expect(clientContent).not.toContain('Certified official university digital document');
+    expect(clientContent).not.toContain('https://hub.smu.ac.ke/verify/');
+    expect(clientContent).toContain('registryNotice');
   });
 });

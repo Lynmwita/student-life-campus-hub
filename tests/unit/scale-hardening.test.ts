@@ -97,6 +97,8 @@ describe('Scale Hardening: Offline Writes & Honesty Refusal Rules', () => {
     expect(bookResult.queued).toBe(true);
     expect(bookResult.queueId).toMatch(/^OFL-QUEUED-/);
     expect(bookResult.message).toContain('Action saved locally under queue reference');
+    expect(bookResult.message).toContain('must be submitted when back online');
+    expect(bookResult.message).not.toContain('automatically');
 
     const queuedActions = getOfflineQueuedActions();
     expect(queuedActions).toHaveLength(1);
