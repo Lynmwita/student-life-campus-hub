@@ -19,6 +19,16 @@ describe("Authentication & Onboarding Schemas", () => {
       expect(result.success).toBe(true);
     });
 
+    it("validates pilot student email and credentials", () => {
+      const valid = {
+        email: "pilot.student@summit.ac.ke",
+        password: "StudentPassword123!",
+      };
+      const result = loginSchema.safeParse(valid);
+      expect(result.success).toBe(true);
+      expect(isAcademicEmail(valid.email)).toBe(true);
+    });
+
     it("fails on invalid email format", () => {
       const invalid = {
         email: "not-an-email",

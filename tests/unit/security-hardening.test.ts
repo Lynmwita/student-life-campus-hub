@@ -72,6 +72,7 @@ describe("Security Hardening & Rate Limiting (Tiny 9b)", () => {
     it("defines mandatory Content-Security-Policy header", () => {
       expect(SECURITY_HEADERS["Content-Security-Policy"]).toBeDefined();
       expect(SECURITY_HEADERS["Content-Security-Policy"]).toContain("default-src 'self'");
+      expect(SECURITY_HEADERS["Content-Security-Policy"]).toContain("media-src 'self' data: blob:");
       expect(SECURITY_HEADERS["Content-Security-Policy"]).toContain("frame-ancestors 'none'");
     });
 
