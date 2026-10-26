@@ -401,7 +401,7 @@ export async function submitHostelApplicationAction(params: {
     admissionNumber: demoEmail ? 'BIT/2023/8849' : 'BIT/2023/REAL',
     academicYear: '2026/2027',
     semester: 2,
-    status: 'submitted',
+    status: 'applied',
     firstPreferenceHall: params.firstPreferenceHall,
     secondPreferenceHall: params.secondPreferenceHall || 'Hall 2 (Menengai)',
     preferredRoomType: params.preferredRoomType,
@@ -476,9 +476,28 @@ export async function getWardenAnnouncementsAction(): Promise<WardenAnnouncement
   const cookieStore = await cookies();
   const demoEmail = demoSessionEmail(cookieStore.get('smu_demo_session')?.value);
 
+  // Retrieve student's room allocation to identify resident hall
+  const roomRes = await getMyRoomAllocationAction();
+  const residentHall = roomRes.allocation?.hallName;
+
+  // Filter announcements: only show notices for student's hall, or campus-wide notices
+  const scopedAnnouncements = DEMO_WARDEN_ANNOUNCEMENTS.filter((notice) => {
+    if (notice.hallScope === 'All Campus Halls' || notice.hallScope === 'All Halls') {
+      return true;
+    }
+    if (!residentHall) {
+      // Non-resident students only receive campus-wide announcements
+      return false;
+    }
+    // Resident only sees notices for their assigned hall
+    const cleanScope = notice.hallScope.toLowerCase().split('(')[0].trim();
+    const cleanResident = residentHall.toLowerCase().split('(')[0].trim();
+    return cleanScope === cleanResident || residentHall.toLowerCase().includes(cleanScope);
+  });
+
   return {
     success: true,
-    announcements: DEMO_WARDEN_ANNOUNCEMENTS,
+    announcements: scopedAnnouncements,
     isDemo: !!demoEmail,
   };
 }
@@ -492,4 +511,74 @@ export async function getVerifiedOffCampusHousesAction(): Promise<OffCampusHouse
     houses: DEMO_OFF_CAMPUS_HOUSES,
     isDemo: !!demoEmail,
   };
+}
+
+export async function reportOffCampusListingAction(params: {
+  houseId: string;
+  reason: string;
+  description: string;
+}): Promise<{ success: boolean; message: string }> {
+  let user = null;
+  try {
+    const supabase = await createClient();
+    const authRes = await supabase.auth.getUser();
+    user = authRes.data.user;
+  } catch {}
+
+  const cookieStore = await cookies();
+  const demoEmail = demoSessionEmail(cookieStore.get('smu_demo_session')?.value);
+
+  if (!user && !demoEmail) {
+    return { success: false, message: 'Unauthorized. Please log in to report listings.' };
+  }
+
+  if (!params.houseId || !params.reason) {
+    return { success: false, message: 'Reason for report is required.' };
+  }
+
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let refSuffix = '';
+  for (let i = 0; i < 4; i++) {
+    refSuffix += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  const reportRef = `HD-2026-${refSuffix}`;
+
+  if (demoEmail) {
+    return {
+      success: true,
+      message: `Report ${reportRef} received. Our Accommodation Office has flagged this listing for immediate verification.`,
+    };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data: membership } = await supabase
+      .from('university_memberships')
+      .select('university_id')
+      .eq('user_id', user!.id)
+      .single();
+
+    if (membership) {
+      await supabase.from('help_requests').insert({
+        reference_no: reportRef,
+        university_id: membership.university_id,
+        student_id: user!.id,
+        category: 'hostel',
+        priority: 'P2',
+        subject: `[Off-Campus Scam Report] Property ${params.houseId} - ${params.reason}`,
+        description: params.description?.trim() || `Listing reported for: ${params.reason}`,
+        status: 'submitted',
+      });
+    }
+
+    return {
+      success: true,
+      message: `Report ${reportRef} logged successfully. Staff will review this off-campus property.`,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : 'Failed to submit scam report.',
+    };
+  }
 }

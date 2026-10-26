@@ -71,11 +71,13 @@ export interface MaintenanceTicket {
 
 export type ApplicationStatus =
   | 'draft'
-  | 'submitted'
-  | 'under_review'
+  | 'applied'
+  | 'pending'
   | 'allocated'
   | 'waitlisted'
-  | 'rejected';
+  | 'rejected'
+  | 'submitted'
+  | 'under_review';
 
 export interface HostelApplication {
   id: string;
@@ -95,6 +97,14 @@ export interface HostelApplication {
   allocatedHall?: string;
   allocatedRoom?: string;
   paymentDeadline?: string;
+}
+
+export interface ApplicationWindowInfo {
+  isOpen: boolean;
+  academicYear: string;
+  semester: number;
+  opensAt: string;
+  closesAt: string;
 }
 
 export interface RoommatePreferences {
@@ -152,4 +162,17 @@ export interface VerifiedOffCampusHouse {
   waterReliability: string; // e.g. "24/7 Borehole + City Council"
   backupGenerator: boolean;
   address: string;
+  imageUrl?: string;
+  isStaffVerified: boolean;
+  verifiedAt?: string;
+  verifiedByStaffName?: string;
+}
+
+export interface OffCampusScamReport {
+  id: string;
+  houseId: string;
+  studentId: string;
+  reason: 'fraud_deposit' | 'inaccurate_photos' | 'overpriced' | 'unresponsive_landlord' | 'other';
+  description: string;
+  reportedAt: string;
 }

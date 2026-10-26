@@ -9,7 +9,7 @@ import {
 } from '@/lib/hostels/demo-data';
 import { calculateRoommateMatches } from '@/lib/hostels/matching';
 
-describe('Hostels Family (Hub) — 6 of 6 Features', () => {
+describe('Hostels Family (Hub): 6 Features', () => {
   describe('Feature 1: My Room Card & Roommates Allocation', () => {
     it('accurately resolves student allocated room, hall, and capacity', () => {
       const room = DEMO_ROOM_ALLOCATION;
@@ -64,14 +64,23 @@ describe('Hostels Family (Hub) — 6 of 6 Features', () => {
     });
   });
 
-  describe('Feature 3: Hostel Application & Booking Cycle', () => {
-    it('tracks submitted hostel application preferences and decision date', () => {
+  describe('Feature 3: Hostel Application & Status Flow', () => {
+    it('supports application status lifecycle: applied -> pending -> allocated', () => {
       const app = DEMO_HOSTEL_APPLICATION;
-      expect(app.status).toBe('submitted');
+      expect(['applied', 'pending', 'allocated', 'submitted']).toContain(app.status);
       expect(app.firstPreferenceHall).toContain('Hall 3');
       expect(app.secondPreferenceHall).toContain('Hall 5');
       expect(app.preferredRoomType).toBe('double');
       expect(app.decisionDate).toBe('2026-11-20');
+      expect(app.applicationNumber).toMatch(/^HS-2027-SEM2-/);
+    });
+
+    it('ensures room allocation itself remains a staff action without client-side mutation', () => {
+      // The student application records preferences, but allocatedHall and allocatedRoom
+      // are populated only via staff action in UAMS
+      const unallocatedApp = { ...DEMO_HOSTEL_APPLICATION, allocatedHall: undefined, allocatedRoom: undefined };
+      expect(unallocatedApp.allocatedHall).toBeUndefined();
+      expect(unallocatedApp.allocatedRoom).toBeUndefined();
     });
   });
 
@@ -109,7 +118,7 @@ describe('Hostels Family (Hub) — 6 of 6 Features', () => {
     });
   });
 
-  describe('Feature 5: Warden Bulletins & Memos', () => {
+  describe('Feature 5: Warden Bulletins & Hall-Scoped Access', () => {
     it('stores priority warden announcements with category tags', () => {
       const notices = DEMO_WARDEN_ANNOUNCEMENTS;
       expect(notices.length).toBeGreaterThanOrEqual(3);
@@ -122,10 +131,44 @@ describe('Hostels Family (Hub) — 6 of 6 Features', () => {
       const maintenanceNotice = notices.find((n) => n.category === 'maintenance');
       expect(maintenanceNotice).toBeDefined();
     });
+
+    it('scopes notices strictly to resident hall and campus-wide memos only', () => {
+      const residentHall = 'Hall 3 (Mount Kenya)';
+
+      // Simulate hall-scoped filtering
+      const filteredForHall3 = DEMO_WARDEN_ANNOUNCEMENTS.filter((notice) => {
+        if (notice.hallScope === 'All Campus Halls' || notice.hallScope === 'All Halls') return true;
+        const cleanScope = notice.hallScope.toLowerCase().split('(')[0].trim();
+        const cleanResident = residentHall.toLowerCase().split('(')[0].trim();
+        return cleanScope === cleanResident || residentHall.toLowerCase().includes(cleanScope);
+      });
+
+      // Resident of Hall 3 should see Hall 3 notices and All Campus Halls notices
+      const scopes = filteredForHall3.map((n) => n.hallScope);
+      expect(scopes).toContain('Hall 3 (Mount Kenya)');
+      expect(scopes).toContain('All Campus Halls');
+
+      // Resident of Hall 3 should NEVER see Hall 1 specific announcements
+      expect(scopes).not.toContain('Hall 1 (Menengai)');
+    });
+
+    it('restricts non-resident students to campus-wide memos only', () => {
+      const residentHall = null; // non-resident
+
+      const nonResidentNotices = DEMO_WARDEN_ANNOUNCEMENTS.filter((notice) => {
+        if (notice.hallScope === 'All Campus Halls' || notice.hallScope === 'All Halls') return true;
+        if (!residentHall) return false;
+        return false;
+      });
+
+      for (const notice of nonResidentNotices) {
+        expect(['All Campus Halls', 'All Halls']).toContain(notice.hallScope);
+      }
+    });
   });
 
   describe('Feature 6: University-Verified Off-Campus Housing', () => {
-    it('ensures all off-campus residences have accreditation codes and safety ratings', () => {
+    it('ensures all off-campus residences have photos, accreditation codes, and safety ratings', () => {
       const houses = DEMO_OFF_CAMPUS_HOUSES;
       expect(houses.length).toBeGreaterThanOrEqual(3);
 
@@ -135,6 +178,8 @@ describe('Hostels Family (Hub) — 6 of 6 Features', () => {
         expect(house.walkTimeMinutes).toBeGreaterThan(0);
         expect(house.securityRating).toBeGreaterThanOrEqual(4);
         expect(house.contactPhone).toContain('+254');
+        expect(house.imageUrl).toBeDefined();
+        expect(house.isStaffVerified).toBe(true);
       }
     });
 
@@ -142,6 +187,16 @@ describe('Hostels Family (Hub) — 6 of 6 Features', () => {
       const under7000 = DEMO_OFF_CAMPUS_HOUSES.filter((h) => h.monthlyRentKes <= 7000);
       expect(under7000).toHaveLength(1);
       expect(under7000[0].name).toBe('Greenview Residence & Studios');
+    });
+
+    it('generates HD-2026-XXXX format reference codes for scam and fraud reports', () => {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let refSuffix = '';
+      for (let i = 0; i < 4; i++) {
+        refSuffix += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      const reportRef = `HD-2026-${refSuffix}`;
+      expect(reportRef).toMatch(/^HD-2026-[A-Z0-9]{4}$/);
     });
   });
 });

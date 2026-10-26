@@ -15,6 +15,7 @@ import {
 import {
   createHostelMaintenanceTicketAction,
   submitHostelApplicationAction,
+  reportOffCampusListingAction,
 } from '@/lib/actions/hostels';
 import {
   Building,
@@ -37,6 +38,8 @@ import {
   Calendar,
   Search,
   Filter,
+  Flag,
+  ChevronRight,
 } from 'lucide-react';
 
 interface HostelsClientProps {
@@ -87,6 +90,39 @@ export function HostelsClient({
   // Off campus filter state
   const [offCampusSearch, setOffCampusSearch] = React.useState('');
   const [maxRentFilter, setMaxRentFilter] = React.useState<number>(10000);
+
+  // Off campus scam report state
+  const [reportingHouse, setReportingHouse] = React.useState<VerifiedOffCampusHouse | null>(null);
+  const [scamReason, setScamReason] = React.useState('fraud_deposit');
+  const [scamDesc, setScamDesc] = React.useState('');
+  const [submittingReport, setSubmittingReport] = React.useState(false);
+  const [reportSuccessMsg, setReportSuccessMsg] = React.useState('');
+
+  async function handleReportListing(e: React.FormEvent) {
+    e.preventDefault();
+    if (!reportingHouse) return;
+
+    setSubmittingReport(true);
+    setReportSuccessMsg('');
+    try {
+      const res = await reportOffCampusListingAction({
+        houseId: reportingHouse.id,
+        reason: scamReason,
+        description: scamDesc,
+      });
+
+      if (res.success) {
+        setReportSuccessMsg(res.message);
+        setScamDesc('');
+        setTimeout(() => {
+          setReportingHouse(null);
+          setReportSuccessMsg('');
+        }, 3500);
+      }
+    } finally {
+      setSubmittingReport(false);
+    }
+  }
 
   async function handleCreateTicket(e: React.FormEvent) {
     e.preventDefault();
@@ -265,32 +301,137 @@ export function HostelsClient({
       {activeTab === 'my_room' && (
         <div className="space-y-6">
           {!initialAllocation ? (
-            <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center max-w-lg mx-auto shadow-xs space-y-3">
-              <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center mx-auto">
-                <Bed className="w-6 h-6" />
+            application ? (
+              /* Active Application Status Stepper Card */
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden max-w-2xl mx-auto space-y-6 p-6 sm:p-7">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-5">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded bg-[#C59B27] text-[#0B1D33] mb-1.5">
+                      <Clock className="w-3 h-3 text-[#0B1D33]" />
+                      Application Under Review
+                    </div>
+                    <h2 className="text-lg font-serif font-bold text-[#0B1D33]">
+                      Semester {application.semester} ({application.academicYear}) Accommodation
+                    </h2>
+                    <p className="text-xs text-slate-500 font-mono mt-0.5">
+                      Ref: {application.applicationNumber} · Submitted {new Date(application.submittedAt).toLocaleDateString('en-KE')}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('application')}
+                    className="text-xs font-semibold text-[#0B1D33] hover:text-[#C59B27] self-start sm:self-auto inline-flex items-center gap-1"
+                  >
+                    View Preferences <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* 3-Step Status Stepper: applied -> pending -> allocated */}
+                <div className="py-2">
+                  <p className="text-[11px] font-bold text-[#0B1D33] uppercase tracking-wider mb-4">
+                    Allocation Lifecycle
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 relative">
+                    {/* Step 1: Applied */}
+                    <div className="text-center space-y-1.5">
+                      <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-xs">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-900 block">1. Applied</span>
+                      <span className="text-[10px] text-slate-500 block">Preferences logged</span>
+                    </div>
+
+                    {/* Step 2: Pending Review */}
+                    <div className="text-center space-y-1.5">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto shadow-xs ${
+                        application.status === 'allocated'
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-[#C59B27] text-[#0B1D33] ring-4 ring-[#C59B27]/20 font-bold'
+                      }`}>
+                        {application.status === 'allocated' ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                      </div>
+                      <span className="text-xs font-bold text-[#0B1D33] block">2. Pending</span>
+                      <span className="text-[10px] text-slate-500 block">Warden verification</span>
+                    </div>
+
+                    {/* Step 3: Allocated */}
+                    <div className="text-center space-y-1.5">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto shadow-xs ${
+                        application.status === 'allocated'
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-100 text-slate-400 border border-slate-200'
+                      }`}>
+                        <Bed className="w-4 h-4" />
+                      </div>
+                      <span className={`text-xs font-bold block ${application.status === 'allocated' ? 'text-emerald-800' : 'text-slate-400'}`}>
+                        3. Allocated
+                      </span>
+                      <span className="text-[10px] text-slate-400 block">Staff UAMS action</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Application Details Summary */}
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 text-xs space-y-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <span className="text-slate-500 block">1st Preference:</span>
+                      <span className="font-semibold text-slate-900">{application.firstPreferenceHall}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">Preferred Room:</span>
+                      <span className="font-semibold text-slate-900 capitalize">{application.preferredRoomType} occupancy</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">2nd Preference:</span>
+                      <span className="font-semibold text-slate-900">{application.secondPreferenceHall}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block">Expected Decision:</span>
+                      <span className="font-semibold text-[#0B1D33]">{application.decisionDate || '20 Nov 2026'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Institutional Note */}
+                <div className="bg-[#0B1D33]/5 border border-[#0B1D33]/15 rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-slate-700">
+                  <Info className="w-4 h-4 text-[#C59B27] shrink-0 mt-0.5" />
+                  <p className="leading-relaxed">
+                    <strong>Staff Allocation Action:</strong> Room and bed assignments are confirmed by the University Accommodation Office directly in UAMS. Once staff completes allocation, your assigned hall, block, and room details will automatically appear on this card.
+                  </p>
+                </div>
               </div>
-              <h2 className="text-base font-bold text-[#0B1D33]">No Active On-Campus Room</h2>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                You are currently registered as a non-resident student or waiting for room allocation.
-                You can apply for next semester accommodation or explore verified private housing.
-              </p>
-              <div className="pt-2 flex justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('application')}
-                  className="px-4 py-2 rounded-lg bg-[#0B1D33] text-white text-xs font-semibold hover:bg-[#06101E]"
-                >
-                  Apply for Hostel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('off_campus')}
-                  className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200"
-                >
-                  Explore Off-Campus
-                </button>
+            ) : (
+              <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center max-w-lg mx-auto shadow-xs space-y-3">
+                <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center mx-auto">
+                  <Bed className="w-6 h-6" />
+                </div>
+                <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  Semester 2 Window Open
+                </div>
+                <h2 className="text-base font-bold text-[#0B1D33]">No Active On-Campus Room</h2>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  You are currently registered as a non-resident student. The accommodation application window for Semester 2 is now open. Submit your preferred halls and room type to request placement.
+                </p>
+                <div className="pt-2 flex justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('application')}
+                    className="px-4 py-2 rounded-lg bg-[#0B1D33] text-white text-xs font-semibold hover:bg-[#06101E]"
+                  >
+                    Apply for Hostel Room
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('off_campus')}
+                    className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200"
+                  >
+                    Explore Off-Campus
+                  </button>
+                </div>
               </div>
-            </div>
+            )
           ) : (
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Left 2 Cols: Room Primary Hero Card */}
@@ -987,52 +1128,63 @@ export function HostelsClient({
       {/* TAB 5: WARDEN ANNOUNCEMENTS */}
       {activeTab === 'warden' && (
         <div className="space-y-4 max-w-3xl mx-auto">
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex items-center justify-between">
+          <div className="bg-[#0B1D33] text-white p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
             <div>
-              <h2 className="text-base font-bold text-[#0B1D33]">Hostel Warden Bulletins</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Official notices from Hall Wardens, Matrons, and Dean of Students.
+              <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[#C59B27] text-[#0B1D33] mb-1">
+                Resident Scoped
+              </div>
+              <h2 className="text-base font-serif font-bold">Hostel Warden Bulletins</h2>
+              <p className="text-xs text-slate-300 mt-0.5">
+                {initialAllocation
+                  ? `Notices scoped to your residence (${initialAllocation.hallName}) and campus-wide memos.`
+                  : 'Campus-wide residential notices issued by the Dean of Students and Estates.'}
               </p>
             </div>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded bg-slate-100 text-slate-700 border border-slate-200">
-              {initialAnnouncements.length} Active Memos
+            <span className="text-xs font-mono font-bold px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-[#FCD34D] self-start sm:self-auto">
+              {initialAnnouncements.length} Memos Active
             </span>
           </div>
 
           <div className="space-y-3">
-            {initialAnnouncements.map((memo) => (
-              <div
-                key={memo.id}
-                className={`bg-white rounded-2xl border p-5 shadow-2xs space-y-3 transition ${
-                  memo.isImportant
-                    ? 'border-l-4 border-l-[#C59B27] border-slate-200'
-                    : 'border-slate-200'
-                }`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-xs sm:text-sm text-[#0B1D33]">{memo.title}</h3>
-                    {memo.isImportant && (
-                      <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-200">
-                        Priority
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] font-mono text-slate-500">
-                    {new Date(memo.publishedAt).toLocaleDateString('en-KE')}
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-700 leading-relaxed">{memo.content}</p>
-
-                <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 border-t border-slate-50">
-                  <span>Scope: <strong className="text-slate-800">{memo.hallScope}</strong></span>
-                  <span className="font-medium text-slate-700">
-                    Issued by: {memo.wardenName} ({memo.wardenRole})
-                  </span>
-                </div>
+            {initialAnnouncements.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-xs text-slate-500">
+                No active warden announcements for your hall at this time.
               </div>
-            ))}
+            ) : (
+              initialAnnouncements.map((memo) => (
+                <div
+                  key={memo.id}
+                  className={`bg-white rounded-2xl border p-5 shadow-2xs space-y-3 transition ${
+                    memo.isImportant
+                      ? 'border-l-4 border-l-[#C59B27] border-slate-200'
+                      : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-xs sm:text-sm text-[#0B1D33]">{memo.title}</h3>
+                      {memo.isImportant && (
+                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-200">
+                          Priority
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] font-mono text-slate-500">
+                      {new Date(memo.publishedAt).toLocaleDateString('en-KE')}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-700 leading-relaxed">{memo.content}</p>
+
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 border-t border-slate-50">
+                    <span>Scope: <strong className="text-slate-800">{memo.hallScope}</strong></span>
+                    <span className="font-medium text-slate-700">
+                      Issued by: {memo.wardenName} ({memo.wardenRole})
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}
@@ -1098,13 +1250,41 @@ export function HostelsClient({
             {filteredOffCampus.map((house) => (
               <div
                 key={house.id}
-                className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4 flex flex-col justify-between hover:border-[#C59B27] transition"
+                className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col justify-between hover:border-[#C59B27] transition"
               >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2">
+                <div>
+                  {/* Visual Photo Header */}
+                  <div className="h-44 w-full bg-slate-100 relative overflow-hidden border-b border-slate-100">
+                    {house.imageUrl ? (
+                      <img
+                        src={house.imageUrl}
+                        alt={house.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-400">
+                        <Home className="w-8 h-8" />
+                      </div>
+                    )}
+                    {/* Staff Verified Badge */}
+                    {house.isStaffVerified && (
+                      <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-md bg-[#0B1D33] text-[#FCD34D] shadow-sm border border-[#C59B27]/40">
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#C59B27]" />
+                        Staff Verified
+                      </div>
+                    )}
+                    {/* Price Overlay */}
+                    <div className="absolute bottom-2.5 right-2.5 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-md shadow-xs text-right border border-slate-200">
+                      <span className="text-xs font-bold font-mono text-[#0B1D33]">
+                        KES {house.monthlyRentKes.toLocaleString('en-KE')}
+                      </span>
+                      <span className="text-[9px] text-slate-500 block font-sans">/ month</span>
+                    </div>
+                  </div>
+
+                  <div className="p-5 space-y-3">
                     <div>
-                      <div className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 mb-1">
-                        <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                      <div className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-slate-500 mb-0.5">
                         {house.accreditationReference}
                       </div>
                       <h3 className="font-bold text-sm text-[#0B1D33]">{house.name}</h3>
@@ -1114,67 +1294,162 @@ export function HostelsClient({
                       </p>
                     </div>
 
-                    <div className="text-right shrink-0">
-                      <span className="text-sm font-bold text-[#0B1D33] font-mono">
-                        KES {house.monthlyRentKes.toLocaleString('en-KE')}
+                    <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between text-xs text-slate-700">
+                      <span>{Math.round(house.distanceFromCampusKm * 1000)}m from campus</span>
+                      <span className="font-semibold">{house.walkTimeMinutes} min walk</span>
+                      <span>Security: {house.securityRating}/5</span>
+                    </div>
+
+                    <div className="space-y-1 text-xs text-slate-600">
+                      <span className="font-semibold text-slate-800 block text-[11px]">
+                        Available Room Types:
                       </span>
-                      <span className="text-[10px] text-slate-400 block font-sans">/ month</span>
+                      <div className="flex flex-wrap gap-1">
+                        {house.roomTypesAvailable.map((rt, i) => (
+                          <span
+                            key={i}
+                            className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-medium"
+                          >
+                            {rt}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 flex items-center justify-between text-xs text-slate-700">
-                    <span>{house.distanceFromCampusKm * 1000}m from gate</span>
-                    <span className="font-semibold">{house.walkTimeMinutes} min walk</span>
-                    <span>Security: {house.securityRating}/5</span>
-                  </div>
-
-                  <div className="space-y-1 text-xs text-slate-600">
-                    <span className="font-semibold text-slate-800 block text-[11px]">
-                      Available Room Types:
-                    </span>
-                    <div className="flex flex-wrap gap-1">
-                      {house.roomTypesAvailable.map((rt, i) => (
-                        <span
-                          key={i}
-                          className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-medium"
-                        >
-                          {rt}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 text-xs text-slate-600">
-                    <span className="font-semibold text-slate-800 block text-[11px]">
-                      Key Amenities:
-                    </span>
-                    <div className="grid grid-cols-2 gap-1 text-[11px]">
-                      {house.amenities.slice(0, 4).map((amenity, i) => (
-                        <div key={i} className="flex items-center gap-1.5 truncate">
-                          <CheckCircle2 className="w-3 h-3 text-[#C59B27] shrink-0" />
-                          <span className="truncate">{amenity}</span>
-                        </div>
-                      ))}
+                    <div className="space-y-1 text-xs text-slate-600">
+                      <span className="font-semibold text-slate-800 block text-[11px]">
+                        Key Facilities:
+                      </span>
+                      <div className="grid grid-cols-2 gap-1 text-[11px]">
+                        {house.amenities.slice(0, 4).map((amenity, i) => (
+                          <div key={i} className="flex items-center gap-1.5 truncate">
+                            <CheckCircle2 className="w-3 h-3 text-[#C59B27] shrink-0" />
+                            <span className="truncate">{amenity}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                <div className="p-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                   <div>
-                    <span className="text-[10px] text-slate-400 block">Caretaker</span>
+                    <span className="text-[10px] text-slate-400 block">Landlord / Caretaker</span>
                     <span className="font-bold text-slate-800">{house.caretakerName}</span>
                   </div>
 
-                  <a
-                    href={`tel:${house.contactPhone}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0B1D33] text-white font-semibold hover:bg-[#06101E] transition"
-                  >
-                    <Phone className="w-3.5 h-3.5 text-[#FCD34D]" /> Call to Book
-                  </a>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReportingHouse(house);
+                        setScamReason('fraud_deposit');
+                        setScamDesc('');
+                        setReportSuccessMsg('');
+                      }}
+                      className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:text-red-700 hover:border-red-300 hover:bg-red-50 transition"
+                      title="Report listing for investigation"
+                    >
+                      <Flag className="w-3.5 h-3.5" />
+                    </button>
+
+                    <a
+                      href={`tel:${house.contactPhone}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0B1D33] text-white font-semibold hover:bg-[#06101E] transition"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-[#FCD34D]" /> Call
+                    </a>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Scam Report Modal */}
+          {reportingHouse && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-2xs z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+                <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+                  <div>
+                    <div className="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 uppercase tracking-wider mb-1">
+                      <Flag className="w-3 h-3" /> Scam Investigation
+                    </div>
+                    <h3 className="font-bold text-sm text-[#0B1D33]">
+                      Report {reportingHouse.name}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReportingHouse(null)}
+                    className="text-slate-400 hover:text-slate-700 text-sm font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {reportSuccessMsg ? (
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-4 rounded-xl text-xs font-medium space-y-1">
+                    <div className="flex items-center gap-2 font-bold">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      Report Logged
+                    </div>
+                    <p className="leading-relaxed">{reportSuccessMsg}</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleReportListing} className="space-y-4">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1">
+                        Reason for Report
+                      </label>
+                      <select
+                        value={scamReason}
+                        onChange={(e) => setScamReason(e.target.value)}
+                        className="w-full text-xs rounded-lg border border-slate-300 p-2.5 focus:border-[#0B1D33] outline-hidden bg-white"
+                      >
+                        <option value="fraud_deposit">Deposit fraud or advance payment extortion</option>
+                        <option value="inaccurate_photos">False photos, amenities, or nonexistent building</option>
+                        <option value="overpriced">Price quoted on arrival higher than listed</option>
+                        <option value="unresponsive_landlord">Unresponsive landlord or refused student inspection</option>
+                        <option value="security_concern">Security hazard or compromised perimeter</option>
+                        <option value="other">Other compliance violation</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1">
+                        Specific Details
+                      </label>
+                      <textarea
+                        rows={3}
+                        required
+                        placeholder="Provide details of the incident or discrepancy to help the Accommodation Office investigate..."
+                        value={scamDesc}
+                        onChange={(e) => setScamDesc(e.target.value)}
+                        className="w-full text-xs rounded-lg border border-slate-300 p-2.5 focus:border-[#0B1D33] outline-hidden"
+                      />
+                    </div>
+
+                    <div className="pt-2 flex justify-end gap-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setReportingHouse(null)}
+                        className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submittingReport || !scamDesc.trim()}
+                        className="px-4 py-2 rounded-lg bg-red-700 text-white font-semibold hover:bg-red-800 transition disabled:opacity-50"
+                      >
+                        {submittingReport ? 'Submitting Report...' : 'Submit Report'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
