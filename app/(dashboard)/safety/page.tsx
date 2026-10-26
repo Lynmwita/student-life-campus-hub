@@ -5,6 +5,8 @@ import {
 import { SafetyClient } from './safety-client';
 import { AppHeader } from '@/components/shared/app-header';
 
+export const instant = false;
+
 export const metadata = {
   title: 'Community, Safety & Privacy Centre | Student Life Hub',
   description: 'Emergency SOS alerts, verified lost and found custody, and statutory KDPA data protection exports.',
