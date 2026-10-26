@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ke.ac.summit.campushub.test",
+      "sha256_cert_fingerprints": [
+        "3A:F0:36:78:B4:D9:1A:04:1B:36:A2:90:30:59:29:47:0F:00:95:2B:64:95:46:EB:6A:0E:79:A4:64:AF:AD:D7"
+      ]
+    }
+  }
+]

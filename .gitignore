@@ -24,6 +24,12 @@
 # misc
 .DS_Store
 *.pem
+*.keystore
+*.jks
+*.apk
+*.aab
+.bubblewrap/
+twa-build/
 
 # debug
 npm-debug.log*
