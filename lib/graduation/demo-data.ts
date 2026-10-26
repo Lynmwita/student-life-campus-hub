@@ -118,7 +118,7 @@ export const DEMO_TRANSCRIPT_REQUESTS: TranscriptRequest[] = [
     status: 'dispatched',
     requestedAt: '2026-10-18T10:14:00Z',
     dispatchedAt: '2026-10-20T14:30:00Z',
-    notes: 'Official electronic certificate with cryptographic registrar seal delivered to admissions portal.',
+    notes: 'Official electronic certificate with verified registrar seal delivered to admissions portal.',
   },
   {
     id: 'trq-02',

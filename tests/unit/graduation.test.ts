@@ -179,7 +179,7 @@ describe('Graduation: Parent & Sponsor Statement', () => {
 });
 
 describe('Design Rules & Integrity', () => {
-  it('enforces strictly zero em dashes and zero emojis across graduation and sponsor files', () => {
+  it('enforces strictly zero em dashes, zero emojis, and zero cryptographic claims across graduation and sponsor files', () => {
     const files = [
       'lib/graduation/types.ts',
       'lib/graduation/demo-data.ts',
@@ -197,7 +197,23 @@ describe('Design Rules & Integrity', () => {
         const content = fs.readFileSync(fullPath, 'utf8');
         expect(content).not.toContain('\u2014'); // no em dash
         expect(emojiRegex.test(content)).toBe(false); // no emoji
+        expect(content.toLowerCase()).not.toContain('cryptographic'); // no cryptographic claims
       }
     });
+  });
+
+  it('honesty rule: graduation action contains zero invented 36-unit rules or hardcoded 2023 admission dates', () => {
+    const graduationActionPath = path.resolve(process.cwd(), 'lib/actions/graduation.ts');
+    const content = fs.readFileSync(graduationActionPath, 'utf8');
+
+    // Registrar clearance must not use invented 36 unit threshold
+    expect(content).not.toContain('36');
+    expect(content).not.toContain('passedUnits >= 36');
+
+    // Admission letter must not use hardcoded 2023-09-01
+    expect(content).not.toContain('2023-09-01');
+
+    // Cleared timestamps must never default to now
+    expect(content).not.toContain('clearedAt: new Date().toISOString()');
   });
 });

@@ -93,63 +93,135 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
     // 2. Query fee records for Finance department clearance
     const { data: feeRows } = await supabase
       .from('uams_academic_records')
-      .select('data')
+      .select('data, source_updated_at')
       .eq('student_id', user.id)
       .eq('kind', 'fee_statement')
       .order('source_updated_at', { ascending: false });
 
     let feeBalance = 0;
+    let financeClearedAt: string | undefined = undefined;
     if (feeRows && feeRows.length > 0) {
       feeBalance = feeRows[0].data?.balance ?? 0;
+      if (feeBalance <= 0) {
+        financeClearedAt =
+          feeRows[0].data?.cleared_at ||
+          feeRows[0].data?.settled_at ||
+          feeRows[0].source_updated_at ||
+          undefined;
+      }
     }
 
     // 3. Query library records for Library department clearance
     const { data: loanRows } = await supabase
       .from('uams_academic_records')
-      .select('data')
+      .select('data, source_updated_at')
       .eq('student_id', user.id)
       .eq('kind', 'library_loan');
 
     const activeOrOverdueLoans = (loanRows || []).filter(
       (r: any) => r.data?.status === 'overdue' || r.data?.status === 'active'
     );
+    const hasLibraryLiability = activeOrOverdueLoans.length > 0;
+    const libraryClearedAt = (!hasLibraryLiability && loanRows && loanRows.length > 0)
+      ? (loanRows[0].data?.cleared_at || loanRows[0].source_updated_at || undefined)
+      : undefined;
 
     // 4. Query hostel allocation for Residence clearance
     const { data: hostelRows } = await supabase
       .from('uams_academic_records')
-      .select('data')
+      .select('data, source_updated_at')
       .eq('student_id', user.id)
       .eq('kind', 'hostel_allocation');
 
-    const hasHostelAllocation = hostelRows && hostelRows.length > 0;
-    const isHostelCheckedOut =
-      hasHostelAllocation &&
-      (hostelRows[0].data?.status === 'checked_out' ||
-        hostelRows[0].data?.clearance_status === 'cleared');
+    const hasHostelRecord = Boolean(hostelRows && hostelRows.length > 0);
+    const hostelData = hasHostelRecord ? hostelRows![0].data : null;
+    const isKeyReturned = Boolean(hostelData?.key_returned || hostelData?.key_handed_over);
+    const isRoomInventoryCleared = Boolean(hostelData?.room_inventory_cleared || hostelData?.inventory_inspected);
+    const isHostelFullyCleared =
+      hasHostelRecord &&
+      ((isKeyReturned && isRoomInventoryCleared) ||
+        hostelData?.clearance_status === 'cleared' ||
+        hostelData?.status === 'checked_out');
+
+    const hostelClearedAt = isHostelFullyCleared
+      ? (hostelData?.cleared_at || hostelData?.checkout_date || hostelRows![0].source_updated_at || undefined)
+      : undefined;
+
+    let hostelStatus: 'cleared' | 'pending' | 'blocked' = 'pending';
+    let hostelBlockingReason: string | undefined = undefined;
+
+    if (!hasHostelRecord) {
+      hostelStatus = 'pending';
+      hostelBlockingReason = 'No residential record found on institutional feed. Housing clearance is not yet assessed.';
+    } else if (isHostelFullyCleared) {
+      hostelStatus = 'cleared';
+      hostelBlockingReason = undefined;
+    } else {
+      hostelStatus = 'pending';
+      hostelBlockingReason = 'Room key handover or room inventory inspection unverified at Hall Warden desk.';
+    }
 
     // 5. Query sports equipment clearance
     const { data: sportsRows } = await supabase
       .from('uams_academic_records')
-      .select('data')
+      .select('data, source_updated_at')
       .eq('student_id', user.id)
       .eq('kind', 'sports_clearance');
 
-    const isSportsCleared =
-      sportsRows &&
-      sportsRows.length > 0 &&
-      sportsRows[0].data?.status === 'cleared';
+    const hasSportsRecord = Boolean(sportsRows && sportsRows.length > 0);
+    const sportsData = hasSportsRecord ? sportsRows![0].data : null;
+    const isEquipmentReturned = Boolean(sportsData?.equipment_returned || sportsData?.gear_returned);
+    const isSportsFullyCleared =
+      hasSportsRecord &&
+      (isEquipmentReturned || sportsData?.clearance_status === 'cleared' || sportsData?.status === 'cleared');
+
+    const sportsClearedAt = isSportsFullyCleared
+      ? (sportsData?.cleared_at || sportsData?.signoff_date || sportsRows![0].source_updated_at || undefined)
+      : undefined;
+
+    let sportsStatus: 'cleared' | 'pending' | 'blocked' = 'pending';
+    let sportsBlockingReason: string | undefined = undefined;
+
+    if (!hasSportsRecord) {
+      sportsStatus = 'pending';
+      sportsBlockingReason = 'No sports equipment record found on institutional feed. Equipment return is not yet assessed.';
+    } else if (isSportsFullyCleared) {
+      sportsStatus = 'cleared';
+      sportsBlockingReason = undefined;
+    } else {
+      sportsStatus = 'pending';
+      sportsBlockingReason = 'Physical sports equipment return or athletic kit inspection unverified.';
+    }
 
     // 6. Query Senate graduation clearance
     const { data: senateRows } = await supabase
       .from('uams_academic_records')
-      .select('data')
+      .select('data, source_updated_at')
       .eq('student_id', user.id)
       .eq('kind', 'graduation_clearance');
 
+    const hasSenateRecord = Boolean(senateRows && senateRows.length > 0);
+    const senateData = hasSenateRecord ? senateRows![0].data : null;
     const isSenateApproved =
-      senateRows &&
-      senateRows.length > 0 &&
-      senateRows[0].data?.status === 'cleared';
+      hasSenateRecord &&
+      (senateData?.status === 'cleared' ||
+        senateData?.senate_approved === true ||
+        senateData?.clearance_status === 'cleared');
+
+    const senateClearedAt = isSenateApproved
+      ? (senateData?.cleared_at || senateData?.senate_approval_date || senateRows![0].source_updated_at || undefined)
+      : undefined;
+
+    let registrarStatus: 'cleared' | 'pending' | 'blocked' = 'pending';
+    let registrarBlockingReason: string | undefined = undefined;
+
+    if (isSenateApproved) {
+      registrarStatus = 'cleared';
+      registrarBlockingReason = undefined;
+    } else {
+      registrarStatus = 'pending';
+      registrarBlockingReason = 'Pending Senate Academic Board graduation audit and graduation list confirmation.';
+    }
 
     // Build real departments without hardcoded fake approvals
     const departments: ClearanceDepartmentItem[] = [
@@ -157,12 +229,11 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
         id: 'real-dept-lib',
         departmentName: 'University Library Commons',
         category: 'library',
-        status: activeOrOverdueLoans.length > 0 ? 'blocked' : 'cleared',
-        blockingReason:
-          activeOrOverdueLoans.length > 0
-            ? `${activeOrOverdueLoans.length} active or overdue book loan(s) pending return.`
-            : undefined,
-        clearedAt: activeOrOverdueLoans.length === 0 ? new Date().toISOString() : undefined,
+        status: hasLibraryLiability ? 'blocked' : 'cleared',
+        blockingReason: hasLibraryLiability
+          ? `${activeOrOverdueLoans.length} active or overdue book loan(s) pending return.`
+          : undefined,
+        clearedAt: hasLibraryLiability ? undefined : libraryClearedAt,
         resolutionActionUrl: '/library',
         resolutionActionLabel: 'Return or Renew at Library',
       },
@@ -170,13 +241,9 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
         id: 'real-dept-res',
         departmentName: 'Halls of Residence & Housing',
         category: 'hostels',
-        status: isHostelCheckedOut ? 'cleared' : 'pending',
-        blockingReason: isHostelCheckedOut
-          ? undefined
-          : hasHostelAllocation
-          ? 'Room key handover and room inventory inspection pending at Hall Warden desk.'
-          : 'No residential clearance record on file. Verify non-resident status with housing office.',
-        clearedAt: isHostelCheckedOut ? new Date().toISOString() : undefined,
+        status: hostelStatus,
+        blockingReason: hostelBlockingReason,
+        clearedAt: hostelClearedAt,
         resolutionActionUrl: '/hostels',
         resolutionActionLabel: 'Check Residence Details',
       },
@@ -184,11 +251,9 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
         id: 'real-dept-sport',
         departmentName: 'Sports & Recreation Department',
         category: 'sports',
-        status: isSportsCleared ? 'cleared' : 'pending',
-        blockingReason: isSportsCleared
-          ? undefined
-          : 'Sports equipment return and facility clearance pending departmental audit.',
-        clearedAt: isSportsCleared ? new Date().toISOString() : undefined,
+        status: sportsStatus,
+        blockingReason: sportsBlockingReason,
+        clearedAt: sportsClearedAt,
       },
       {
         id: 'real-dept-fin',
@@ -199,7 +264,7 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
           feeBalance > 0
             ? `Outstanding fee balance: KES ${feeBalance.toLocaleString()}. Must be fully settled for clearance.`
             : undefined,
-        clearedAt: feeBalance <= 0 ? new Date().toISOString() : undefined,
+        clearedAt: feeBalance <= 0 ? financeClearedAt : undefined,
         resolutionActionUrl: '/fees',
         resolutionActionLabel: 'View & Settle Outstanding Fees',
       },
@@ -207,11 +272,9 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
         id: 'real-dept-reg',
         departmentName: 'Office of the Academic Registrar',
         category: 'registrar',
-        status: isSenateApproved ? 'cleared' : 'pending',
-        blockingReason: isSenateApproved
-          ? undefined
-          : 'Pending Senate Academic Board graduation audit and graduation list confirmation.',
-        clearedAt: isSenateApproved ? new Date().toISOString() : undefined,
+        status: registrarStatus,
+        blockingReason: registrarBlockingReason,
+        clearedAt: senateClearedAt,
         resolutionActionUrl: '/exams',
         resolutionActionLabel: 'Check Exam Schedule & Transcripts',
       },
@@ -300,13 +363,13 @@ export async function getVaultDocumentsAction(): Promise<VaultResponse> {
 
     const { data: feeRows } = await supabase
       .from('uams_academic_records')
-      .select('data')
+      .select('data, source_updated_at')
       .eq('student_id', user.id)
       .eq('kind', 'fee_statement');
 
     const { data: gradeRows } = await supabase
       .from('uams_academic_records')
-      .select('data')
+      .select('data, source_updated_at')
       .eq('student_id', user.id)
       .eq('kind', 'grade');
 
@@ -314,13 +377,27 @@ export async function getVaultDocumentsAction(): Promise<VaultResponse> {
     const isFullyCleared = clrRes.summary?.isFullyCleared ?? false;
     const admissionNo = clrRes.summary?.admissionNumber || 'ADM';
 
-    const hasMembership = !!membership?.registration_number;
-    const hasFeeRecords = !!(feeRows && feeRows.length > 0);
-    const hasGradeRecords = !!(gradeRows && gradeRows.length > 0);
+    const hasMembership = Boolean(membership && membership.registration_number && membership.created_at);
+    const hasFeeRecords = Boolean(feeRows && feeRows.length > 0);
+    const hasGradeRecords = Boolean(gradeRows && gradeRows.length > 0);
 
-    const admissionDate = membership?.created_at
+    const admissionDate = hasMembership && membership?.created_at
       ? membership.created_at.split('T')[0]
-      : '2023-09-01';
+      : 'Unrecorded';
+
+    const feeIssuedDate = hasFeeRecords && feeRows && feeRows.length > 0
+      ? (feeRows[0].data?.statement_date ||
+          feeRows[0].data?.issued_date ||
+          feeRows[0].source_updated_at?.split('T')[0] ||
+          new Date().toISOString().split('T')[0])
+      : 'Pending';
+
+    const examIssuedDate = hasGradeRecords && gradeRows && gradeRows.length > 0
+      ? (gradeRows[0].data?.exam_date ||
+          gradeRows[0].data?.published_at ||
+          gradeRows[0].source_updated_at?.split('T')[0] ||
+          new Date().toISOString().split('T')[0])
+      : 'Pending';
 
     const documents: VaultDocument[] = [
       {
@@ -332,15 +409,15 @@ export async function getVaultDocumentsAction(): Promise<VaultResponse> {
         issuedDate: admissionDate,
         fileFormat: 'PDF',
         isAvailable: hasMembership,
-        unavailableReason: hasMembership ? undefined : 'No university admission record on institutional registry.',
+        unavailableReason: hasMembership ? undefined : 'No active university membership record found on institutional registry.',
       },
       {
         id: 'real-doc-fee',
         title: 'Semester Fee Statement & Payment Receipt',
         type: 'fee_receipt',
-        description: 'Certified financial statement showing billed tuition, campus amenities, HELB funding, and M-Pesa receipts.',
+        description: 'Financial statement showing billed tuition, campus amenities, HELB funding, and M-Pesa receipts.',
         referenceNumber: `STMT-2026-${admissionNo.replace(/[^A-Za-z0-9]/g, '')}`,
-        issuedDate: new Date().toISOString().split('T')[0],
+        issuedDate: feeIssuedDate,
         fileFormat: 'PDF',
         isAvailable: hasFeeRecords,
         unavailableReason: hasFeeRecords ? undefined : 'No fee statements recorded on registry ledger.',
@@ -351,7 +428,7 @@ export async function getVaultDocumentsAction(): Promise<VaultResponse> {
         type: 'provisional_transcript',
         description: 'Consolidated semester coursework and examination score summary endorsed by Departmental Examination Board.',
         referenceNumber: `EXAM-SLIP-2026-${admissionNo.replace(/[^A-Za-z0-9]/g, '')}`,
-        issuedDate: new Date().toISOString().split('T')[0],
+        issuedDate: examIssuedDate,
         fileFormat: 'PDF',
         isAvailable: hasGradeRecords,
         unavailableReason: hasGradeRecords ? undefined : 'No examination results recorded on registry ledger.',

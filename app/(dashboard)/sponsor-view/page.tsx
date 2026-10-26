@@ -7,7 +7,7 @@ import Link from 'next/link';
 
 export const metadata = {
   title: 'Parent & Sponsor Statement | Summit Metropolitan University',
-  description: 'Verified fee balances, payment instructions, and academic progress for university sponsors.',
+  description: 'Provisional demonstration fee balances, payment instructions, and academic standing for university sponsors.',
 };
 
 export default async function SponsorViewPage() {
@@ -42,6 +42,17 @@ export default async function SponsorViewPage() {
           </div>
         )}
 
+        {/* Provisional Demonstration Advisory Banner */}
+        <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-xs text-amber-950 space-y-1">
+          <div className="flex items-center gap-2 font-semibold text-[#0B1D33]">
+            <Receipt className="w-4 h-4 text-[#C59B27]" />
+            <span>Provisional Demonstration Payment Channels</span>
+          </div>
+          <p className="text-xs leading-relaxed text-slate-700">
+            Payment channels, Paybill numbers, and banking details shown below are demonstration entries for pilot evaluation. Do not transfer actual student fees to these demonstration numbers. Confirm official university bank accounts directly with the Finance Office before making payments.
+          </p>
+        </div>
+
         <div className="border-b border-[#C59B27]/20 pb-4">
           <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
             <Link href="/dashboard" className="hover:underline">
@@ -52,10 +63,10 @@ export default async function SponsorViewPage() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-serif font-bold text-[#0B1D33] tracking-tight flex items-center gap-2.5">
             <Users className="w-7 h-7 text-[#C59B27]" />
-            Official Parent &amp; Sponsor Statement
+            Parent &amp; Sponsor Statement
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-1">
-            Certified statement of fees, payment account numbers, and current academic standing.
+            Read-only summary of student academic standing and provisional demonstration payment instructions.
           </p>
         </div>
 
@@ -161,6 +172,10 @@ export default async function SponsorViewPage() {
                   <strong className="font-mono text-[#0B1D33]">
                     {summary.feeSummary.bankDetails.accountNumber}
                   </strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Branch:</span>
+                  <span className="text-slate-700">{summary.feeSummary.bankDetails.branch}</span>
                 </div>
               </div>
             </div>

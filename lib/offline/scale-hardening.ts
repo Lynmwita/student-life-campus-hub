@@ -84,7 +84,7 @@ export function handleOfflineWriteAttempt(
     return {
       success: false,
       queued: false,
-      error: 'Cannot transmit SOS dispatch without network connectivity. Call campus security or dial national emergency 999/112.',
+      error: 'Cannot transmit SOS dispatch without network connectivity. Use provisional campus lines below or dial national emergency 999/112.',
       securityHotline: '+254 700 000 999 (Provisional Pilot Line)',
     };
   }
@@ -116,7 +116,7 @@ export function handleOfflineWriteAttempt(
       success: false,
       queued: true,
       queueId,
-      message: `Offline mode: Action saved locally under queue reference ${queueId}. It will be submitted automatically when connectivity is restored.`,
+      message: `Offline mode: Action saved locally under queue reference ${queueId}. It is saved locally and must be submitted when back online.`,
     };
   } catch {
     return {

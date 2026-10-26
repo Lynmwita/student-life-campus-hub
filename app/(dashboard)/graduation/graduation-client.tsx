@@ -91,8 +91,7 @@ export function GraduationClient({
           faculty: summary?.faculty || 'Faculty Division',
           campus: summary?.campus || 'Main Campus',
         },
-        certificationNotice: 'Certified official university digital document generated from institutional UAMS registry records.',
-        verificationUrl: `https://hub.smu.ac.ke/verify/${doc.referenceNumber}`,
+        registryNotice: 'Official university digital record exported from institutional UAMS registry records for student reference.',
       };
 
       const blob = new Blob([JSON.stringify(docPayload, null, 2)], {
@@ -414,10 +413,10 @@ export function GraduationClient({
               </div>
               <div className="space-y-1">
                 <h3 className="font-serif font-bold text-base text-blue-950">
-                  Certified Academic Documents Vault
+                  Official Academic Documents Vault
                 </h3>
                 <p className="text-xs text-slate-700 leading-relaxed max-w-2xl">
-                  Statutory educational documents, fee payment statements, and examination transcripts generated directly from the university registry. Verified with official cryptographic reference numbers.
+                  Statutory educational documents, fee payment statements, and examination transcripts generated directly from university registry records. Formatted with official university registry reference numbers.
                 </p>
               </div>
             </div>
@@ -441,7 +440,7 @@ export function GraduationClient({
                           : 'bg-amber-100 text-amber-900'
                       }`}
                     >
-                      {doc.isAvailable ? 'Certified' : 'Unavailable'}
+                      {doc.isAvailable ? 'Available' : 'Unavailable'}
                     </span>
                   </div>
 
@@ -472,7 +471,7 @@ export function GraduationClient({
                     className="bg-[#0B1D33] hover:bg-[#06101E] text-white text-xs h-8"
                   >
                     <Download className="w-3.5 h-3.5 mr-1.5 text-[#FCD34D]" />
-                    <span>{downloadingDocId === doc.id ? 'Exporting...' : 'Download Certified Copy'}</span>
+                    <span>{downloadingDocId === doc.id ? 'Exporting...' : 'Download Document'}</span>
                   </Button>
                 </div>
               </Card>

@@ -82,6 +82,21 @@ export function SafetyClient({
     setSosTriggering(true);
     setSosResult(null);
 
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setSosTriggering(false);
+      setSosResult({
+        success: false,
+        ticketNumber: 'SOS-OFFLINE',
+        dispatchedTo: 'Campus Security',
+        campusSecurityPhone: '+254 700 000 999 (Provisional Pilot Line)',
+        campusHealthCentrePhone: '+254 700 000 911 (Provisional Pilot Line)',
+        studentLocation: sosLocation,
+        dispatchedAt: new Date().toISOString(),
+        message: 'Network offline: Cannot transmit digital SOS dispatch without network connectivity. Please call provisional campus lines directly or dial national emergency 999/112.',
+      });
+      return;
+    }
+
     try {
       const res = await triggerEmergencySosAction(sosLocation, sosCategory, sosNotes);
       setSosResult(res);
@@ -90,11 +105,11 @@ export function SafetyClient({
         success: false,
         ticketNumber: 'SOS-LOCAL',
         dispatchedTo: 'Campus Security',
-        campusSecurityPhone: '+254 700 000 999',
-        campusHealthCentrePhone: '+254 700 000 911',
+        campusSecurityPhone: '+254 700 000 999 (Provisional Pilot Line)',
+        campusHealthCentrePhone: '+254 700 000 911 (Provisional Pilot Line)',
         studentLocation: sosLocation,
         dispatchedAt: new Date().toISOString(),
-        message: 'Could not log online ticket. Please call campus security immediately on +254 700 000 999.',
+        message: 'Could not log online ticket due to network interruption. Please call provisional campus emergency lines immediately on +254 700 000 999.',
       });
     } finally {
       setSosTriggering(false);
@@ -302,7 +317,7 @@ export function SafetyClient({
                   Triggering an SOS immediately logs a Priority 1 urgent alert with the Campus Security Control Room and duty residential wardens. It notifies campus staff responders to your verified location.
                 </p>
                 <p className="text-[11px] font-mono text-rose-800 pt-1">
-                  Institutional Notice: This feature alerts on-campus staff responders. For external municipal services, use verified hotlines below.
+                  Institutional Notice: This feature alerts on-campus staff responders. For external municipal services, use provisional lines below.
                 </p>
               </div>
             </div>
