@@ -152,60 +152,51 @@ export default function LoginPage() {
           </CardFooter>
         </Card>
 
-        {/* Pilot Inspection Demo Credentials */}
-        {(process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true" || true) && (
+        {/* Pilot Inspection Demo Credentials - Strictly OFF in production builds */}
+        {process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true" && (
           <div className="mt-6 p-4 rounded-xl border border-[#C59B27]/30 bg-white/70 backdrop-blur-xs">
             <div className="flex items-center justify-between mb-2.5">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-[#C59B27]">
-                Pilot Demo Access
+                Pilot Inspection Accounts
               </span>
               <span className="text-[10px] text-slate-400 font-mono">SMU Pilot Node</span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
-                onClick={() => fillDemo("pilot.student@summit.ac.ke", "StudentPassword123!")}
-                className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors col-span-2"
-              >
-                <div className="font-semibold text-[#0B1D33]">Pilot Student (Evaluation Account)</div>
-                <div className="text-[10px] text-slate-500 truncate">pilot.student@summit.ac.ke</div>
-                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Pilot Access • Password: StudentPassword123! • /dashboard</div>
-              </button>
-              <button
-                type="button"
                 onClick={() => fillDemo("alex.mutua@summit.ac.ke", "StudentPassword123!")}
                 className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
               >
-                <div className="font-semibold text-[#0B1D33]">Active Student</div>
+                <div className="font-semibold text-[#0B1D33]">Student Demo</div>
                 <div className="text-[10px] text-slate-500 truncate">alex.mutua@summit.ac.ke</div>
-                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Full Ledger • /dashboard</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillDemo("admin@summit.ac.ke", "AdminPassword123!")}
-                className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
-              >
-                <div className="font-semibold text-[#0B1D33]">Admin Demo</div>
-                <div className="text-[10px] text-slate-500 truncate">admin@summit.ac.ke</div>
-                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Super Admin • /admin</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillDemo("registrar@summit.ac.ke", "StaffPassword123!")}
-                className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
-              >
-                <div className="font-semibold text-[#0B1D33]">Registrar Demo</div>
-                <div className="text-[10px] text-slate-500 truncate">registrar@summit.ac.ke</div>
-                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Academic Affairs • Notice Ops</div>
+                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Active Student • /dashboard</div>
               </button>
               <button
                 type="button"
                 onClick={() => fillDemo("student@summit.ac.ke", "StudentPassword123!")}
                 className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
               >
-                <div className="font-semibold text-[#0B1D33]">Onboarding Flow</div>
+                <div className="font-semibold text-[#0B1D33]">New Student</div>
                 <div className="text-[10px] text-slate-500 truncate">student@summit.ac.ke</div>
-                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">New Student • 3-Step Flow</div>
+                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Onboarding Flow • /onboarding</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemo("registrar@summit.ac.ke", "StaffPassword123!")}
+                className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
+              >
+                <div className="font-semibold text-[#0B1D33]">Academic Registrar</div>
+                <div className="text-[10px] text-slate-500 truncate">registrar@summit.ac.ke</div>
+                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Academic Affairs • Notice Ops</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemo("admin@summit.ac.ke", "AdminPassword123!")}
+                className="text-left p-2.5 rounded-lg border border-[#C59B27]/20 hover:border-[#C59B27] bg-[#F8FAFC] transition-colors"
+              >
+                <div className="font-semibold text-[#0B1D33]">System Admin</div>
+                <div className="text-[10px] text-slate-500 truncate">admin@summit.ac.ke</div>
+                <div className="text-[9px] text-[#C59B27] mt-0.5 font-mono">Full Systems • /admin</div>
               </button>
             </div>
           </div>

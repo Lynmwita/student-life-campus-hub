@@ -23,26 +23,6 @@ import {
 } from "@/lib/security/rate-limit";
 
 const DEMO_ACCOUNTS: Record<string, { role: string; redirectUrl: string; password: string }> = {
-  "pilot.student@summit.ac.ke": {
-    role: "student",
-    redirectUrl: "/dashboard",
-    password: "StudentPassword123!",
-  },
-  "pilot.student@smu.ac.ke": {
-    role: "student",
-    redirectUrl: "/dashboard",
-    password: "StudentPassword123!",
-  },
-  "student-demo-faith@smu.ac.ke": {
-    role: "student",
-    redirectUrl: "/dashboard",
-    password: "StudentPassword123!",
-  },
-  "faith.wanjiku@summit.ac.ke": {
-    role: "student",
-    redirectUrl: "/dashboard",
-    password: "StudentPassword123!",
-  },
   "student@summit.ac.ke": {
     role: "student",
     redirectUrl: "/onboarding",
@@ -130,47 +110,25 @@ export async function loginAction(formData: FormData): Promise<ActionResponse> {
     // Network or placeholder error, fall through to check demo credentials
   }
 
-  // Allow fallback authentication for known demo/pilot accounts if Supabase Auth encounters schema errors or unseeded status
+  // Allow fallback authentication for known demo accounts ONLY in non-production or when explicitly enabled
   const allowDemoFallback =
     process.env.NEXT_PUBLIC_ENABLE_DEMO_AUTH === "true" ||
-    process.env.NODE_ENV !== "production" ||
-    Boolean(demoAccount || emailLower.includes("pilot") || emailLower.includes("student"));
+    process.env.NODE_ENV !== "production";
 
-  if (allowDemoFallback) {
-    if (demoAccount && validated.data.password === demoAccount.password) {
-      resetRateLimit(`login:${ip}`);
-      const cookieStore = await cookies();
-      cookieStore.set("smu_demo_session", emailLower, {
-        path: "/",
-        maxAge: 60 * 60 * 24,
-        sameSite: "lax",
-      });
-      cookieStore.set("smu_demo_role", demoAccount.role, {
-        path: "/",
-        maxAge: 60 * 60 * 24,
-        sameSite: "lax",
-      });
-      redirect(demoAccount.redirectUrl);
-    }
-
-    if (
-      (emailLower.includes("student") || emailLower.includes("pilot")) &&
-      validated.data.password === "StudentPassword123!"
-    ) {
-      resetRateLimit(`login:${ip}`);
-      const cookieStore = await cookies();
-      cookieStore.set("smu_demo_session", emailLower, {
-        path: "/",
-        maxAge: 60 * 60 * 24,
-        sameSite: "lax",
-      });
-      cookieStore.set("smu_demo_role", "student", {
-        path: "/",
-        maxAge: 60 * 60 * 24,
-        sameSite: "lax",
-      });
-      redirect("/dashboard");
-    }
+  if (allowDemoFallback && demoAccount && validated.data.password === demoAccount.password) {
+    resetRateLimit(`login:${ip}`);
+    const cookieStore = await cookies();
+    cookieStore.set("smu_demo_session", emailLower, {
+      path: "/",
+      maxAge: 60 * 60 * 24,
+      sameSite: "lax",
+    });
+    cookieStore.set("smu_demo_role", demoAccount.role, {
+      path: "/",
+      maxAge: 60 * 60 * 24,
+      sameSite: "lax",
+    });
+    redirect(demoAccount.redirectUrl);
   }
 
   return {

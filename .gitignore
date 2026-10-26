@@ -27,6 +27,7 @@
 *.keystore
 *.jks
 *.apk
+!public/downloads/*.apk
 *.aab
 .bubblewrap/
 twa-build/
