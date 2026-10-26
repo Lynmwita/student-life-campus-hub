@@ -117,16 +117,16 @@ export function AppHeader({
             <div className="w-9 h-9 rounded-lg bg-[#06101E] border border-[#C59B27]/40 flex items-center justify-center text-[#FCD34D] transition-transform group-hover:scale-105">
               <GraduationCap className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="font-serif font-bold text-sm text-white leading-tight">
+            <div suppressHydrationWarning>
+              <div className="flex items-center gap-1.5" suppressHydrationWarning>
+                <h1 className="font-serif font-bold text-sm text-white leading-tight" suppressHydrationWarning>
                   {universityName}
                 </h1>
                 <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-[#C59B27]/25 text-[#FCD34D] border border-[#C59B27]/50 tracking-wider uppercase">
                   Internal Test Build
                 </span>
               </div>
-              <p className="text-[11px] text-slate-300 flex items-center gap-1.5 font-sans">
+              <p className="text-[11px] text-slate-300 flex items-center gap-1.5 font-sans" suppressHydrationWarning>
                 <MapPin className="w-3 h-3 text-[#FCD34D]" /> {campusName}
               </p>
             </div>

@@ -1,8 +1,9 @@
-const STATIC_CACHE='campus-hub-static-v3';
+const STATIC_CACHE='campus-hub-static-v5';
 const PRECACHE_ASSETS=['/offline.html','/icons/icon-192x192.png','/icons/icon-512x512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(STATIC_CACHE).then(cache=>Promise.allSettled(PRECACHE_ASSETS.map(url=>cache.add(url)))).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('campus-hub-')&&k!==STATIC_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{const {request}=event;const url=new URL(request.url);if(url.origin!==self.location.origin||request.method!=='GET')return;
+if(self.location.hostname==='localhost'||self.location.hostname==='127.0.0.1')return;
 if(request.mode==='navigate'){event.respondWith(fetch(request).catch(()=>caches.match('/offline.html').then(r=>r||new Response('Offline',{status:503}))));return;}
 const publicStatic=url.pathname.startsWith('/_next/static/')||url.pathname.startsWith('/icons/')||url.pathname==='/offline.html';
 if(!publicStatic||url.search||request.headers.has('authorization')||request.headers.has('rsc'))return;

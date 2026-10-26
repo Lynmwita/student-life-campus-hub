@@ -1,8 +1,11 @@
 import { Suspense } from 'react';
+import { connection } from 'next/server';
 import { AppHeader } from '@/components/shared/app-header';
 import { getStudentFeeStatementsAction, getStudentPaymentHistoryAction } from '@/lib/actions/fees';
 import { FeeStatementClient } from './fee-statement-client';
 import { redirect } from 'next/navigation';
+
+export const instant = false;
 
 export const metadata = {
   title: 'Fees & Payment Receipts | Student Life & Campus Hub',
@@ -30,6 +33,7 @@ export default function FeeStatementPage() {
 }
 
 async function FeeStatementLoader() {
+  await connection();
   const [feeResult, paymentResult] = await Promise.all([
     getStudentFeeStatementsAction(),
     getStudentPaymentHistoryAction(),

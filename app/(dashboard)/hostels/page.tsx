@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { connection } from 'next/server';
 import { AppHeader } from '@/components/shared/app-header';
 import {
   getMyRoomAllocationAction,
@@ -10,6 +11,8 @@ import {
 } from '@/lib/actions/hostels';
 import { HostelsClient } from './hostels-client';
 import { redirect } from 'next/navigation';
+
+export const instant = false;
 
 export const metadata = {
   title: 'Hostels & Residence | Student Life & Campus Hub',
@@ -37,6 +40,7 @@ export default function HostelsPage() {
 }
 
 async function HostelsLoader() {
+  await connection();
   const [
     allocResult,
     ticketsResult,
