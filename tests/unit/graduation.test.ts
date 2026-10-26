@@ -54,18 +54,20 @@ describe('Graduation: Multi-Department Final Clearance Checklist', () => {
     expect(summary.finalClearanceCertificateRef).toBeUndefined();
   });
 
-  it('accurately reports cleared departments with officer sign-off credentials', async () => {
+  it('honesty rule: never auto-clears departments without backing records and avoids fake officer signatures', async () => {
     const res = await getStudentClearanceSummaryAction();
     const summary = res.summary!;
 
     const hostelsDept = summary.departments.find((d) => d.category === 'hostels');
-    expect(hostelsDept?.status).toBe('cleared');
-    expect(hostelsDept?.officerName).toBeDefined();
-    expect(hostelsDept?.officerRole).toBeDefined();
+    expect(hostelsDept?.status).toBe('pending');
+    expect(hostelsDept?.blockingReason).toContain('Room key');
 
-    const sportsDept = summary.departments.find((d) => d.category === 'sports');
-    expect(sportsDept?.status).toBe('cleared');
-    expect(sportsDept?.officerName).toBeDefined();
+    const registrarDept = summary.departments.find((d) => d.category === 'registrar');
+    expect(registrarDept?.status).toBe('pending');
+    expect(registrarDept?.blockingReason).toContain('Senate');
+
+    // Verifies no fake officer signatures are claimed
+    expect(hostelsDept?.officerName).toBeUndefined();
   });
 });
 
@@ -95,7 +97,7 @@ describe('Graduation: Digital Documents Vault', () => {
 
     expect(clrDoc).toBeDefined();
     expect(clrDoc?.isAvailable).toBe(false);
-    expect(clrDoc?.unavailableReason).toContain('all 5 departments sign off');
+    expect(clrDoc?.unavailableReason).toContain('all 5 departments');
   });
 });
 
@@ -157,9 +159,11 @@ describe('Graduation: Parent & Sponsor Statement', () => {
     expect(summary.studentName).toBe('Faith Wanjiku');
     expect(summary.admissionNumber).toBe('BIT/2023/8849');
     expect(summary.feeSummary.balance).toBe(24500);
-    expect(summary.feeSummary.paybillNumber).toBe('247247');
+    expect(summary.feeSummary.paybillNumber).toContain('247247');
+    expect(summary.feeSummary.paybillNumber).toContain('Provisional');
     expect(summary.feeSummary.accountNumber).toBe('BIT20238849');
-    expect(summary.feeSummary.bankDetails.bankName).toBe('Kenya Commercial Bank (KCB)');
+    expect(summary.feeSummary.bankDetails.bankName).toContain('Kenya Commercial Bank');
+    expect(summary.feeSummary.bankDetails.bankName).toContain('Provisional');
     expect(summary.enrolledUnitsCount).toBeGreaterThan(0);
   });
 

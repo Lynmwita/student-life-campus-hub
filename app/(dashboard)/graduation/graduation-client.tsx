@@ -363,9 +363,7 @@ export function GraduationClient({
                         {dept.status === 'cleared' && (
                           <div className="text-xs text-slate-600 flex items-center gap-1.5 pt-0.5">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>
-                              Signed off by {dept.officerName} ({dept.officerRole})
-                            </span>
+                            <span>No outstanding liabilities recorded on institutional ledger</span>
                           </div>
                         )}
 
@@ -493,14 +491,19 @@ export function GraduationClient({
                 <GraduationCap className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#FCD34D]">
-                  34th Annual University Convocation
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#FCD34D]">
+                    Annual University Convocation
+                  </span>
+                  <span className="text-[10px] font-mono bg-[#06101E] text-amber-300 border border-[#C59B27]/40 px-1.5 py-0.5 rounded">
+                    Illustrative Schedule
+                  </span>
+                </div>
                 <h3 className="font-serif font-bold text-lg text-white">
                   Graduation Ceremony &amp; Gown Protocol
                 </h3>
                 <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
-                  The 34th Graduation Ceremony will take place at the Chancellor Pavilion, Main Campus. Graduands who achieve full clearance by Friday, 20 November 2026 are included in the official congregation roll.
+                  Illustrative pilot schedule: Actual convocation dates, gown collection depot rooms, and rehearsal hours are subject to official Senate Academic Board confirmation and formal Kenya Gazette publication.
                 </p>
               </div>
             </div>
@@ -595,7 +598,7 @@ export function GraduationClient({
                         className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white"
                       >
                         <option value="electronic_certified">
-                          Certified E-Transcript (Instant Dispatch)
+                          Certified E-Transcript (Electronic Dispatch Request)
                         </option>
                         <option value="embossed_hardcopy">
                           Embossed Hardcopy (Postal / Courier)
@@ -768,10 +771,15 @@ export function GraduationClient({
 
           {/* Payment Instructions for Parents & Sponsors */}
           <Card className="p-6 bg-white border border-[#C59B27]/40 shadow-xs space-y-4">
-            <h4 className="font-serif font-bold text-base text-[#0B1D33] flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-[#C59B27]" />
-              <span>Official University Fee Payment Channels</span>
-            </h4>
+            <div>
+              <h4 className="font-serif font-bold text-base text-[#0B1D33] flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-[#C59B27]" />
+                <span>Provisional Demonstration Payment Channels</span>
+              </h4>
+              <p className="text-xs text-rose-950 bg-rose-50 border border-rose-200 p-2.5 rounded-lg mt-2 leading-relaxed">
+                <strong>Crucial Pilot Advisory:</strong> The Paybill number and bank account below are provisional demonstration entries. Do not transfer actual student fees to these demonstration numbers. Confirm authoritative university revenue accounts directly with the Summit Metropolitan University Finance Office before disbursing funds.
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               {/* M-Pesa Paybill */}

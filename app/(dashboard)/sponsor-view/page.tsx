@@ -108,10 +108,15 @@ export default async function SponsorViewPage() {
 
         {/* Payment Channels */}
         <Card className="p-6 bg-white border border-[#C59B27]/40 shadow-xs space-y-4">
-          <h2 className="font-serif font-bold text-base text-[#0B1D33] flex items-center gap-2">
-            <Receipt className="w-4 h-4 text-[#C59B27]" />
-            <span>Official University Payment Channels</span>
-          </h2>
+          <div>
+            <h2 className="font-serif font-bold text-base text-[#0B1D33] flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-[#C59B27]" />
+              <span>Provisional Demonstration Payment Channels</span>
+            </h2>
+            <p className="text-xs text-rose-950 bg-rose-50 border border-rose-200 p-2.5 rounded-lg mt-2 leading-relaxed">
+              <strong>Crucial Pilot Advisory:</strong> The Paybill number and bank account below are provisional demonstration entries. Do not transfer actual student fees to these demonstration numbers. Confirm authoritative university revenue accounts directly with the Summit Metropolitan University Finance Office before disbursing funds.
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">

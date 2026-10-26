@@ -83,7 +83,7 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
 
     const { data: membership } = await supabase
       .from('university_memberships')
-      .select('registration_number, program_of_study, faculty, campuses(name)')
+      .select('registration_number, program_of_study, faculty, created_at, campuses(name)')
       .eq('user_id', user.id)
       .maybeSingle();
 
@@ -114,18 +114,44 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
       (r: any) => r.data?.status === 'overdue' || r.data?.status === 'active'
     );
 
-    // 4. Query academic records for Registrar audit
-    const { data: gradeRows } = await supabase
+    // 4. Query hostel allocation for Residence clearance
+    const { data: hostelRows } = await supabase
       .from('uams_academic_records')
       .select('data')
       .eq('student_id', user.id)
-      .eq('kind', 'grade');
+      .eq('kind', 'hostel_allocation');
 
-    const totalPassedUnits = (gradeRows || []).filter(
-      (r: any) => r.data?.grade && r.data.grade !== 'F' && r.data.grade !== 'E'
-    ).length;
+    const hasHostelAllocation = hostelRows && hostelRows.length > 0;
+    const isHostelCheckedOut =
+      hasHostelAllocation &&
+      (hostelRows[0].data?.status === 'checked_out' ||
+        hostelRows[0].data?.clearance_status === 'cleared');
 
-    // Build real departments
+    // 5. Query sports equipment clearance
+    const { data: sportsRows } = await supabase
+      .from('uams_academic_records')
+      .select('data')
+      .eq('student_id', user.id)
+      .eq('kind', 'sports_clearance');
+
+    const isSportsCleared =
+      sportsRows &&
+      sportsRows.length > 0 &&
+      sportsRows[0].data?.status === 'cleared';
+
+    // 6. Query Senate graduation clearance
+    const { data: senateRows } = await supabase
+      .from('uams_academic_records')
+      .select('data')
+      .eq('student_id', user.id)
+      .eq('kind', 'graduation_clearance');
+
+    const isSenateApproved =
+      senateRows &&
+      senateRows.length > 0 &&
+      senateRows[0].data?.status === 'cleared';
+
+    // Build real departments without hardcoded fake approvals
     const departments: ClearanceDepartmentItem[] = [
       {
         id: 'real-dept-lib',
@@ -137,8 +163,6 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
             ? `${activeOrOverdueLoans.length} active or overdue book loan(s) pending return.`
             : undefined,
         clearedAt: activeOrOverdueLoans.length === 0 ? new Date().toISOString() : undefined,
-        officerName: 'University Librarian',
-        officerRole: 'Head of Circulation & Access Services',
         resolutionActionUrl: '/library',
         resolutionActionLabel: 'Return or Renew at Library',
       },
@@ -146,19 +170,25 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
         id: 'real-dept-res',
         departmentName: 'Halls of Residence & Housing',
         category: 'hostels',
-        status: 'cleared',
-        clearedAt: new Date().toISOString(),
-        officerName: 'Hall Warden',
-        officerRole: 'Student Accommodation Services',
+        status: isHostelCheckedOut ? 'cleared' : 'pending',
+        blockingReason: isHostelCheckedOut
+          ? undefined
+          : hasHostelAllocation
+          ? 'Room key handover and room inventory inspection pending at Hall Warden desk.'
+          : 'No residential clearance record on file. Verify non-resident status with housing office.',
+        clearedAt: isHostelCheckedOut ? new Date().toISOString() : undefined,
+        resolutionActionUrl: '/hostels',
+        resolutionActionLabel: 'Check Residence Details',
       },
       {
         id: 'real-dept-sport',
         departmentName: 'Sports & Recreation Department',
         category: 'sports',
-        status: 'cleared',
-        clearedAt: new Date().toISOString(),
-        officerName: 'Sports Custodian',
-        officerRole: 'University Gymnasium & Field Equipment Office',
+        status: isSportsCleared ? 'cleared' : 'pending',
+        blockingReason: isSportsCleared
+          ? undefined
+          : 'Sports equipment return and facility clearance pending departmental audit.',
+        clearedAt: isSportsCleared ? new Date().toISOString() : undefined,
       },
       {
         id: 'real-dept-fin',
@@ -170,8 +200,6 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
             ? `Outstanding fee balance: KES ${feeBalance.toLocaleString()}. Must be fully settled for clearance.`
             : undefined,
         clearedAt: feeBalance <= 0 ? new Date().toISOString() : undefined,
-        officerName: 'Senior Student Accountant',
-        officerRole: 'Fees Revenue Office',
         resolutionActionUrl: '/fees',
         resolutionActionLabel: 'View & Settle Outstanding Fees',
       },
@@ -179,14 +207,11 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
         id: 'real-dept-reg',
         departmentName: 'Office of the Academic Registrar',
         category: 'registrar',
-        status: totalPassedUnits >= 36 ? 'cleared' : 'pending',
-        blockingReason:
-          totalPassedUnits >= 36
-            ? undefined
-            : `Awaiting completion of required graduation credit points (Currently ${totalPassedUnits} verified units).`,
-        clearedAt: totalPassedUnits >= 36 ? new Date().toISOString() : undefined,
-        officerName: 'Academic Registrar',
-        officerRole: 'Senate Admissions & Examinations Board',
+        status: isSenateApproved ? 'cleared' : 'pending',
+        blockingReason: isSenateApproved
+          ? undefined
+          : 'Pending Senate Academic Board graduation audit and graduation list confirmation.',
+        clearedAt: isSenateApproved ? new Date().toISOString() : undefined,
         resolutionActionUrl: '/exams',
         resolutionActionLabel: 'Check Exam Schedule & Transcripts',
       },
@@ -228,6 +253,7 @@ export async function getStudentClearanceSummaryAction(): Promise<ClearanceRespo
 
 /**
  * Retrieves the certified documents in the student's digital documents vault.
+ * Availability is strictly tied to real backing records.
  */
 export async function getVaultDocumentsAction(): Promise<VaultResponse> {
   let user = null;
@@ -263,9 +289,38 @@ export async function getVaultDocumentsAction(): Promise<VaultResponse> {
   }
 
   try {
+    const supabase = await createClient();
+
+    // Query real backing records
+    const { data: membership } = await supabase
+      .from('university_memberships')
+      .select('registration_number, created_at')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const { data: feeRows } = await supabase
+      .from('uams_academic_records')
+      .select('data')
+      .eq('student_id', user.id)
+      .eq('kind', 'fee_statement');
+
+    const { data: gradeRows } = await supabase
+      .from('uams_academic_records')
+      .select('data')
+      .eq('student_id', user.id)
+      .eq('kind', 'grade');
+
     const clrRes = await getStudentClearanceSummaryAction();
     const isFullyCleared = clrRes.summary?.isFullyCleared ?? false;
     const admissionNo = clrRes.summary?.admissionNumber || 'ADM';
+
+    const hasMembership = !!membership?.registration_number;
+    const hasFeeRecords = !!(feeRows && feeRows.length > 0);
+    const hasGradeRecords = !!(gradeRows && gradeRows.length > 0);
+
+    const admissionDate = membership?.created_at
+      ? membership.created_at.split('T')[0]
+      : '2023-09-01';
 
     const documents: VaultDocument[] = [
       {
@@ -274,9 +329,10 @@ export async function getVaultDocumentsAction(): Promise<VaultResponse> {
         type: 'admission_letter',
         description: 'Statutory university admission offer letter with program code, faculty entry, and reporting instructions.',
         referenceNumber: `SMU/ADM/${admissionNo.replace(/[^A-Za-z0-9]/g, '-')}`,
-        issuedDate: '2023-08-15',
+        issuedDate: admissionDate,
         fileFormat: 'PDF',
-        isAvailable: true,
+        isAvailable: hasMembership,
+        unavailableReason: hasMembership ? undefined : 'No university admission record on institutional registry.',
       },
       {
         id: 'real-doc-fee',
@@ -286,7 +342,8 @@ export async function getVaultDocumentsAction(): Promise<VaultResponse> {
         referenceNumber: `STMT-2026-${admissionNo.replace(/[^A-Za-z0-9]/g, '')}`,
         issuedDate: new Date().toISOString().split('T')[0],
         fileFormat: 'PDF',
-        isAvailable: true,
+        isAvailable: hasFeeRecords,
+        unavailableReason: hasFeeRecords ? undefined : 'No fee statements recorded on registry ledger.',
       },
       {
         id: 'real-doc-exam',
@@ -296,7 +353,8 @@ export async function getVaultDocumentsAction(): Promise<VaultResponse> {
         referenceNumber: `EXAM-SLIP-2026-${admissionNo.replace(/[^A-Za-z0-9]/g, '')}`,
         issuedDate: new Date().toISOString().split('T')[0],
         fileFormat: 'PDF',
-        isAvailable: true,
+        isAvailable: hasGradeRecords,
+        unavailableReason: hasGradeRecords ? undefined : 'No examination results recorded on registry ledger.',
       },
       {
         id: 'real-doc-clr',
@@ -311,7 +369,7 @@ export async function getVaultDocumentsAction(): Promise<VaultResponse> {
         isAvailable: isFullyCleared,
         unavailableReason: isFullyCleared
           ? undefined
-          : `Available once all 5 departments sign off final clearance. Currently ${clrRes.summary?.clearedDepartmentsCount ?? 0} of 5 cleared.`,
+          : `Available once all 5 departments record final clearance. Currently ${clrRes.summary?.clearedDepartmentsCount ?? 0} of 5 cleared.`,
       },
     ];
 
@@ -509,7 +567,7 @@ export async function getTranscriptRequestsAction(): Promise<{
 
 /**
  * Retrieves the read-only summary for parents and sponsors.
- * Surfaces fee balances, official Paybill instructions, and academic standing
+ * Surfaces fee balances, provisional demonstration payment instructions, and academic standing
  * without exposing confidential private messages or help desk support tickets.
  */
 export async function getSponsorViewSummaryAction(): Promise<{
@@ -613,12 +671,12 @@ export async function getSponsorViewSummaryAction(): Promise<{
         totalPaid: paid,
         balance,
         dueDate: '2026-11-15',
-        paybillNumber: '247247',
+        paybillNumber: '247247 (Provisional Pilot Number)',
         accountNumber: cleanAccountNo,
         bankDetails: {
-          bankName: 'Kenya Commercial Bank (KCB)',
+          bankName: 'Kenya Commercial Bank (KCB) [Provisional - Confirm with SMU Finance]',
           accountName: 'Summit Metropolitan University Fees Collection',
-          accountNumber: '1102938475',
+          accountNumber: '1102938475 (Provisional)',
           branch: 'University Way Branch',
         },
       },
