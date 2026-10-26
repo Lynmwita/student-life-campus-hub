@@ -1,0 +1,60 @@
+import { ClassChangeAlert, MorningCardBrief } from './types';
+
+export const DEMO_CLASS_CHANGE_ALERTS: ClassChangeAlert[] = [
+  {
+    id: 'cca-2026-comp211-venue',
+    courseCode: 'COMP 211',
+    courseName: 'Object-Oriented Analysis & Design',
+    changeType: 'venue_change',
+    title: 'COMP 211 moved to Computing Lab 3',
+    message: 'Due to scheduled network maintenance in Lecture Hall 4B, this session will be held in Computing Lab 3.',
+    originalDetail: 'Lecture Hall 4B',
+    newDetail: 'Computing Lab 3 (Westlands)',
+    effectiveDate: '2026-10-26',
+    effectiveTime: '08:30 - 11:30',
+    lecturerName: 'Dr. Evans Ochieng',
+    postedAt: '2026-10-26T06:15:00Z',
+    isUrgent: true,
+  },
+  {
+    id: 'cca-2026-comp216-reschedule',
+    courseCode: 'COMP 216',
+    courseName: 'Computer Networks & Data Communications',
+    changeType: 'reschedule',
+    title: 'COMP 216 slot adjusted to 10:00',
+    message: 'Session starts at 10:00 to accommodate the faculty consultative assembly.',
+    originalDetail: '09:00 - 12:00',
+    newDetail: '10:00 - 13:00 (Networks Lab)',
+    effectiveDate: '2026-10-27',
+    effectiveTime: '10:00 - 13:00',
+    lecturerName: 'Eng. Samuel Koech',
+    postedAt: '2026-10-25T16:30:00Z',
+    isUrgent: false,
+  },
+];
+
+export const DEMO_MORNING_CARD_BRIEF: MorningCardBrief = {
+  studentName: 'Faith Wanjiku',
+  admissionNumber: 'BIT/2023/8849',
+  greeting: 'Good morning',
+  todayDateFormatted: 'Monday, 26 October 2026',
+  todayDayOfWeek: 1,
+  todayDayName: 'Monday',
+  classesCount: 2,
+  nextClass: {
+    code: 'COMP 211',
+    name: 'Object-Oriented Analysis & Design',
+    time: '08:30',
+    venue: 'Computing Lab 3 (Westlands)',
+    lecturerName: 'Dr. Evans Ochieng',
+  },
+  urgentDeadline: {
+    title: 'Fee payment deadline Friday',
+    detail: 'Outstanding balance KES 24,500 required for examination clearance.',
+    dueDateFormatted: 'Friday, 15 Nov 2026',
+    category: 'fee',
+    actionHref: '/fees',
+    actionLabel: 'View Statement',
+  },
+  activeClassChangesCount: 1,
+};

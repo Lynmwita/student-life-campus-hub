@@ -30,10 +30,14 @@ import { AppHeader } from "@/components/shared/app-header";
 import { PaymentProgressBar } from "@/components/ui/payment-progress-bar";
 import { FeeDeadlineBanner } from "@/components/ui/fee-deadline-banner";
 import { ResultsDigestAlertBanner } from "@/components/ui/results-digest-alert";
+import { MorningCard } from "@/components/ui/morning-card";
+import { ClassChangeAlertsBanner } from "@/components/ui/class-change-alerts";
 import { getPrimaryFeeDeadlineAlert, FeeDeadlineAlert } from "@/lib/finance/deadline-alerts";
 import { DEMO_FEE_STATEMENTS } from "@/lib/finance/demo-data";
 import { getResultsDigestAlertAction } from "@/lib/actions/exams";
 import { ResultsDigestAlert } from "@/lib/exams/types";
+import { getMorningCardBriefAction, getClassChangeAlertsAction } from "@/lib/actions/daily-life";
+import { MorningCardBrief, ClassChangeAlert } from "@/lib/daily-life/types";
 import {
   markAnnouncementAsReadAction,
   getStudentAnnouncementsAction,
@@ -69,20 +73,30 @@ export default function StudentDashboardPage() {
   });
   const [deadlineAlert, setDeadlineAlert] = React.useState<FeeDeadlineAlert | null>(null);
   const [resultsAlert, setResultsAlert] = React.useState<ResultsDigestAlert | null>(null);
+  const [morningBrief, setMorningBrief] = React.useState<MorningCardBrief | null>(null);
+  const [classChanges, setClassChanges] = React.useState<ClassChangeAlert[]>([]);
 
   React.useEffect(() => {
     let ignore = false;
 
     async function loadData() {
       try {
-        const [announcementsRes, scheduleRes, feeRes, resultsAlertRes] = await Promise.all([
+        const [announcementsRes, scheduleRes, feeRes, resultsAlertRes, morningRes, classChangesRes] = await Promise.all([
           withOffline("getStudentAnnouncementsAction", getStudentAnnouncementsAction),
           withOffline("getStudentTodayScheduleAction", getStudentTodayScheduleAction),
           withOffline("getStudentFeeStatementsAction", getStudentFeeStatementsAction).catch(() => null),
           getResultsDigestAlertAction().catch(() => null),
+          getMorningCardBriefAction().catch(() => null),
+          getClassChangeAlertsAction().catch(() => null),
         ]);
 
         if (!ignore) {
+          if (morningRes && morningRes.success && morningRes.brief) {
+            setMorningBrief(morningRes.brief);
+          }
+          if (classChangesRes && classChangesRes.success) {
+            setClassChanges(classChangesRes.alerts);
+          }
           if (resultsAlertRes && resultsAlertRes.success) {
             setResultsAlert(resultsAlertRes.alert);
           }
@@ -138,13 +152,21 @@ export default function StudentDashboardPage() {
   async function handleRefresh() {
     setRefreshing(true);
     try {
-      const [announcementsRes, scheduleRes, feeRes, resultsAlertRes] = await Promise.all([
+      const [announcementsRes, scheduleRes, feeRes, resultsAlertRes, morningRes, classChangesRes] = await Promise.all([
         withOffline("getStudentAnnouncementsAction", getStudentAnnouncementsAction),
         withOffline("getStudentTodayScheduleAction", getStudentTodayScheduleAction),
         withOffline("getStudentFeeStatementsAction", getStudentFeeStatementsAction).catch(() => null),
         getResultsDigestAlertAction().catch(() => null),
+        getMorningCardBriefAction().catch(() => null),
+        getClassChangeAlertsAction().catch(() => null),
       ]);
 
+      if (morningRes && morningRes.success && morningRes.brief) {
+        setMorningBrief(morningRes.brief);
+      }
+      if (classChangesRes && classChangesRes.success) {
+        setClassChanges(classChangesRes.alerts);
+      }
       if (resultsAlertRes && resultsAlertRes.success) {
         setResultsAlert(resultsAlertRes.alert);
       }
@@ -223,6 +245,13 @@ export default function StudentDashboardPage() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
         {loadError&&<p role="alert" className="rounded border border-amber-300 bg-amber-50 p-4">Could not refresh: {loadError} Displaying previously loaded information; it may be out of date.</p>}
+
+        {/* Morning Briefing Hero Card (Habit Loop) */}
+        {morningBrief && <MorningCard brief={morningBrief} />}
+
+        {/* Real-time Class Change Alerts */}
+        {classChanges.length > 0 && <ClassChangeAlertsBanner alerts={classChanges} />}
+
         {/* Student Welcome Banner */}
         <div className="rounded-xl bg-gradient-to-r from-[#0B1D33] to-[#06101E] border border-[#C59B27]/30 p-6 sm:p-8 text-white shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

@@ -19,6 +19,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/shared/app-header";
+import { ClassChangeAlertsBanner } from "@/components/ui/class-change-alerts";
+import { getClassChangeAlertsAction } from "@/lib/actions/daily-life";
+import { ClassChangeAlert } from "@/lib/daily-life/types";
 import {
   getStudentWeeklyTimetableAction,
   type TimetableEntry,
@@ -42,6 +45,7 @@ export default function TimetablePage() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [universityName, setUniversityName] = React.useState("Your university");
   const [campusName, setCampusName] = React.useState("Your campus");
+  const [classChanges, setClassChanges] = React.useState<ClassChangeAlert[]>([]);
 
   // Default to today's day of week (0 = Sunday, 1..6 = Mon..Sat)
   const currentJsDay = typeof window !== "undefined" ? new Date().getDay() : 1;
@@ -53,13 +57,19 @@ export default function TimetablePage() {
 
     async function loadData() {
       try {
-        const res = await withOffline("getStudentWeeklyTimetableAction", getStudentWeeklyTimetableAction);
+        const [res, changesRes] = await Promise.all([
+          withOffline("getStudentWeeklyTimetableAction", getStudentWeeklyTimetableAction),
+          getClassChangeAlertsAction().catch(() => null),
+        ]);
         if(!ignore&&!res.success)throw new Error(res.message||'Weekly timetable could not be loaded.');
         if (!ignore && res.success) {
           setHasLoadedData(true);setLoadError('');
           setEntries(res.entries);
           if (res.universityName) setUniversityName(res.universityName);
           if (res.campusName) setCampusName(res.campusName);
+        }
+        if (!ignore && changesRes && changesRes.success) {
+          setClassChanges(changesRes.alerts);
         }
       } catch (err) {
         if(!ignore)setLoadError(err instanceof Error?err.message:'Weekly timetable is unavailable. Please reconnect and try again.');
@@ -81,13 +91,19 @@ export default function TimetablePage() {
   async function handleRefresh() {
     setRefreshing(true);
     try {
-      const res = await withOffline("getStudentWeeklyTimetableAction", getStudentWeeklyTimetableAction);
+      const [res, changesRes] = await Promise.all([
+        withOffline("getStudentWeeklyTimetableAction", getStudentWeeklyTimetableAction),
+        getClassChangeAlertsAction().catch(() => null),
+      ]);
       if(!res.success)throw new Error(res.message||'Weekly timetable could not be refreshed.');
       if (res.success) {
         setHasLoadedData(true);setLoadError('');
         setEntries(res.entries);
         if (res.universityName) setUniversityName(res.universityName);
         if (res.campusName) setCampusName(res.campusName);
+      }
+      if (changesRes && changesRes.success) {
+        setClassChanges(changesRes.alerts);
       }
     } catch (err) {
       setLoadError(err instanceof Error?err.message:'Could not refresh weekly timetable.');
@@ -139,6 +155,9 @@ export default function TimetablePage() {
             </Button>
           </div>
         </div>
+
+        {/* Real-time Class Change Alerts */}
+        {classChanges.length > 0 && <ClassChangeAlertsBanner alerts={classChanges} />}
 
         {/* Day Selector Tabs with solid gold indicator bar */}
         <div className="flex items-center gap-4 sm:gap-6 border-b border-[#C59B27]/25 overflow-x-auto pb-1">
@@ -198,7 +217,7 @@ export default function TimetablePage() {
                   <Calendar className="w-5 h-5" />
                 </div>
                 <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
-                  {selectedDay === 0 ? "Free Study Day — No Lectures Scheduled" : `No Classes Scheduled for ${selectedDayMeta.name}`}
+                  {selectedDay === 0 ? "Free Study Day - No Lectures Scheduled" : `No Classes Scheduled for ${selectedDayMeta.name}`}
                 </h4>
                 <p className="text-xs text-slate-500">
                   {selectedDay === 0
