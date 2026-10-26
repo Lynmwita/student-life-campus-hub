@@ -296,7 +296,7 @@ export async function submitUnitRegistrationAction(
       name: u.name,
       creditHours: u.creditHours,
       registeredAt: nowIso,
-      status: 'registered',
+      status: 'pending_approval',
       registrationRef,
     }));
 
@@ -306,7 +306,7 @@ export async function submitUnitRegistrationAction(
       registrationReference: registrationRef,
       registeredUnits: newlyRegistered,
       totalCredits,
-      message: `UAMS course registration approved. Reference: ${registrationRef}. Official examination roster updated.`,
+      message: `Registration recorded, pending UAMS confirmation. Reference: ${registrationRef}. Status: Pending registrar confirmation.`,
     };
   }
 

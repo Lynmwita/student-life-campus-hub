@@ -235,7 +235,7 @@ export function SafetyClient({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <Badge variant="danger">24/7 Security Hotline</Badge>
+          <Badge variant="danger">SOS Dispatch Queue</Badge>
           <Badge variant="default">Westlands Hub</Badge>
         </div>
       </div>
@@ -401,16 +401,26 @@ export function SafetyClient({
 
           {/* Institutional Emergency Telephone Directory */}
           <div className="space-y-3">
-            <h3 className="font-serif font-bold text-base text-[#0B1D33] flex items-center gap-2">
-              <PhoneCall className="w-4 h-4 text-[#C59B27]" />
-              <span>Verified Campus Emergency Telephone Lines</span>
-            </h3>
+            <div>
+              <h3 className="font-serif font-bold text-base text-[#0B1D33] flex items-center gap-2">
+                <PhoneCall className="w-4 h-4 text-[#C59B27]" />
+                <span>Provisional Campus Emergency Telephone Lines (Pilot Directory)</span>
+              </h3>
+              <p className="text-xs text-amber-900 bg-amber-50 border border-amber-200 p-2.5 rounded-lg mt-1.5 leading-relaxed">
+                <strong>Pre-Pilot Notice:</strong> The numbers below are provisional demonstration lines for the system test. Confirm official campus gate and control room contacts before full launch. In an urgent life-threatening emergency, dial national lines 999 or 112 directly, or alert the nearest gate security guard.
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="p-4 bg-white border border-slate-200 space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700">
-                  Security Operations
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700">
+                    Security Operations
+                  </span>
+                  <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                    Provisional
+                  </span>
+                </div>
                 <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
                   Control Room Dispatch
                 </h4>
@@ -425,9 +435,14 @@ export function SafetyClient({
               </Card>
 
               <Card className="p-4 bg-white border border-slate-200 space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
-                  Health &amp; Wellness
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">
+                    Health &amp; Wellness
+                  </span>
+                  <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                    Provisional
+                  </span>
+                </div>
                 <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
                   University Clinic &amp; Triage
                 </h4>
@@ -442,9 +457,14 @@ export function SafetyClient({
               </Card>
 
               <Card className="p-4 bg-white border border-slate-200 space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">
-                  Student Welfare
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">
+                    Student Welfare
+                  </span>
+                  <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                    Provisional
+                  </span>
+                </div>
                 <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
                   Dean of Students Counselling
                 </h4>
@@ -459,9 +479,14 @@ export function SafetyClient({
               </Card>
 
               <Card className="p-4 bg-white border border-slate-200 space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
-                  Gender Desk
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                    Gender Desk
+                  </span>
+                  <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                    Provisional
+                  </span>
+                </div>
                 <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
                   GBV &amp; Protection Liaison
                 </h4>

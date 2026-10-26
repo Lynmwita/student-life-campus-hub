@@ -14,7 +14,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 describe('Community & Safety: Emergency SOS & Dispatch', () => {
-  it('dispatches a Priority 1 emergency incident with verified campus security hotlines', async () => {
+  it('dispatches a Priority 1 emergency incident and labels hotlines honestly as provisional pilot contacts', async () => {
     const res = await triggerEmergencySosAction(
       'Hall 3 Block B Room 204',
       'security',
@@ -24,10 +24,11 @@ describe('Community & Safety: Emergency SOS & Dispatch', () => {
     expect(res.success).toBe(true);
     expect(res.ticketNumber).toMatch(/^SOS-2026-\d{4}$/);
     expect(res.studentLocation).toBe('Hall 3 Block B Room 204');
-    expect(res.campusSecurityPhone).toBe('+254 700 000 999');
-    expect(res.campusHealthCentrePhone).toBe('+254 700 000 911');
+    expect(res.campusSecurityPhone).toContain('Provisional Pilot Line');
+    expect(res.campusHealthCentrePhone).toContain('Provisional Pilot Line');
     expect(res.dispatchedTo).toContain('Campus Security Control Room');
     expect(res.message).toContain('Priority 1 Emergency Incident dispatched');
+    expect(res.message).toContain('provisional pilot');
   });
 
   it('honesty rule: never claims to dispatch national municipal 999 services directly', async () => {
@@ -36,7 +37,7 @@ describe('Community & Safety: Emergency SOS & Dispatch', () => {
     // The Hub dispatches to campus staff responders, never municipal police/fire
     expect(res.dispatchedTo).not.toContain('National Police Service');
     expect(res.dispatchedTo).not.toContain('City Ambulance');
-    expect(res.campusSecurityPhone).toBe('+254 700 000 999');
+    expect(res.campusSecurityPhone).toContain('Provisional');
   });
 });
 

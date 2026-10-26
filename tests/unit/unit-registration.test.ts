@@ -82,8 +82,10 @@ describe('Unit Registration & UAMS Boundary Rules', () => {
     expect(res.success).toBe(true);
     expect(res.totalCredits).toBe(18);
     expect(res.registrationReference).toMatch(/^REG-SEM2-2026-/);
+    expect(res.registeredUnits).toBeDefined();
     expect(res.registeredUnits).toHaveLength(6);
-    expect(res.message).toContain('UAMS course registration approved');
+    expect(res.registeredUnits![0].status).toBe('pending_approval');
+    expect(res.message).toContain('Pending registrar confirmation');
   });
 
   it('enforces locked-door privacy: Student B registration records are never visible to Student A', () => {

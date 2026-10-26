@@ -318,8 +318,8 @@ export async function triggerEmergencySosAction(
   const ticketNumber = `SOS-2026-${ticketSuffix}`;
   const nowIso = new Date().toISOString();
 
-  const securityPhone = '+254 700 000 999';
-  const healthPhone = '+254 700 000 911';
+  const securityPhone = '+254 700 000 999 (Provisional Pilot Line)';
+  const healthPhone = '+254 700 000 911 (Provisional Pilot Line)';
 
   if (demoEmail) {
     return {
@@ -330,7 +330,7 @@ export async function triggerEmergencySosAction(
       campusHealthCentrePhone: healthPhone,
       studentLocation: location || 'Main Campus',
       dispatchedAt: nowIso,
-      message: 'Priority 1 Emergency Incident dispatched to Campus Security Control Room. Stand by at your location or call security direct.',
+      message: 'Priority 1 Emergency Incident dispatched to Campus Security Control Room. Stand by at your location. Notice: Phone contacts are provisional pilot lines; for life-threatening emergencies, dial 999/112 or alert gate security.',
     };
   }
 
@@ -343,7 +343,7 @@ export async function triggerEmergencySosAction(
       campusHealthCentrePhone: healthPhone,
       studentLocation: location,
       dispatchedAt: nowIso,
-      message: 'Authentication required. For immediate emergency response, call campus security on ' + securityPhone,
+      message: 'Authentication required. Contact campus security desk or dial national emergency 999/112.',
     };
   }
 
@@ -376,7 +376,7 @@ export async function triggerEmergencySosAction(
       campusHealthCentrePhone: healthPhone,
       studentLocation: location,
       dispatchedAt: nowIso,
-      message: 'Priority 1 Emergency Incident logged with Security Operations. Campus responders alerted.',
+      message: 'Priority 1 Emergency Incident logged with Security Operations. Campus responders alerted. Notice: Phone contacts are provisional pilot lines.',
     };
   } catch {
     return {
@@ -387,7 +387,7 @@ export async function triggerEmergencySosAction(
       campusHealthCentrePhone: healthPhone,
       studentLocation: location,
       dispatchedAt: nowIso,
-      message: 'Incident recorded. Please contact campus security immediately on ' + securityPhone,
+      message: 'Incident recorded. Please contact campus security desk or dial national emergency 999/112.',
     };
   }
 }
