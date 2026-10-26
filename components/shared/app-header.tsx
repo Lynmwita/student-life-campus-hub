@@ -98,6 +98,7 @@ export function AppHeader({
  { href: "/timetable", label: "Weekly Timetable", icon: Calendar },
     { href: "/campus-life", label: "Campus Life & Clubs", icon: Compass },
     { href: "/safety", label: "Community & Safety", icon: ShieldCheck },
+    { href: "/graduation", label: "Graduation & Vault", icon: GraduationCap },
     { href: "/help-desk", label: "Help Desk & Inquiries", icon: LifeBuoy },
   ];
 
