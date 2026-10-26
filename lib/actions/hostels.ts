@@ -352,18 +352,51 @@ export async function getHostelApplicationAction(): Promise<HostelApplicationRes
 
   try {
     const supabase = await createClient();
+    // Query student's submitted application from help_requests with category 'hostel'
     const { data, error } = await supabase
-      .from('uams_academic_records')
-      .select('data')
-      .eq('kind', 'hostel_application')
+      .from('help_requests')
+      .select('*')
       .eq('student_id', user!.id)
+      .eq('category', 'hostel')
+      .ilike('subject', '[Hostel Application]%')
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error || !data) {
       return { success: true, application: null, isDemo: false };
     }
 
-    return { success: true, application: data.data as HostelApplication, isDemo: false };
+    let parsedApp: HostelApplication | null = null;
+    try {
+      parsedApp = JSON.parse(data.description) as HostelApplication;
+      // Map status from database record
+      if (data.status === 'resolved' || data.status === 'closed') {
+        parsedApp.status = 'allocated';
+      } else if (data.status === 'in_progress' || data.status === 'under_review') {
+        parsedApp.status = 'pending';
+      } else {
+        parsedApp.status = 'applied';
+      }
+    } catch {
+      parsedApp = {
+        id: data.id,
+        applicationNumber: data.reference_no,
+        studentId: user!.id,
+        studentName: user!.email?.split('@')[0] || 'Student',
+        admissionNumber: 'BIT/2023/REAL',
+        academicYear: '2026/2027',
+        semester: 2,
+        status: data.status === 'resolved' ? 'allocated' : data.status === 'under_review' ? 'pending' : 'applied',
+        firstPreferenceHall: 'Hall 3 (Mount Kenya Residence)',
+        secondPreferenceHall: 'Hall 5 (Kilimanjaro Hall)',
+        preferredRoomType: 'double',
+        submittedAt: data.created_at,
+        decisionDate: '2026-11-20',
+      };
+    }
+
+    return { success: true, application: parsedApp, isDemo: false };
   } catch (err) {
     return { success: false, application: null, isDemo: false, error: err instanceof Error ? err.message : 'Failed to query application.' };
   }
@@ -393,9 +426,16 @@ export async function submitHostelApplicationAction(params: {
     return { success: false, error: 'Preferred hall and room type are mandatory.' };
   }
 
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let appSuffix = '';
+  for (let i = 0; i < 4; i++) {
+    appSuffix += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  const appNumber = `HS-2027-SEM2-${appSuffix}`;
+
   const app: HostelApplication = {
     id: `APP-${Date.now()}`,
-    applicationNumber: `HS-2027-SEM2-${Math.floor(1000 + Math.random() * 9000)}`,
+    applicationNumber: appNumber,
     studentId: demoEmail ? 'student-demo-faith' : user!.id,
     studentName: demoEmail ? 'Faith Wanjiku' : user!.email?.split('@')[0] || 'Student',
     admissionNumber: demoEmail ? 'BIT/2023/8849' : 'BIT/2023/REAL',
@@ -417,15 +457,37 @@ export async function submitHostelApplicationAction(params: {
 
   try {
     const supabase = await createClient();
-    const { error } = await supabase.from('uams_academic_records').upsert({
-      kind: 'hostel_application',
+    // Retrieve student's university membership to attach mandatory university_id
+    const { data: membership } = await supabase
+      .from('university_memberships')
+      .select('university_id, campus_id')
+      .eq('user_id', user!.id)
+      .single();
+
+    if (!membership) {
+      return { success: false, error: 'No active university affiliation found.' };
+    }
+
+    const formattedSubject = `[Hostel Application] ${params.firstPreferenceHall} (${params.preferredRoomType})`;
+
+    const { data: inserted, error } = await supabase.from('help_requests').insert({
+      reference_no: appNumber,
+      university_id: membership.university_id,
+      campus_id: membership.campus_id || null,
       student_id: user!.id,
-      data: app,
-      updated_at: new Date().toISOString(),
-    });
+      category: 'hostel',
+      priority: 'P3',
+      subject: formattedSubject,
+      description: JSON.stringify(app),
+      status: 'submitted',
+    }).select('id, reference_no').single();
 
     if (error) {
       return { success: false, error: error.message };
+    }
+
+    if (inserted?.reference_no) {
+      app.applicationNumber = inserted.reference_no;
     }
 
     return { success: true, application: app };
