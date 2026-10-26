@@ -19,6 +19,7 @@ import {
   Compass,
   LifeBuoy,
   Receipt,
+  Building,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -503,7 +504,7 @@ export default function StudentDashboardPage() {
         )}
 
         {/* Quick Links Section */}
-        <section className="pt-2 grid sm:grid-cols-3 gap-4">
+        <section className="pt-2 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link href="/fees" className="block group">
             <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs space-y-3.5">
               <div className="flex items-center gap-3">
@@ -528,6 +529,24 @@ export default function StudentDashboardPage() {
                 paidByStudent={feeProgress.paidByStudent}
                 compact={true}
               />
+            </Card>
+          </Link>
+
+          <Link href="/hostels" className="block group">
+            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
+                  <Building className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
+                    Hostels & Residence
+                  </h4>
+                  <p className="text-xs text-slate-500 font-sans">
+                    Room B-204 · Maintenance requests · Roommate matching.
+                  </p>
+                </div>
+              </div>
             </Card>
           </Link>
 

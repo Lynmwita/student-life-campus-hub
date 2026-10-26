@@ -3,7 +3,7 @@
 Student features and activation requirements: [feature guide](docs/STUDENT_FEATURES.md). The shared workspace checkpoint and rollout checklist are maintained in the sibling `UAMS/docs` directory. Local verification does not mean production migrations or the pilot have run.
 
 > **"The university follows the student."**  
-> A lightweight, mobile-first, multi-tenant campus platform designed for university students to unify official communications, academic timetables, campus discovery, and student support into a fast, low-bandwidth web application (PWA).
+> A lightweight, mobile-first campus platform designed for university students to unify official communications, academic timetables, campus discovery, and student support into a fast, low-bandwidth web application (PWA).
 
 ---
 
@@ -12,11 +12,11 @@ Student features and activation requirements: [feature guide](docs/STUDENT_FEATU
 University students frequently face fragmented campus communication channels — relying on noisy WhatsApp groups, physical bulletin boards, and bloated administrative portals. **Student Life & Campus Hub** centralizes essential student services into a clean, mobile-first hub built to perform smoothly even on 3G mobile connections.
 
 ### Key Pillars
-- **Strict Multi-Tenancy**: Data isolation between universities via database-level Supabase Row-Level Security (RLS).
+- **Strict Tenant & Data Isolation**: One university per deployment model, using database-level Supabase Row-Level Security (RLS) policies and tenant columns as strict internal security boundaries.
 - **Verified Student Identity**: Tiered onboarding with student credential verification (`pending` → `verified`).
 - **Targeted Announcements & Priority Alerts**: Official campus notices scoped by institution, faculty, department, or year of study, categorized by urgency (P1 Urgent to P4 General).
 - **Personalized Student Feed**: Daily glance covering upcoming schedules, academic deadlines, and notifications.
-- **Structured Help Desk**: Direct student inquiry submission with tracking codes (`REQ-YYYY-XXXXX`) and status timelines.
+- **Structured Help Desk**: Direct student inquiry submission with tracking codes (`HD-2026-XXXX`) and status timelines.
 - **Low-Bandwidth & PWA First**: Lightweight asset footprint with offline fallback caching for core views.
 
 ### 🚫 Explicit Scope Boundaries
