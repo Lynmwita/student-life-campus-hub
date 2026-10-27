@@ -247,63 +247,48 @@ export default function StudentDashboardPage() {
       <AppHeader universityName={universityName} campusName={campusName} />
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 space-y-6">
-        {loadError&&<p role="alert" className="rounded border border-amber-300 bg-amber-50 p-4">Could not refresh: {loadError} Displaying previously loaded information; it may be out of date.</p>}
+        {loadError && (
+          <p role="alert" className="rounded border border-amber-300 bg-amber-50 p-4">
+            Could not refresh: {loadError} Displaying previously loaded information; it may be out of date.
+          </p>
+        )}
 
-        {/* Morning Briefing Hero Card (Habit Loop) */}
-        {morningBrief && <MorningCard brief={morningBrief} />}
+        {/* 2. Greeting & Short Morning Briefing (Today Snapshot Only) */}
+        {morningBrief && (
+          <MorningCard
+            brief={morningBrief}
+            feeDeadlineText={
+              deadlineAlert
+                ? (language === "sw"
+                    ? `Mwisho wa ada: ${deadlineAlert.formattedDueDate} (Baki: KES ${(feeProgress.totalBilled - feeProgress.totalPaid).toLocaleString()})`
+                    : `Fee deadline: ${deadlineAlert.formattedDueDate} (KES ${(feeProgress.totalBilled - feeProgress.totalPaid).toLocaleString()} balance)`)
+                : undefined
+            }
+          />
+        )}
 
-        {/* Real-time Class Change Alerts */}
-        {classChanges.length > 0 && <ClassChangeAlertsBanner alerts={classChanges} />}
-
-        {/* Student Welcome Banner */}
-        <div className="rounded-xl bg-gradient-to-r from-[#0B1D33] to-[#06101E] border border-[#C59B27]/30 p-6 sm:p-8 text-white shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#06101E] text-[#FCD34D] text-xs font-semibold border border-[#C59B27]/40">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#FCD34D]" />
-                Institutional Student Portal
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight text-white">
-                Student Life & Campus Hub
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-lg font-sans">
-                Official institutional communications • <strong>{unreadCount} unread notice{unreadCount === 1 ? "" : "s"}</strong> • Live lecture scheduling for {campusName}.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="bg-[#0B1D33]/90 px-4 py-3 rounded-lg text-center border border-[#C59B27]/30">
-                <span className="block text-sm font-bold text-[#FCD34D]">Active</span>
-                <span className="text-[10px] uppercase font-bold text-slate-400">Verified</span>
-              </div>
-              <div className="bg-[#0B1D33]/90 px-4 py-3 rounded-lg text-center border border-[#C59B27]/30">
-                <span className="block text-2xl font-black font-serif text-white">{unreadCount}</span>
-                <span className="text-[10px] uppercase font-bold text-slate-400">Alerts</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Navigation Grid (14 Square Cards) */}
+        {/* 3. Square Card Grid (Directly after the briefing) */}
         <SquaredCardsNav />
 
-        {/* Live Academic Timetable: Today's Schedule */}
-        <section className="space-y-3">
+        {/* 4. Today's Lectures (Full detail lives here and only here) */}
+        <section aria-label="Today's Lecture Schedule" className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h3 className="font-serif font-bold text-sm text-[#0B1D33] flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-[#C59B27]" />
-                Today&apos;s Lecture Schedule • {todayDayName}
+                {language === "sw" ? `Ratiba ya Vipindi vya Leo • ${todayDayName}` : `Today's Lecture Schedule • ${todayDayName}`}
               </h3>
               {todaySchedule.length > 0 && (
-                <Badge variant="info">{todaySchedule.length} Lecture{todaySchedule.length > 1 ? "s" : ""}</Badge>
+                <Badge variant="info">
+                  {todaySchedule.length} {todaySchedule.length === 1 ? (language === "sw" ? "Kipindi" : "Lecture") : (language === "sw" ? "Vipindi" : "Lectures")}
+                </Badge>
               )}
             </div>
             <Link
               href="/timetable"
               className="text-xs font-serif font-bold text-[#C59B27] hover:underline flex items-center gap-1"
             >
-              Full Timetable <ArrowRight className="w-3 h-3" />
+              {language === "sw" ? "Ratiba Kamili ya Wiki" : "Full Timetable"} <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
 
@@ -319,23 +304,20 @@ export default function StudentDashboardPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-serif font-bold text-sm text-[#0B1D33]">
-                      No Lectures Scheduled for {todayDayName}
+                      {language === "sw" ? `Hakuna Vipindi Vilivyoratibiwa ${todayDayName}` : `No Lectures Scheduled for ${todayDayName}`}
                     </span>
-                    <Badge variant="default">Free Study Day</Badge>
+                    <Badge variant="default">{language === "sw" ? "Siku ya Kujisomea" : "Free Study Day"}</Badge>
                   </div>
                   <p className="text-xs text-slate-500 max-w-xl leading-relaxed">
-                    You have no official classes scheduled for today. You can view your full weekly schedule or explore upcoming campus events and clubs.
+                    {language === "sw"
+                      ? "Huna vipindi rasmi vilivyopangwa leo. Unaweza kuangalia ratiba yako ya wiki nzima au kuchunguza vilabu na shughuli za chuo."
+                      : "You have no official classes scheduled for today. You can view your full weekly schedule or explore upcoming campus events and clubs."}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Link href="/timetable">
                     <Button variant="outline" size="sm" className="text-xs border-[#C59B27]/40 text-[#0B1D33]">
-                      <Calendar className="w-3.5 h-3.5 mr-1 text-[#C59B27]" /> Weekly Timetable
-                    </Button>
-                  </Link>
-                  <Link href="/campus-life">
-                    <Button variant="outline" size="sm" className="text-xs border-[#C59B27]/40 text-[#0B1D33]">
-                      <Users className="w-3.5 h-3.5 mr-1 text-[#C59B27]" /> Campus Life
+                      <Calendar className="w-3.5 h-3.5 mr-1 text-[#C59B27]" /> {language === "sw" ? "Ratiba ya Wiki" : "Weekly Timetable"}
                     </Button>
                   </Link>
                 </div>
@@ -382,18 +364,18 @@ export default function StudentDashboardPage() {
           )}
         </section>
 
-        {/* Priority Announcements Feed */}
-        <section className="space-y-4 pt-2">
+        {/* 5. Notices & Broadcasts (Grouped into one section, latest first) */}
+        <section id="notices" aria-label="Campus Notices and Broadcasts" className="space-y-4 pt-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <h3 className="font-serif font-bold text-sm text-[#0B1D33] flex items-center gap-1.5">
                 <Megaphone className="w-4 h-4 text-[#C59B27]" />
-                Targeted Campus Broadcasts
+                {language === "sw" ? "Matangazo na Taarifa za Chuo" : "Notices & Campus Broadcasts"}
               </h3>
-              {unreadCount > 0 && <Badge variant="danger">{unreadCount} New</Badge>}
+              {unreadCount > 0 && <Badge variant="danger">{unreadCount} {language === "sw" ? "Mpya" : "New"}</Badge>}
             </div>
 
-            {/* Filter buttons with solid gold indicator style */}
+            {/* Filter buttons */}
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs border border-slate-200">
               <button
                 onClick={() => setSelectedFilter("all")}
@@ -403,7 +385,7 @@ export default function StudentDashboardPage() {
                     : "text-slate-600 hover:text-[#0B1D33]"
                 }`}
               >
-                All Notices
+                {language === "sw" ? "Zote" : "All Notices"}
               </button>
               <button
                 onClick={() => setSelectedFilter("P1")}
@@ -413,7 +395,7 @@ export default function StudentDashboardPage() {
                     : "text-slate-600 hover:text-red-700"
                 }`}
               >
-                Urgent (P1)
+                {language === "sw" ? "Dharura (P1)" : "Urgent (P1)"}
               </button>
               <button
                 onClick={() => setSelectedFilter("unread")}
@@ -423,7 +405,7 @@ export default function StudentDashboardPage() {
                     : "text-slate-600 hover:text-[#0B1D33]"
                 }`}
               >
-                Unread
+                {language === "sw" ? "Ambazo Hujasoma" : "Unread"}
               </button>
             </div>
 
@@ -439,6 +421,13 @@ export default function StudentDashboardPage() {
             </Button>
           </div>
 
+          {/* Real-time Class Change Alerts (Folded into Notices) */}
+          {classChanges.length > 0 && <ClassChangeAlertsBanner alerts={classChanges} />}
+
+          {/* Results Digest Alert (Folded into Notices) */}
+          {resultsAlert && <ResultsDigestAlertBanner alert={resultsAlert} variant="card" />}
+
+          {/* Priority Announcements Feed */}
           <div className="space-y-3">
             {loading ? (
               <div className="space-y-3">
@@ -457,15 +446,17 @@ export default function StudentDashboardPage() {
                     <Megaphone className="w-6 h-6" />
                   </div>
                   <h4 className="font-serif font-bold text-[#0B1D33] text-sm">
-                    No Official Broadcasts at This Time
+                    {language === "sw" ? "Hakuna Matangazo Rasmi kwa Sasa" : "No Official Broadcasts at This Time"}
                   </h4>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    When university administration, campus deans, or department coordinators post notices for your group, they will appear here in real-time.
+                    {language === "sw"
+                      ? "Matangazo mapya kutoka kwa uongozi wa chuo au idara yako yataonekana hapa moja kwa moja."
+                      : "When university administration, campus deans, or department coordinators post notices for your group, they will appear here in real-time."}
                   </p>
                   <div className="pt-2">
                     <Link href="/announcements/new">
                       <Button variant="outline" size="sm" className="text-xs border-[#C59B27]/40 text-[#0B1D33]">
-                        <PlusCircle className="w-3.5 h-3.5 mr-1 text-[#C59B27]" /> Post Campus Broadcast
+                        <PlusCircle className="w-3.5 h-3.5 mr-1 text-[#C59B27]" /> {language === "sw" ? "Chapisha Tangazo" : "Post Campus Broadcast"}
                       </Button>
                     </Link>
                   </div>
@@ -473,7 +464,7 @@ export default function StudentDashboardPage() {
               </Card>
             ) : filteredNotices.length === 0 ? (
               <Card className="border border-[#C59B27]/30 p-6 text-center text-xs text-slate-500 bg-white">
-                No announcements matching the selected filter.
+                {language === "sw" ? "Hakuna matangazo yanayolingana na kichujio kilichochaguliwa." : "No announcements matching the selected filter."}
               </Card>
             ) : (
               filteredNotices.map((notice) => {
@@ -530,11 +521,11 @@ export default function StudentDashboardPage() {
                             onClick={() => handleMarkRead(notice.id)}
                             className="text-xs text-[#0B1D33] border-[#C59B27]/40 hover:bg-[#0B1D33]/5"
                           >
-                            <CheckCircle className="w-3.5 h-3.5 mr-1 text-[#C59B27]" /> Mark as Read
+                            <CheckCircle className="w-3.5 h-3.5 mr-1 text-[#C59B27]" /> {language === "sw" ? "Weka Umesoma" : "Mark as Read"}
                           </Button>
                         ) : (
                           <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1 font-sans">
-                            <CheckCircle className="w-3 h-3 text-emerald-600" /> Read
+                            <CheckCircle className="w-3 h-3 text-emerald-600" /> {language === "sw" ? "Umesoma" : "Read"}
                           </span>
                         )}
                       </div>
@@ -546,43 +537,41 @@ export default function StudentDashboardPage() {
           </div>
         </section>
 
-        {/* Results Digest Alert Card (Fires once per release window) */}
-        {resultsAlert && (
-          <section className="pt-2">
-            <ResultsDigestAlertBanner alert={resultsAlert} variant="card" />
-          </section>
-        )}
-
-        {/* Fee Deadline Alert Card */}
-        {deadlineAlert && (
-          <section className="pt-2">
-            <FeeDeadlineBanner alert={deadlineAlert} variant="card" />
-          </section>
-        )}
-
-        {/* Tuition & Fee Clearance Overview */}
-        <section aria-label="Fee Clearance Summary" className="pt-2">
-          <Card className="p-5 border border-[#C59B27]/30 bg-white shadow-xs space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-[#C59B27]" />
-                <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
-                  {language === "sw" ? "Hali ya Ada za Masomo na Usajili" : "Fee Statement & Clearance"}
-                </h4>
+        {/* 6. Fee Summary (Shown once: progress plus balance) */}
+        <section aria-label="Fee Summary and Clearance" className="pt-2">
+          <Card className="p-5 border border-[#C59B27]/30 bg-white shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#C59B27]/15 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
+                  <Receipt className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
+                    {language === "sw" ? "Muhtasari wa Ada za Masomo na Kibali" : "Fee Summary & Clearance"}
+                  </h4>
+                  <p className="text-xs text-slate-600 font-sans">
+                    {feeProgress.totalPaid >= feeProgress.totalBilled
+                      ? (language === "sw" ? "Ada zote zimekamilika • Umeidhinishwa kwa mitihani" : "Fees covered • Cleared for examinations")
+                      : (language === "sw"
+                          ? `Baki: KES ${(feeProgress.totalBilled - feeProgress.totalPaid).toLocaleString()}${deadlineAlert ? ` • Tarehe ya mwisho: ${deadlineAlert.formattedDueDate}` : ""}`
+                          : `KES ${(feeProgress.totalBilled - feeProgress.totalPaid).toLocaleString()} balance remaining${deadlineAlert ? ` • Due by ${deadlineAlert.formattedDueDate}` : ""}`)}
+                  </p>
+                </div>
               </div>
               <Link
                 href="/fees"
-                className="text-xs font-serif font-bold text-[#C59B27] hover:underline flex items-center gap-1"
+                className="text-xs font-serif font-bold text-[#C59B27] hover:underline flex items-center gap-1 self-start sm:self-auto"
               >
-                {language === "sw" ? "Taarifa Kamili" : "Full Statement"} <ArrowRight className="w-3 h-3" />
+                {language === "sw" ? "Taarifa Kamili na Risiti" : "View Fee Statement & Receipts"} <ArrowRight className="w-3 h-3" />
               </Link>
             </div>
+
             <PaymentProgressBar
               totalBilled={feeProgress.totalBilled}
               totalPaid={feeProgress.totalPaid}
               fundingApplied={feeProgress.fundingApplied}
               paidByStudent={feeProgress.paidByStudent}
-              compact={true}
+              compact={false}
             />
           </Card>
         </section>
