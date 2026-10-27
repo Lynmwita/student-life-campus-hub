@@ -27,6 +27,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/shared/app-header";
+import { SquaredCardsNav } from "@/components/shared/squared-cards-nav";
+import { useLanguage } from "@/lib/i18n/context";
 import { PaymentProgressBar } from "@/components/ui/payment-progress-bar";
 import { FeeDeadlineBanner } from "@/components/ui/fee-deadline-banner";
 import { ResultsDigestAlertBanner } from "@/components/ui/results-digest-alert";
@@ -50,6 +52,7 @@ import {
 import { getStudentFeeStatementsAction } from "@/lib/actions/fees";
 
 export default function StudentDashboardPage() {
+  const { language } = useLanguage();
   const [notices, setNotices] = React.useState<NoticeItem[]>([]);
   const [todaySchedule, setTodaySchedule] = React.useState<TimetableEntry[]>([]);
   const [todayDayName, setTodayDayName] = React.useState<string>("Today");
@@ -280,6 +283,9 @@ export default function StudentDashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Main Navigation Grid (14 Square Cards) */}
+        <SquaredCardsNav />
 
         {/* Live Academic Timetable: Today's Schedule */}
         <section className="space-y-3">
@@ -554,196 +560,31 @@ export default function StudentDashboardPage() {
           </section>
         )}
 
-        {/* Quick Links Section */}
-        <section className="pt-2 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/student-id" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
-                  <IdCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
-                    Digital Student ID
-                  </h4>
-                  <p className="text-xs text-slate-500 font-sans">
-                    NFC &amp; QR verified smart badge · Gate entry · Library.
-                  </p>
-                </div>
+        {/* Tuition & Fee Clearance Overview */}
+        <section aria-label="Fee Clearance Summary" className="pt-2">
+          <Card className="p-5 border border-[#C59B27]/30 bg-white shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-[#C59B27]" />
+                <h4 className="font-serif font-bold text-sm text-[#0B1D33]">
+                  {language === "sw" ? "Hali ya Ada za Masomo na Usajili" : "Fee Statement & Clearance"}
+                </h4>
               </div>
-            </Card>
-          </Link>
-
-          <Link href="/exams" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
-                    Exam Pass & Timetable
-                  </h4>
-                  <p className="text-xs text-slate-500 font-sans">
-                    Digital Exam Pass · Venue &amp; seat allocations · Paper countdown.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          <Link href="/fees" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs space-y-3.5">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
-                  <Receipt className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors truncate">
-                    Fee Statement & Clearance
-                  </h4>
-                  <p className="text-xs text-slate-500 font-sans truncate">
-                    Track payment progress and download receipts
-                  </p>
-                </div>
-              </div>
-
-              {/* Compact Payment Progress Bar */}
-              <PaymentProgressBar
-                totalBilled={feeProgress.totalBilled}
-                totalPaid={feeProgress.totalPaid}
-                fundingApplied={feeProgress.fundingApplied}
-                paidByStudent={feeProgress.paidByStudent}
-                compact={true}
-              />
-            </Card>
-          </Link>
-
-          <Link href="/hostels" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
-                  <Building className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
-                    Hostels & Residence
-                  </h4>
-                  <p className="text-xs text-slate-500 font-sans">
-                    Room B-204 · Maintenance requests · Roommate matching.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          <Link href="/library" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
-                  <BookOpen className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
-                    Library & Loans
-                  </h4>
-                  <p className="text-xs text-slate-500 font-sans">
-                    Active book loans · Due countdowns · Instant renewal · Clearance.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          <Link href="/units" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
-                  <GraduationCap className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
-                    Unit Registration
-                  </h4>
-                  <p className="text-xs text-slate-500 font-sans">
-                    Semester course units · Prerequisite checks · Credit thresholds.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          <Link href="/timetable" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
-                  <BookOpen className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
-                    Weekly Timetable Schedules
-                  </h4>
-                  <p className="text-xs text-slate-500 font-sans">
-                    View lecture halls • Times • Faculty instructors for Monday - Friday.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          <Link href="/campus-life" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
-                  <Users className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
-                    Clubs, Communities & Events
-                  </h4>
-                  <p className="text-xs text-slate-500 font-sans">
-                    Discover campus student groups • Workshops • Hackathons • Activities.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          <Link href="/safety" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
-                    Community, Safety & Privacy
-                  </h4>
-                  <p className="text-xs text-slate-500 font-sans">
-                    Emergency SOS • Verified lost & found custody • KDPA data export.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          <Link href="/graduation" className="block group">
-            <Card className="p-5 border border-[#C59B27]/30 group-hover:border-[#C59B27]/80 transition-all bg-white shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#0B1D33] text-[#FCD34D] border border-[#C59B27]/40 flex items-center justify-center shrink-0">
-                  <GraduationCap className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[#0B1D33] group-hover:text-[#C59B27] transition-colors">
-                    Graduation & Vault
-                  </h4>
-                  <p className="text-xs text-slate-500 font-sans">
-                    Exit clearance checklist • Documents vault • Alumni • Sponsor view.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </Link>
+              <Link
+                href="/fees"
+                className="text-xs font-serif font-bold text-[#C59B27] hover:underline flex items-center gap-1"
+              >
+                {language === "sw" ? "Taarifa Kamili" : "Full Statement"} <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <PaymentProgressBar
+              totalBilled={feeProgress.totalBilled}
+              totalPaid={feeProgress.totalPaid}
+              fundingApplied={feeProgress.fundingApplied}
+              paidByStudent={feeProgress.paidByStudent}
+              compact={true}
+            />
+          </Card>
         </section>
       </main>
     </div>

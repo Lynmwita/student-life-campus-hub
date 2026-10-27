@@ -7,28 +7,18 @@ import { usePathname } from "next/navigation";
 import {
   GraduationCap,
   MapPin,
-  Megaphone,
-  Calendar,
-  Compass,
-  LifeBuoy,
   User,
   LogOut,
   ShieldAlert,
-  ShieldCheck,
   PlusCircle,
-  Menu,
-  X,
-  Receipt,
-  Building,
-  FileText,
-  IdCard,
-  BookOpen,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { signOutAction, getUserRoleAction } from "@/lib/actions/auth";
 import { LanguageToggle } from "@/components/shared/language-toggle";
 import { OfflineStatusBanner } from "@/components/shared/offline-status-banner";
 import { useLanguage } from "@/lib/i18n/context";
+import { NAV_CARDS } from "@/components/shared/squared-cards-nav";
 
 interface AppHeaderProps {
   universityName?: string;
@@ -41,7 +31,6 @@ export function AppHeader({
 }: AppHeaderProps) {
   const pathname = usePathname();
   const { language } = useLanguage();
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [userInfo, setUserInfo] = React.useState<{
     isAuthenticated: boolean;
     role: string;
@@ -64,8 +53,8 @@ export function AppHeader({
       try {
         const res = await getUserRoleAction();
         if (!ignore && res.isAuthenticated) {
- if (res.accountId || res.email) setOfflineAccount(res.accountId || res.email!);
- else clearPrivateOffline();
+          if (res.accountId || res.email) setOfflineAccount(res.accountId || res.email!);
+          else clearPrivateOffline();
           const isStaffOrAdmin =
             res.role === "staff" ||
             res.role === "admin" ||
@@ -89,22 +78,11 @@ export function AppHeader({
     };
   }, []);
 
-  const navLinks = [
-    { href: "/dashboard", label: language === "sw" ? "Mlisho wa Chuo" : "Campus Feed", icon: Megaphone },
-    { href: "/fees", label: language === "sw" ? "Ada za Masomo" : "Fee Statement", icon: Receipt },
-    { href: "/student-id", label: language === "sw" ? "Kitambulisho cha Mwanafunzi" : "Digital Student ID", icon: IdCard },
-    { href: "/library", label: language === "sw" ? "Maktaba" : "Library", icon: BookOpen },
-    { href: "/units", label: language === "sw" ? "Usajili wa Kozi" : "Unit Registration", icon: GraduationCap },
-    { href: "/exams", label: language === "sw" ? "Ratiba ya Mitihani & Pasi" : "Exam Pass & Timetable", icon: FileText },
-    { href: "/hostels", label: language === "sw" ? "Bweni na Makazi" : "Hostels & Residence", icon: Building },
-    { href: "/results", label: language === "sw" ? "Matokeo ya Mitihani" : "Results", icon: GraduationCap },
-    { href: "/feedback", label: language === "sw" ? "Maoni ya Majaribio" : "Pilot feedback", icon: LifeBuoy },
-    { href: "/timetable", label: language === "sw" ? "Ratiba ya Wiki" : "Weekly Timetable", icon: Calendar },
-    { href: "/campus-life", label: language === "sw" ? "Maisha ya Chuo na Vilabu" : "Campus Life & Clubs", icon: Compass },
-    { href: "/safety", label: language === "sw" ? "Usalama na Faragha" : "Community & Safety", icon: ShieldCheck },
-    { href: "/graduation", label: language === "sw" ? "Utoaji wa Shahada & Kibali" : "Graduation & Vault", icon: GraduationCap },
-    { href: "/help-desk", label: language === "sw" ? "Dawati la Msaada" : "Help Desk & Inquiries", icon: LifeBuoy },
-  ];
+  const currentNav = NAV_CARDS.find((item) =>
+    pathname.startsWith(item.href) && item.href !== "/dashboard"
+      ? true
+      : pathname === item.href
+  );
 
   return (
     <>
@@ -196,76 +174,30 @@ export function AppHeader({
                 <span className="hidden sm:inline">{language === "sw" ? "Toka" : "Sign Out"}</span>
               </Button>
             </form>
-
-            {/* Mobile menu toggle */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="sm:hidden p-1.5 text-slate-300 hover:text-white"
-              aria-label="Toggle navigation"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
           </div>
         </div>
-
-        {/* Mobile Navigation Dropdown */}
-        {mobileMenuOpen && (
-          <div className="sm:hidden mt-3 pt-3 border-t border-slate-800 space-y-1 pb-2">
-            {navLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold ${
-                    isActive
-                      ? "bg-[#06101E] text-[#FCD34D] border border-[#C59B27]/30"
-                      : "text-slate-300 hover:bg-[#06101E]/50"
-                  }`}
-                >
-                  <Icon className="w-4 h-4 text-[#C59B27]" />
-                  {link.label}
-                </Link>
-              );
-            })}
-            <Link
-              href="/profile"
-              onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:bg-[#06101E]/50"
-            >
-              <User className="w-4 h-4 text-[#C59B27]" />
-              My Academic Profile
-            </Link>
-          </div>
-        )}
       </header>
 
-      {/* Desktop Navigation Sub-bar */}
-      <nav className="bg-[#06101E] border-b border-[#C59B27]/20 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto flex items-center gap-6 text-xs font-semibold overflow-x-auto py-2.5">
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`pb-1 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
-                  isActive
-                    ? "text-[#FCD34D] border-b-2 border-[#C59B27]"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#FCD34D]" : ""}`} />
-                {link.label}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+      {/* Clear back control inside any section returning to the navigation grid */}
+      {pathname !== "/dashboard" && pathname !== "/" && (
+        <nav aria-label="Section navigation" className="bg-[#06101E] border-b border-[#C59B27]/20 px-4 sm:px-6 py-2">
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 text-xs font-semibold text-[#FCD34D] hover:text-white transition-colors group py-1"
+              aria-label={language === "sw" ? "Rudi kwenye Menyu Kuu" : "Back to Navigation"}
+            >
+              <ArrowLeft className="w-4 h-4 text-[#C59B27] group-hover:-translate-x-0.5 transition-transform" />
+              <span>{language === "sw" ? "Rudi kwenye Menyu Kuu" : "Back to Navigation"}</span>
+            </Link>
+            {currentNav && (
+              <span className="text-[11px] font-sans font-medium text-slate-300">
+                {language === "sw" ? currentNav.labelSw : currentNav.labelEn}
+              </span>
+            )}
+          </div>
+        </nav>
+      )}
     </>
   );
 }
