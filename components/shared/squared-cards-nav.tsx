@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Megaphone,
   Receipt,
@@ -354,6 +355,7 @@ export const NAV_CARDS: NavCardItem[] = [
 ];
 
 export function SquaredCardsNav() {
+  const pathname = usePathname();
   const { language } = useLanguage();
 
   return (
@@ -378,14 +380,29 @@ export function SquaredCardsNav() {
           const detail = language === "sw" ? card.detailSw : card.detailEn;
 
           const isCompactStat = statNumber.length <= 4;
+          const isCurrentPage =
+            card.href === "/dashboard"
+              ? pathname === "/dashboard" || pathname === "/"
+              : pathname.startsWith(card.href);
 
           return (
             <Link
               key={card.href + card.labelEn}
               href={card.href}
               data-testid={`nav-card-${card.href.replace('/', '') || 'dashboard'}`}
-              aria-label={`${label} - ${category}: ${statNumber} ${statUnit}`}
-              className={`aspect-square flex flex-col justify-between p-3 sm:p-3.5 rounded-xl border ${card.accent.borderColor} ${card.accent.cardBg} shadow-xs hover:shadow-md active:scale-[0.97] transition-all text-center group focus:outline-hidden focus:ring-2 focus:ring-[#C59B27] relative overflow-hidden cursor-pointer select-none`}
+              aria-label={`${label} - ${category}: ${statNumber} ${statUnit}${isCurrentPage ? (language === "sw" ? " (Upo hapa)" : " (You are here)") : ""}`}
+              aria-current={isCurrentPage ? "page" : undefined}
+              onClick={(e) => {
+                if (isCurrentPage) {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              }}
+              className={`aspect-square flex flex-col justify-between p-3 sm:p-3.5 rounded-xl border ${
+                isCurrentPage
+                  ? "ring-2 ring-[#C59B27] border-[#C59B27] shadow-sm"
+                  : `${card.accent.borderColor} shadow-xs`
+              } ${card.accent.cardBg} hover:shadow-md active:scale-[0.97] transition-all text-center group focus:outline-hidden focus:ring-2 focus:ring-[#C59B27] relative overflow-hidden cursor-pointer select-none`}
             >
               {/* 3px Creative Top Accent Bar */}
               <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${card.accent.topGradient} pointer-events-none`} />
@@ -393,7 +410,7 @@ export function SquaredCardsNav() {
               {/* 1. Category Eyebrow with Colored Dot + Icon Badge in Top Right */}
               <div className="w-full flex items-center justify-between pt-0.5 pointer-events-none">
                 <div className="flex items-center gap-1.5 truncate pr-1">
-                  <span className={`w-1.5 h-1.5 rounded-full ${card.accent.dotColor} shrink-0`} />
+                  <span className={`w-1.5 h-1.5 rounded-full ${isCurrentPage ? "bg-[#C59B27]" : card.accent.dotColor} shrink-0`} />
                   <span className="font-semibold uppercase tracking-wider text-[8.5px] sm:text-[9.5px] text-[#0B1D33]/70 truncate text-left">
                     {category}
                   </span>
@@ -402,6 +419,16 @@ export function SquaredCardsNav() {
                   <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
               </div>
+
+              {/* Current Page Indicator Badge */}
+              {isCurrentPage && (
+                <div className="w-full flex justify-center -my-0.5 pointer-events-none">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#0B1D33] text-[#FCD34D] text-[8px] sm:text-[8.5px] font-bold border border-[#C59B27] shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#FCD34D] animate-pulse shrink-0" />
+                    <span>{language === "sw" ? "Upo hapa" : "You are here"}</span>
+                  </span>
+                </div>
+              )}
 
               {/* 2. Big Hero Stat in the Center + 3. Title Below */}
               <div className="flex flex-col items-center justify-center my-auto py-0.5 pointer-events-none">

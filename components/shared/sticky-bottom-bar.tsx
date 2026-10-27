@@ -66,6 +66,12 @@ export function StickyBottomBar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={(e) => {
+                if (isActive) {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              }}
               className={`flex flex-col items-center justify-center flex-1 h-full py-1 transition-all group ${
                 isActive
                   ? "text-[#FCD34D]"
