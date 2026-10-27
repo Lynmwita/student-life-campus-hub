@@ -383,13 +383,15 @@ export function SquaredCardsNav() {
             <Link
               key={card.href + card.labelEn}
               href={card.href}
-              className={`aspect-square flex flex-col justify-between p-3 sm:p-3.5 rounded-xl border ${card.accent.borderColor} ${card.accent.cardBg} shadow-xs hover:shadow-md transition-all text-center group focus:outline-hidden focus:ring-2 focus:ring-[#C59B27] relative overflow-hidden`}
+              data-testid={`nav-card-${card.href.replace('/', '') || 'dashboard'}`}
+              aria-label={`${label} - ${category}: ${statNumber} ${statUnit}`}
+              className={`aspect-square flex flex-col justify-between p-3 sm:p-3.5 rounded-xl border ${card.accent.borderColor} ${card.accent.cardBg} shadow-xs hover:shadow-md active:scale-[0.97] transition-all text-center group focus:outline-hidden focus:ring-2 focus:ring-[#C59B27] relative overflow-hidden cursor-pointer select-none`}
             >
               {/* 3px Creative Top Accent Bar */}
-              <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${card.accent.topGradient}`} />
+              <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${card.accent.topGradient} pointer-events-none`} />
 
               {/* 1. Category Eyebrow with Colored Dot + Icon Badge in Top Right */}
-              <div className="w-full flex items-center justify-between pt-0.5">
+              <div className="w-full flex items-center justify-between pt-0.5 pointer-events-none">
                 <div className="flex items-center gap-1.5 truncate pr-1">
                   <span className={`w-1.5 h-1.5 rounded-full ${card.accent.dotColor} shrink-0`} />
                   <span className="font-semibold uppercase tracking-wider text-[8.5px] sm:text-[9.5px] text-[#0B1D33]/70 truncate text-left">
@@ -402,7 +404,7 @@ export function SquaredCardsNav() {
               </div>
 
               {/* 2. Big Hero Stat in the Center + 3. Title Below */}
-              <div className="flex flex-col items-center justify-center my-auto py-0.5">
+              <div className="flex flex-col items-center justify-center my-auto py-0.5 pointer-events-none">
                 <div
                   className={`font-serif font-black tracking-tight leading-none text-[#0B1D33] ${
                     isCompactStat
@@ -424,7 +426,7 @@ export function SquaredCardsNav() {
               </div>
 
               {/* 4. Subtitle at the Bottom */}
-              <p className="text-[9.5px] sm:text-[10px] text-slate-500 font-sans leading-tight line-clamp-2 px-0.5 pb-0.5">
+              <p className="text-[9.5px] sm:text-[10px] text-slate-500 font-sans leading-tight line-clamp-2 px-0.5 pb-0.5 pointer-events-none">
                 {detail}
               </p>
             </Link>
