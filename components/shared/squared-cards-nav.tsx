@@ -17,6 +17,15 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/lib/i18n/context";
 
+export interface NavCardAccent {
+  topGradient: string;
+  cardBg: string;
+  borderColor: string;
+  iconBg: string;
+  dotColor: string;
+  unitColor: string;
+}
+
 export interface NavCardItem {
   href: string;
   labelEn: string;
@@ -30,6 +39,7 @@ export interface NavCardItem {
   detailEn: string;
   detailSw: string;
   icon: React.ComponentType<{ className?: string }>;
+  accent: NavCardAccent;
 }
 
 export const NAV_CARDS: NavCardItem[] = [
@@ -46,6 +56,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Official circulars and daily briefs",
     detailSw: "Taarifa na matangazo rasmi",
     icon: Megaphone,
+    accent: {
+      topGradient: "from-[#0B1D33] to-[#C59B27]",
+      cardBg: "bg-gradient-to-b from-amber-50/50 via-white to-white",
+      borderColor: "border-amber-200/80 hover:border-[#C59B27]",
+      iconBg: "bg-amber-100/80 text-[#0B1D33] border-amber-200",
+      dotColor: "bg-[#C59B27]",
+      unitColor: "text-[#C59B27]",
+    },
   },
   {
     href: "/fees",
@@ -60,6 +78,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Ledger, balance and receipts",
     detailSw: "Daftari, baki na risiti za malipo",
     icon: Receipt,
+    accent: {
+      topGradient: "from-amber-500 to-[#C59B27]",
+      cardBg: "bg-gradient-to-b from-amber-50/60 via-white to-white",
+      borderColor: "border-amber-300/80 hover:border-amber-500",
+      iconBg: "bg-amber-100 text-amber-900 border-amber-300",
+      dotColor: "bg-amber-500",
+      unitColor: "text-amber-700",
+    },
   },
   {
     href: "/student-id",
@@ -74,6 +100,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Barcode pass and verification",
     detailSw: "Msimbo wa geti na uthibitisho",
     icon: IdCard,
+    accent: {
+      topGradient: "from-emerald-500 to-teal-500",
+      cardBg: "bg-gradient-to-b from-emerald-50/50 via-white to-white",
+      borderColor: "border-emerald-200/80 hover:border-emerald-500",
+      iconBg: "bg-emerald-100/90 text-emerald-900 border-emerald-200",
+      dotColor: "bg-emerald-500",
+      unitColor: "text-emerald-700",
+    },
   },
   {
     href: "/library",
@@ -88,6 +122,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Catalogs, books and e-vault",
     detailSw: "Katalogi, vitabu na marejeo",
     icon: BookOpen,
+    accent: {
+      topGradient: "from-sky-500 to-blue-600",
+      cardBg: "bg-gradient-to-b from-sky-50/50 via-white to-white",
+      borderColor: "border-sky-200/80 hover:border-sky-500",
+      iconBg: "bg-sky-100/90 text-sky-900 border-sky-200",
+      dotColor: "bg-sky-500",
+      unitColor: "text-sky-700",
+    },
   },
   {
     href: "/units",
@@ -102,6 +144,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Semester courses and requirements",
     detailSw: "Masomo ya muhula na masharti",
     icon: GraduationCap,
+    accent: {
+      topGradient: "from-indigo-500 to-blue-600",
+      cardBg: "bg-gradient-to-b from-indigo-50/50 via-white to-white",
+      borderColor: "border-indigo-200/80 hover:border-indigo-500",
+      iconBg: "bg-indigo-100/90 text-indigo-900 border-indigo-200",
+      dotColor: "bg-indigo-500",
+      unitColor: "text-indigo-700",
+    },
   },
   {
     href: "/exams",
@@ -116,6 +166,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Venues, dates and exam cards",
     detailSw: "Ukumbi, tarehe na kadi ya mtihani",
     icon: FileText,
+    accent: {
+      topGradient: "from-violet-500 to-indigo-600",
+      cardBg: "bg-gradient-to-b from-violet-50/50 via-white to-white",
+      borderColor: "border-violet-200/80 hover:border-violet-500",
+      iconBg: "bg-violet-100/90 text-violet-900 border-violet-200",
+      dotColor: "bg-violet-500",
+      unitColor: "text-violet-700",
+    },
   },
   {
     href: "/hostels",
@@ -130,6 +188,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Room allocation and residence",
     detailSw: "Ugawaji vyumba na makazi",
     icon: Building,
+    accent: {
+      topGradient: "from-orange-500 to-amber-600",
+      cardBg: "bg-gradient-to-b from-orange-50/50 via-white to-white",
+      borderColor: "border-orange-200/80 hover:border-orange-500",
+      iconBg: "bg-orange-100/90 text-orange-900 border-orange-200",
+      dotColor: "bg-orange-500",
+      unitColor: "text-orange-700",
+    },
   },
   {
     href: "/results",
@@ -144,6 +210,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Semester grades and transcripts",
     detailSw: "Alama za muhula na nakala",
     icon: GraduationCap,
+    accent: {
+      topGradient: "from-blue-600 to-emerald-500",
+      cardBg: "bg-gradient-to-b from-blue-50/50 via-white to-white",
+      borderColor: "border-blue-200/80 hover:border-blue-500",
+      iconBg: "bg-blue-100/90 text-blue-900 border-blue-200",
+      dotColor: "bg-blue-600",
+      unitColor: "text-blue-700",
+    },
   },
   {
     href: "/feedback",
@@ -158,6 +232,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Issue reports and suggestions",
     detailSw: "Ripoti hitilafu na mapendekezo",
     icon: LifeBuoy,
+    accent: {
+      topGradient: "from-slate-400 to-slate-600",
+      cardBg: "bg-gradient-to-b from-slate-50/60 via-white to-white",
+      borderColor: "border-slate-200 hover:border-slate-400",
+      iconBg: "bg-slate-100 text-slate-800 border-slate-200",
+      dotColor: "bg-slate-500",
+      unitColor: "text-slate-600",
+    },
   },
   {
     href: "/timetable",
@@ -172,6 +254,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Class routines and hall rooms",
     detailSw: "Vipindi vya wiki na kumbi",
     icon: Calendar,
+    accent: {
+      topGradient: "from-amber-500 to-orange-500",
+      cardBg: "bg-gradient-to-b from-amber-50/50 via-white to-white",
+      borderColor: "border-amber-200/80 hover:border-amber-500",
+      iconBg: "bg-amber-100/90 text-amber-900 border-amber-200",
+      dotColor: "bg-amber-500",
+      unitColor: "text-amber-700",
+    },
   },
   {
     href: "/campus-life",
@@ -186,6 +276,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Societies, sports and events",
     detailSw: "Vyama, michezo na matukio",
     icon: Compass,
+    accent: {
+      topGradient: "from-teal-500 to-emerald-500",
+      cardBg: "bg-gradient-to-b from-teal-50/50 via-white to-white",
+      borderColor: "border-teal-200/80 hover:border-teal-500",
+      iconBg: "bg-teal-100/90 text-teal-900 border-teal-200",
+      dotColor: "bg-teal-500",
+      unitColor: "text-teal-700",
+    },
   },
   {
     href: "/safety",
@@ -200,6 +298,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Campus security and medical help",
     detailSw: "Ulinzi wa chuo na msaada wa afya",
     icon: ShieldCheck,
+    accent: {
+      topGradient: "from-emerald-600 to-green-700",
+      cardBg: "bg-gradient-to-b from-green-50/50 via-white to-white",
+      borderColor: "border-green-200/80 hover:border-green-600",
+      iconBg: "bg-green-100/90 text-green-900 border-green-200",
+      dotColor: "bg-green-600",
+      unitColor: "text-green-700",
+    },
   },
   {
     href: "/graduation",
@@ -214,6 +320,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Certificates and credentials",
     detailSw: "Vyeti na stakabadhi rasmi",
     icon: GraduationCap,
+    accent: {
+      topGradient: "from-[#C59B27] to-[#0B1D33]",
+      cardBg: "bg-gradient-to-b from-amber-50/60 via-white to-white",
+      borderColor: "border-amber-300/80 hover:border-[#C59B27]",
+      iconBg: "bg-amber-100/90 text-[#0B1D33] border-amber-200",
+      dotColor: "bg-[#C59B27]",
+      unitColor: "text-[#C59B27]",
+    },
   },
   {
     href: "/help-desk",
@@ -228,6 +342,14 @@ export const NAV_CARDS: NavCardItem[] = [
     detailEn: "Service tickets and contacts",
     detailSw: "Tiketi za huduma na mawasiliano",
     icon: LifeBuoy,
+    accent: {
+      topGradient: "from-cyan-500 to-blue-600",
+      cardBg: "bg-gradient-to-b from-cyan-50/50 via-white to-white",
+      borderColor: "border-cyan-200/80 hover:border-cyan-500",
+      iconBg: "bg-cyan-100/90 text-cyan-900 border-cyan-200",
+      dotColor: "bg-cyan-500",
+      unitColor: "text-cyan-700",
+    },
   },
 ];
 
@@ -261,43 +383,48 @@ export function SquaredCardsNav() {
             <Link
               key={card.href + card.labelEn}
               href={card.href}
-              className="aspect-square flex flex-col justify-between p-3 sm:p-3.5 rounded-xl border border-[#C59B27]/40 bg-white shadow-xs hover:border-[#C59B27] hover:shadow-sm transition-all text-center group focus:outline-hidden focus:ring-2 focus:ring-[#C59B27]"
+              className={`aspect-square flex flex-col justify-between p-3 sm:p-3.5 rounded-xl border ${card.accent.borderColor} ${card.accent.cardBg} shadow-xs hover:shadow-md transition-all text-center group focus:outline-hidden focus:ring-2 focus:ring-[#C59B27] relative overflow-hidden`}
             >
-              {/* 1. Category Eyebrow at Top */}
-              <div className="w-full flex items-center justify-between text-[8.5px] sm:text-[9.5px]">
-                <span className="font-semibold uppercase tracking-wider text-[#0B1D33]/65 truncate text-left">
-                  {category}
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#C59B27]/40 shrink-0" />
+              {/* 3px Creative Top Accent Bar */}
+              <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${card.accent.topGradient}`} />
+
+              {/* 1. Category Eyebrow with Colored Dot + Icon Badge in Top Right */}
+              <div className="w-full flex items-center justify-between pt-0.5">
+                <div className="flex items-center gap-1.5 truncate pr-1">
+                  <span className={`w-1.5 h-1.5 rounded-full ${card.accent.dotColor} shrink-0`} />
+                  <span className="font-semibold uppercase tracking-wider text-[8.5px] sm:text-[9.5px] text-[#0B1D33]/70 truncate text-left">
+                    {category}
+                  </span>
+                </div>
+                <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg ${card.accent.iconBg} border flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-2xs`}>
+                  <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </div>
               </div>
 
-              {/* 2. Big Hero Stat in the Center with the Icon + 3. Title Below */}
-              <div className="flex flex-col items-center justify-center my-auto py-1">
-                <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-1">
-                  <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-[#C59B27] shrink-0 group-hover:scale-110 transition-transform" />
-                  <div
-                    className={`font-serif font-black tracking-tight leading-none text-[#0B1D33] ${
-                      isCompactStat
-                        ? "text-2xl sm:text-3xl"
-                        : "text-lg sm:text-xl"
-                    }`}
-                  >
-                    {statNumber}
-                    {statUnit && (
-                      <span className="ml-1 text-xs sm:text-sm font-sans font-bold text-[#C59B27] tracking-normal">
-                        {statUnit}
-                      </span>
-                    )}
-                  </div>
+              {/* 2. Big Hero Stat in the Center + 3. Title Below */}
+              <div className="flex flex-col items-center justify-center my-auto py-0.5">
+                <div
+                  className={`font-serif font-black tracking-tight leading-none text-[#0B1D33] ${
+                    isCompactStat
+                      ? "text-2xl sm:text-3xl"
+                      : "text-lg sm:text-xl"
+                  }`}
+                >
+                  {statNumber}
+                  {statUnit && (
+                    <span className={`ml-1 text-xs sm:text-sm font-sans font-bold ${card.accent.unitColor} tracking-normal`}>
+                      {statUnit}
+                    </span>
+                  )}
                 </div>
 
-                <span className="font-serif font-bold text-xs sm:text-sm text-[#0B1D33] leading-tight line-clamp-1">
+                <span className="font-serif font-bold text-xs sm:text-sm text-[#0B1D33] leading-tight line-clamp-1 mt-1 group-hover:text-[#0B1D33]">
                   {label}
                 </span>
               </div>
 
               {/* 4. Subtitle at the Bottom */}
-              <p className="text-[9.5px] sm:text-[10.5px] text-slate-500 font-sans leading-tight line-clamp-2 px-0.5">
+              <p className="text-[9.5px] sm:text-[10px] text-slate-500 font-sans leading-tight line-clamp-2 px-0.5 pb-0.5">
                 {detail}
               </p>
             </Link>
